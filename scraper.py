@@ -89,11 +89,19 @@ def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, t
         'state': 'CA'
     }
 
-url = 'https://www.sfdph.org/dph/alerts/coronavirus.asp'
-sfdph_soup = get_html(url)
-cases, deaths, time = find_tags(sfdph_soup)
+def scraper(url: str, existing_data_path: str) -> None:
+    soup = get_html(url)
+    print('Fetchind data from {0}'.format(url))
+    cases, deaths, time = find_tags(soup)
+    covid_data = pd.read_csv(existing_data_path, dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
+    new_row = gen_new_row_dict(covid_data, cases, deaths, time)
+    covid_data = covid_data.append(new_row, ignore_index=True)
+    print('Added the following row to {0}:'.format(existing_data_path))
+    print(covid_data.tail(1))
+    covid_data.to_csv(existing_data_path, index=False)
 
-covid_data = pd.read_csv('data/covid_19_sf.csv', dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
-new_row = gen_new_row_dict(covid_data, cases, deaths, time)
-covid_data = covid_data.append(new_row, ignore_index=True)
-covid_data.to_csv('data/covid_19_sf.csv', index=False)
+sf_url = 'https://www.sfdph.org/dph/alerts/coronavirus.asp'
+sf_data = 'data/covid_19_sf.csv'
+# allows us to see all the columns of the new row
+pd.set_option('display.max_columns', None)
+scraper(sf_url, sf_data)
