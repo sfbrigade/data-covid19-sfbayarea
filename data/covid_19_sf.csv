@@ -1,0 +1,12 @@
+date,time_updated,total_positive_cases,new_daily_cases,total_deaths,new_daily_deaths,city,county,state
+03/10/20,12:00:00 PM,13,13,0,0,San Francisco,San Francisco,CA
+03/11/20,10:00:00 AM,14,1,0,0,San Francisco,San Francisco,CA
+03/12/20,10:00:00 AM,18,4,0,0,San Francisco,San Francisco,CA
+03/13/20,10:00:00 AM,23,5,0,0,San Francisco,San Francisco,CA
+03/14/20,10:00:00 AM,28,5,0,0,San Francisco,San Francisco,CA
+03/15/20,10:00:00 AM,28,0,0,0,San Francisco,San Francisco,CA
+03/16/20,10:00:00 AM,37,9,0,0,San Francisco,San Francisco,CA
+03/17/20,10:00:00 AM,40,3,0,0,San Francisco,San Francisco,CA
+03/18/20,10:00:00 AM,43,3,0,0,San Francisco,San Francisco,CA
+03/19/20,09:00:00 AM,70,27,0,0,San Francisco,San Francisco,CA
+03/20/20,09:00:00 AM,76,6,0,0,San Francisco,San Francisco,CA
