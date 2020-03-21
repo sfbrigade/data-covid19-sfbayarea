@@ -7,14 +7,17 @@ import datetime
 
 def get_html(url: str) -> BeautifulSoup:
     """
-    Takes in a url string and returns a BeautifulSoup object representing the page
+    Takes in a url string and returns a BeautifulSoup object
+    representing the page
     """
     page = requests.get(url)
     return BeautifulSoup(page.content, 'html.parser')
 
 def find_tags_sf(soup: BeautifulSoup) -> Tuple[int, int, str]:
     """
-    Takes in a BeautifulSoup object and returns a tuple of the number of cases (int), the number of deaths (int) and the time that the data was updated(str)
+    Takes in a BeautifulSoup object and returns a tuple of the number
+    of cases (int), the number of deaths (int) and the time that the
+    data was updated(str)
     """
     helpful_links_box = soup.find(id='helpful-links')
 
@@ -33,7 +36,8 @@ def find_tags_sf(soup: BeautifulSoup) -> Tuple[int, int, str]:
 
 def format_single_digits(number: int) -> str:
     """
-    Adds a leading zero to one digit numbers to make them line up with the existing data
+    Adds a leading zero to one digit numbers to make them line
+    up with the existing data
     """
     if number < 10:
         return "0{0}".format(number)
@@ -69,7 +73,8 @@ def format_time(timestamp: str) -> str:
 
 def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, time_updated: str) -> Dict:
     """
-    Generates a new row for a dataframe in dict format and calculates the new cases and deaths for the new data
+    Generates a new row for a dataframe in dict format and calculates
+    the new cases and deaths for the new data
     """
     cases_idx = 2
     deaths_idx = 4
@@ -90,6 +95,10 @@ def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, t
     }
 
 def scraper(url: str, existing_data_path: str, data_getter: Callable) -> None:
+    """
+    Puts together the other functions in this file to add new data from the
+    specified URL (gathered according to data_getter) to the specified CSV
+    """
     soup = get_html(url)
     print('Fetchind data from {0}'.format(url))
     cases, deaths, time = data_getter(soup)
