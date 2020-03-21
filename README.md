@@ -27,3 +27,4 @@ In the data folder, find the spreadsheet of reporting agencies. Each tends to pu
 6) Visit the [Wayback Machine](https://archive.org/web/) and enter the agency website
 7) Iterate through each day starting with current, and transpose datapoints to appropriate columns in the data file.
 8) When you enter a date before the agency started reporting, you may get the 404 error. You're done! If you have the time, start over with another agency on the list!
+9) This data needs to be updated manually every day for the time being. Let us know in slack if you want to do the daily updates.
