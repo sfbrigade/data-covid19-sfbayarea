@@ -11,3 +11,5 @@ python3 -m venv env
 source env/bin/activate
 pip install -r requirements.txt
 ```
+### Use
+Right now, you will need to run `python3 scraper.py` to run this tool. In a nutshell, it fetches an HTML page from the SFDPH website, gets the relevant data from the page, and writes a new line with that data to a CSV file in the `data` directory.
