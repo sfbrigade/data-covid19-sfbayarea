@@ -93,6 +93,6 @@ sfdph_soup = get_html(url)
 cases, deaths, time = find_tags(sfdph_soup)
 
 covid_data = pd.read_csv('data/covid_19_sf.csv', dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
-new_row = gen_new_row_dict(covid_data, cases, deaths, today_date, time)
+new_row = gen_new_row_dict(covid_data, cases, deaths, time)
 covid_data = covid_data.append(new_row, ignore_index=True)
 covid_data.to_csv('data/covid_19_sf.csv', index=False)
