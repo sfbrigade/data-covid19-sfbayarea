@@ -19,7 +19,7 @@ In the data folder, find the spreadsheet of reporting agencies. Each tends to pu
 
 #### Instructions for Manual Input
 
-1) select an agency from the list in the spreadsheet
+1) select an agency from the [CA County Health Sites COVID-19](https://docs.google.com/spreadsheets/d/1zeoRCdycgIr8AuJxhhtEaVnAHBfC48qHq9m96Ev_DpU/edit?usp=sharing) file (view only - create issue to add or correct info there)
 2) open the [COVID-19 County Data Input](https://docs.google.com/spreadsheets/d/15qBL8ELWt1Xpct_u58XXQxZMQwmqZH5whEQ7lQ6-MRw/edit?usp=sharing) file
 3) add (+) a new worksheet tab
 4) rename it to the area represented by the website
