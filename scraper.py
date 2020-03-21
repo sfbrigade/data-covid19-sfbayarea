@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from bs4 import BeautifulSoup
 from typing import Tuple, Dict, Callable
 import requests
