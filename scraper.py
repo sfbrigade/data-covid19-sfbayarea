@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Callable
 import requests
 import re
 import pandas as pd
@@ -12,7 +12,7 @@ def get_html(url: str) -> BeautifulSoup:
     page = requests.get(url)
     return BeautifulSoup(page.content, 'html.parser')
 
-def find_tags(soup: BeautifulSoup) -> Tuple[int, int, str]:
+def find_tags_sf(soup: BeautifulSoup) -> Tuple[int, int, str]:
     """
     Takes in a BeautifulSoup object and returns a tuple of the number of cases (int), the number of deaths (int) and the time that the data was updated(str)
     """
@@ -89,10 +89,10 @@ def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, t
         'state': 'CA'
     }
 
-def scraper(url: str, existing_data_path: str) -> None:
+def scraper(url: str, existing_data_path: str, data_getter: Callable) -> None:
     soup = get_html(url)
     print('Fetchind data from {0}'.format(url))
-    cases, deaths, time = find_tags(soup)
+    cases, deaths, time = data_getter(soup)
     covid_data = pd.read_csv(existing_data_path, dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
     new_row = gen_new_row_dict(covid_data, cases, deaths, time)
     covid_data = covid_data.append(new_row, ignore_index=True)
@@ -104,4 +104,4 @@ sf_url = 'https://www.sfdph.org/dph/alerts/coronavirus.asp'
 sf_data = 'data/covid_19_sf.csv'
 # allows us to see all the columns of the new row
 pd.set_option('display.max_columns', None)
-scraper(sf_url, sf_data)
+scraper(sf_url, sf_data, find_tags_sf)
