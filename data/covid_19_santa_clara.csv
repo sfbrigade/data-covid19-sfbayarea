@@ -1,0 +1,50 @@
+date,time_updated,total_positive_cases,new_daily_cases, total_deaths,new_daily_deaths,city,county,state
+01/31/20,,1,1,0,0,,Santa Clara,CA
+02/01/20,,1,0,0,0,,Santa Clara,CA
+02/02/20,,2,1,0,0,,Santa Clara,CA
+02/03/20,,2,0,0,0,,Santa Clara,CA
+02/04/20,,2,0,0,0,,Santa Clara,CA
+02/05/20,,2,0,0,0,,Santa Clara,CA
+02/06/20,,2,0,0,0,,Santa Clara,CA
+02/07/20,,2,0,0,0,,Santa Clara,CA
+02/08/20,,2,0,0,0,,Santa Clara,CA
+02/09/20,,2,0,0,0,,Santa Clara,CA
+02/10/20,,2,0,0,0,,Santa Clara,CA
+02/11/20,,2,0,0,0,,Santa Clara,CA
+02/12/20,,2,0,0,0,,Santa Clara,CA
+02/13/20,,2,0,0,0,,Santa Clara,CA
+02/14/20,,2,0,0,0,,Santa Clara,CA
+02/15/20,,2,0,0,0,,Santa Clara,CA
+02/16/20,,2,0,0,0,,Santa Clara,CA
+02/17/20,,2,0,0,0,,Santa Clara,CA
+02/18/20,,2,0,0,0,,Santa Clara,CA
+02/19/20,,2,0,0,0,,Santa Clara,CA
+02/20/20,,2,0,0,0,,Santa Clara,CA
+02/21/20,,2,0,0,0,,Santa Clara,CA
+02/22/20,,2,0,0,0,,Santa Clara,CA
+02/23/20,,2,0,0,0,,Santa Clara,CA
+02/24/20,,2,0,0,0,,Santa Clara,CA
+02/25/20,,2,0,0,0,,Santa Clara,CA
+02/26/20,,2,0,0,0,,Santa Clara,CA
+02/27/20,,2,0,0,0,,Santa Clara,CA
+02/28/20,,2,0,0,0,,Santa Clara,CA
+02/29/20,,3,1,0,0,,Santa Clara,CA
+03/01/20,,3,0,0,0,,Santa Clara,CA
+03/02/20,,9,6,0,0,,Santa Clara,CA
+03/03/20,,11,2,0,0,,Santa Clara,CA
+03/04/20,,14,3,0,0,,Santa Clara,CA
+03/05/20,,20,6,0,0,,Santa Clara,CA
+03/06/20,,24,4,0,0,,Santa Clara,CA
+03/07/20,,32,8,0,0,,Santa Clara,CA
+03/08/20,,37,5,0,0,,Santa Clara,CA
+03/09/20,,43,6,1,1,,Santa Clara,CA
+03/10/20,,45,2,1,0,,Santa Clara,CA
+03/11/20,,48,3,1,0,,Santa Clara,CA
+03/12/20,,66,18,2,1,,Santa Clara,CA
+03/13/20,,79,13,2,0,,Santa Clara,CA
+03/14/20,,91,12,2,0,,Santa Clara,CA
+03/15/20,05:00:00 PM,138,47,2,0,,Santa Clara,CA
+03/16/20,05:00:00 PM,155,17,4,2,,Santa Clara,CA
+03/17/20,05:00:00 PM,175,20,6,2,,Santa Clara,CA
+03/18/20,05:00:00 PM,189,14,6,0,,Santa Clara,CA
+03/19/20,05:00:00 PM,196,7,8,2,,Santa Clara,CA
