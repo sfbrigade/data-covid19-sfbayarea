@@ -1,17 +1,18 @@
 from bs4 import BeautifulSoup
+from typing import Tuple, Dict
 import requests
 import re
 import pandas as pd
 import datetime
 
-def get_html(url):
+def get_html(url: str) -> BeautifulSoup:
     """
     Takes in a url string and returns a BeautifulSoup object representing the page
     """
     page = requests.get(url)
     return BeautifulSoup(page.content, 'html.parser')
 
-def find_tags(soup):
+def find_tags(soup: BeautifulSoup) -> Tuple[int, int, str]:
     """
     Takes in a BeautifulSoup object and returns a tuple of the number of cases (int), the number of deaths (int) and the time that the data was updated(str)
     """
@@ -30,23 +31,23 @@ def find_tags(soup):
     time_updated = re.match(time_regex, time_html.text).group(1)
     return (num_cases, num_deaths, time_updated)
 
-def format_single_digits(number):
+def format_single_digits(number: int) -> str:
     """
     Adds a leading zero to one digit numbers to make them line up with the existing data
     """
     if number < 10:
         return "0{0}".format(number)
     else:
-        return number
+        return str(number)
 
-def format_year(year):
+def format_year(year: int) -> int:
     """
     Turns a year into its short form e.g. 2020 -> 20
     """
     # get the short form of the year
     return year - 2000
 
-def gen_date():
+def gen_date() -> str:
     """
     Generates today's date in MM/DD/YY format
     """
@@ -57,16 +58,16 @@ def gen_date():
 
     return "{0}/{1}/{2}".format(month, day, year)
 
-def format_time(time_string):
+def format_time(timestamp: str) -> str:
     """
     Formats time in the format HH:MM:SS AM/PM
     """
-    time, suffix = time_string.split(' ')
+    time, suffix = timestamp.split(' ')
     if len(time) == 4: # time is less than 10:00 w/ length 5
         time = '0{0}'.format(time)
     return '{0}:00 {1}'.format(time, suffix)
 
-def gen_new_row_dict(dataframe, num_cases, num_deaths, time_updated):
+def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, time_updated: str) -> Dict:
     """
     Generates a new row for a dataframe in dict format and calculates the new cases and deaths for the new data
     """
