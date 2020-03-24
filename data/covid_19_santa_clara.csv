@@ -49,3 +49,5 @@ date,time_updated,total_positive_cases,new_daily_cases, total_deaths,new_daily_d
 03/18/20,05:00:00 PM,189,14,6,0,,Santa Clara,CA
 03/19/20,05:00:00 PM,196,7,8,2,,Santa Clara,CA
 03/20/20,05:00:00 PM,263,67,8,0,,Santa Clara,CA
+03/22/20,04:00:00 PM,302,39,10,2,,Santa Clara,CA
+03/23/20,04:00:00 PM,375,73,16,4,,Santa Clara,CA
