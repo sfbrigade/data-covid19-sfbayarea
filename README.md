@@ -14,6 +14,10 @@ pip install -r requirements.txt
 ### Use
 Right now, you will need to run `python3 scraper.py` to run this tool. In a nutshell, it fetches an HTML page from the SFDPH website, gets the relevant data from the page, and writes a new line with that data to a CSV file in the `data` directory.
 
+Alternatively, you can run `sh auto-scrape.sh`, which will make a new branch, fetch the data, then commit and push that data to that new branch, which you can merge in in GitHub.
+
+**NOTE:** Please be careful to check that the data you are scraping hasn't been committed already before you merge it into `master`.
+
 ### Manual Input Needed!
 In the data folder, find the spreadsheet of reporting agencies. Each tends to publish only current cumulative data. We want to use the [Wayback Machine](https://archive.org/web/) to grab the data present on those sites for each day since they started reporting (volunteers will have to determine the first date on a case by case basis).
 
