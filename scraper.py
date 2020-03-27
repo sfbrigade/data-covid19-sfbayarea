@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from bs4 import BeautifulSoup
 from typing import Tuple, Dict, Callable
+from datetime import datetime
 import requests
 import re
 import pandas as pd
-import datetime
 
 def get_html(url: str) -> BeautifulSoup:
     """
@@ -35,42 +35,18 @@ def find_tags_sf(soup: BeautifulSoup) -> Tuple[int, int, str]:
     time_updated = re.match(time_regex, time_html.text).group(1)
     return (num_cases, num_deaths, time_updated)
 
-def format_single_digits(number: int) -> str:
-    """
-    Adds a leading zero to one digit numbers to make them line
-    up with the existing data
-    """
-    if number < 10:
-        return "0{0}".format(number)
-    else:
-        return str(number)
-
-def format_year(year: int) -> int:
-    """
-    Turns a year into its short form e.g. 2020 -> 20
-    """
-    # get the short form of the year
-    return year - 2000
-
 def gen_date() -> str:
     """
     Generates today's date in MM/DD/YY format
     """
-    today = datetime.datetime.today()
-    month = format_single_digits(today.month)
-    day = format_single_digits(today.day)
-    year = format_year(today.year)
-
-    return "{0}/{1}/{2}".format(month, day, year)
+    return datetime.today().strftime('%m/%d/%y')
 
 def format_time(timestamp: str) -> str:
     """
     Formats time in the format HH:MM:SS AM/PM
     """
-    time, suffix = timestamp.split(' ')
-    if len(time) == 4: # time is less than 10:00 w/ length 5
-        time = '0{0}'.format(time)
-    return '{0}:00 {1}'.format(time, suffix)
+    time_format = '%H:%M %p'
+    return datetime.strptime(timestamp, time_format).strftime(time_format)
 
 def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, time_updated: str) -> Dict:
     """
@@ -101,7 +77,7 @@ def scraper(url: str, existing_data_path: str, data_getter: Callable) -> None:
     specified URL (gathered according to data_getter) to the specified CSV
     """
     soup = get_html(url)
-    print('Fetchind data from {0}'.format(url))
+    print('Fetching data from {0}'.format(url))
     cases, deaths, time = data_getter(soup)
     covid_data = pd.read_csv(existing_data_path, dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
     new_row = gen_new_row_dict(covid_data, cases, deaths, time)
