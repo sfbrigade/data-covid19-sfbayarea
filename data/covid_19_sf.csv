@@ -15,3 +15,4 @@ date,time_updated,total_positive_cases,new_daily_cases,total_deaths,new_daily_de
 03/23/20,09:00:00 AM,131,23,0,0,San Francisco,San Francisco,CA
 03/24/20,09:00:00 AM,152,21,0,0,San Francisco,San Francisco,CA
 03/25/20,09:00:00 AM,178,26,1,1,San Francisco,San Francisco,CA
+03/26/20,09:00:00 AM,223,45,2,1,San Francisco,San Francisco,CA
