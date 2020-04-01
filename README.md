@@ -7,3 +7,6 @@ To install this project, you can simply run `sh install.sh` in your terminal. Th
 
 ## Running the scraper
 To run the scraper, you can use the run script by typing `sh run_scraper.sh` into your terminal. This will enable the virtual environment and run `scraper.py`. Once again, the virtual environment will not stay active after the script finishes running. If you want to run the scraper without the run script, enable the virtual environment, then run `python3 scraper.py`.
+
+## Running the API
+The best way to run the API right now is to run the command `FLASK_APP="app.py" FLASK_ENV=development flask run;`.
