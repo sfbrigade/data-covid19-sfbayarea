@@ -63,7 +63,6 @@ bay_area_counties = [
     'Marin County, CA, USA'
 ]
 
-
 # uncomment the lines below to log all of the scraped and cleaned data to the console
 covid_data = pipeline(bay_area_counties)
 print(json.dumps(covid_data, indent=4))
