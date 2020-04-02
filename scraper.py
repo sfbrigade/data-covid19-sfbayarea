@@ -1,93 +1,56 @@
 #!/usr/bin/env python3
-from bs4 import BeautifulSoup
-from typing import Tuple, Dict, Callable
-from datetime import datetime
 import requests
-import re
-import pandas as pd
+import json
+from typing import List, Dict
 
-def get_html(url: str) -> BeautifulSoup:
+def get_json() -> Dict:
     """
-    Takes in a url string and returns a BeautifulSoup object
-    representing the page
+    Fetches location-keyed data in JSON format from the CDS
+    and parses it into a dict
     """
-    page = requests.get(url)
-    return BeautifulSoup(page.content, 'html.parser')
+    corona_url = 'https://coronadatascraper.com/timeseries-byLocation.json'
+    raw_response = requests.get(corona_url)
+    parsed_json = json.loads(raw_response.content)
+    return parsed_json
 
-def find_tags_sf(soup: BeautifulSoup) -> Tuple[int, int, str]:
+def clean_dates(dates: Dict[str,Dict]) -> List[Dict]:
     """
-    Takes in a BeautifulSoup object and returns a tuple of the number
-    of cases (int), the number of deaths (int) and the time that the
-    data was updated(str)
+    Takes in a dict of data where they key is a date and the value is a dict
+    of the data for that date and returns a list of those dicts with the
+    date as a value under the key 'date'
     """
-    helpful_links_box = soup.find(id='helpful-links')
+    date_list = []
+    for key in dates:
+        val = dates[key]
+        val['date'] = key
+        date_list.append(val)
+    return date_list
 
-    cases_regex = re.compile('Total Positive Cases: ([\d,]+)')
-    deaths_regex = re.compile('Deaths: ([\d,]+)')
-    time_regex = re.compile('updated daily at (\d{1,2}:\d{1,2} (AM|PM))')
-
-    cases_html = soup.find('p', text=cases_regex)
-    deaths_html = soup.find('p', text=deaths_regex)
-    time_html = soup.find('p', text=time_regex)
-
-    num_cases = int(re.match(cases_regex, cases_html.text).group(1))
-    num_deaths = int(re.match(deaths_regex, deaths_html.text).group(1))
-    time_updated = re.match(time_regex, time_html.text).group(1)
-    return (num_cases, num_deaths, time_updated)
-
-def gen_date() -> str:
+def get_county_data(county_names: List[str], data: Dict) -> Dict:
     """
-    Generates today's date in MM/DD/YY format
+    Takes in a list of county names and maps the corresponding county data
+    to that list
     """
-    return datetime.today().strftime('%m/%d/%y')
+    county_dicts = {}
+    for name in county_names:
+        clean_county_data = {}
+        county_data = data[name]
+        county_name = county_data['county']
+        clean_county_data['name'] = county_name
+        clean_county_data['population'] = county_data['population']
+        clean_county_data['cases'] = clean_dates(county_data['dates'])
+        county_dicts[county_name] = clean_county_data
+    return county_dicts
 
-def format_time(timestamp: str) -> str:
+def pipeline(counties: List[str]) -> Dict[str, Dict]:
     """
-    Formats time in the format HH:MM:SS AM/PM
+    Puts all the above functions together to fetch data from the CDS
+    and package it up
     """
-    time_format = '%H:%M %p'
-    return datetime.strptime(timestamp, time_format).strftime(time_format)
+    all_data = get_json()
+    county_data = get_county_data(counties, all_data)
+    return county_data
 
-def gen_new_row_dict(dataframe: pd.DataFrame, num_cases: int, num_deaths: int, time_updated: str) -> Dict:
-    """
-    Generates a new row for a dataframe in dict format and calculates
-    the new cases and deaths for the new data
-    """
-    cases_idx = 2
-    deaths_idx = 4
-
-    prev_cases = dataframe.iloc[-1, cases_idx]
-    prev_deaths = dataframe.iloc[-1, deaths_idx]
-
-    return {
-        'date': gen_date(),
-        'time_updated': format_time(time_updated),
-        'total_positive_cases': num_cases,
-        'new_daily_cases': (num_cases - prev_cases),
-        'total_deaths': num_deaths,
-        'new_daily_deaths': (num_deaths - prev_deaths),
-        'city': 'San Francisco',
-        'county': 'San Francisco',
-        'state': 'CA'
-    }
-
-def scraper(url: str, existing_data_path: str, data_getter: Callable) -> None:
-    """
-    Puts together the other functions in this file to add new data from the
-    specified URL (gathered according to data_getter) to the specified CSV
-    """
-    soup = get_html(url)
-    print('Fetching data from {0}'.format(url))
-    cases, deaths, time = data_getter(soup)
-    covid_data = pd.read_csv(existing_data_path, dtype={'total_positive_cases': 'Int64', 'total_deaths': 'Int64'})
-    new_row = gen_new_row_dict(covid_data, cases, deaths, time)
-    covid_data = covid_data.append(new_row, ignore_index=True)
-    print('Added the following row to {0}:'.format(existing_data_path))
-    print(covid_data.tail(1))
-    covid_data.to_csv(existing_data_path, index=False)
-
-sf_url = 'https://www.sfdph.org/dph/alerts/coronavirus.asp'
-sf_data = 'data/covid_19_sf.csv'
-# allows us to see all the columns of the new row
-pd.set_option('display.max_columns', None)
-scraper(sf_url, sf_data, find_tags_sf)
+# uncomment the lines below to log all of the scraped and cleaned data to the console
+# covid_data = pipeline(bay_area_counties)
+# print(json.dumps(covid_data, indent=4))
