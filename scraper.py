@@ -52,5 +52,18 @@ def pipeline(counties: List[str]) -> Dict[str, Dict]:
     return county_data
 
 # uncomment the lines below to log all of the scraped and cleaned data to the console
-# covid_data = pipeline(bay_area_counties)
-# print(json.dumps(covid_data, indent=4))
+"""
+bay_area_counties = [
+    'Solano County, California, United States',
+    'Alameda County, California, United States',
+    'Santa Clara County, California, United States',
+    'San Francisco County, California, United States',
+    'Contra Costa County, California, United States',
+    'San Mateo County, California, United States',
+    'Sonoma County, California, United States',
+    'Napa County, California, United States',
+    'Marin County, California, United States'
+]
+covid_data = pipeline(bay_area_counties)
+print(json.dumps(covid_data, indent=4))
+"""
