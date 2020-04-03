@@ -5,15 +5,15 @@ app = Flask(__name__)
 @app.route('/scrape')
 def scrape():
     bay_area_counties = [
-        'Solano County, CA, USA',
-        'Alameda County, CA, USA',
-        'Santa Clara County, CA, USA',
-        'San Francisco County, CA, USA',
-        'Contra Costa County, CA, USA',
-        'San Mateo County, CA, USA',
-        'Sonoma County, CA, USA',
-        'Napa County, CA, USA',
-        'Marin County, CA, USA'
+        'Solano County, California, United States',
+        'Alameda County, California, United States',
+        'Santa Clara County, California, United States',
+        'San Francisco County, California, United States',
+        'Contra Costa County, California, United States',
+        'San Mateo County, California, United States',
+        'Sonoma County, California, United States',
+        'Napa County, California, United States',
+        'Marin County, California, United States'
     ]
     return pipeline(bay_area_counties);
 
