@@ -78,12 +78,16 @@ def get_tests() -> Dict:
     return get_json(tests_url + date_order_query)
 
 def get_test_totals() -> Dict:
-    """Get total tests, total number of positive tests, to date"""
-    total_test_query = '?#select=tests, sum(tests)'
-    return get_json(tests_url + total_test_query)
+    """Get total tests and total number of positive tests, to date"""
+    total_test_query = '?$select=sum(tests) as tests'
+    tests = get_json(tests_url + total_test_query)
+    total_positives_query = '?$select=sum(pos) as total_positives'
+    positives = get_json(tests_url + total_positives_query)
+    tests[0].update(positives[0])
+    return tests
 
 if __name__ == '__main__':
-    """ When run as a script, logs major groups to console"""
+    """ When run as a script, logs grouped data queries to console"""
     print("Cases by age:\n", json.dumps(get_age_json(), indent=4))
     print("Cases by gender:\n", json.dumps(get_gender_json(), indent=4))
     print("Cases by race:\n", json.dumps(get_race_json(), indent=4))
