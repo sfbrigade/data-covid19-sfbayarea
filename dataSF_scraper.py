@@ -26,7 +26,7 @@ def get_age_gender_json() -> Dict:
 
 def get_age_json() -> Dict:
     """group data by age"""
-    age_query = '?$select=age_group, sum(confirmed_cases)&$group=age_group'
+    age_query = '?$select=age_group, sum(confirmed_cases)&$order=age_group&$group=age_group'
     return get_json(age_gender_url, age_query)
 
 def get_gender_json() -> Dict:
@@ -89,9 +89,9 @@ def get_test_totals() -> Dict:
 if __name__ == '__main__':
     """ When run as a script, logs grouped data queries to console"""
     print("Cases by age:\n", json.dumps(get_age_json(), indent=4))
-    print("Cases by gender:\n", json.dumps(get_gender_json(), indent=4))
-    print("Cases by race:\n", json.dumps(get_race_json(), indent=4))
-    print("Cases by ethnicity:\n", json.dumps(get_ethnicity_json(), indent=4))
-    print("Cases by transmission\n", json.dumps(get_transmission_json(), indent=4))
-    print("Cases by ICU beds\n", json.dumps(get_icu_beds(), indent=4))
-    print("Total tests\n", json.dumps(get_test_totals(), indent=4))
+    # print("Cases by gender:\n", json.dumps(get_gender_json(), indent=4))
+    # print("Cases by race:\n", json.dumps(get_race_json(), indent=4))
+    # print("Cases by ethnicity:\n", json.dumps(get_ethnicity_json(), indent=4))
+    # print("Cases by transmission\n", json.dumps(get_transmission_json(), indent=4))
+    # print("Cases by ICU beds\n", json.dumps(get_icu_beds(), indent=4))
+    # print("Total tests\n", json.dumps(get_test_totals(), indent=4))
