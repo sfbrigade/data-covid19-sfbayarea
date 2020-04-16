@@ -1,0 +1,8 @@
+name: 'Bay Area Coronavirus Data Collection'
+description: 'Collects data from various sources and adds them to the repository.'
+outputs:
+  time: # id of output
+    description: 'Coronavirus Data Output'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

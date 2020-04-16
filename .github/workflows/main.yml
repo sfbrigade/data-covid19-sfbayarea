@@ -1,0 +1,10 @@
+on: [push]
+
+jobs:
+  data-scraping-job:
+    runs-on: ubuntu-latest
+    name: Update the Coronavirus data
+    steps:
+      - name: Download Data
+        id: scrape
+        uses: actions/data-covid19-sfbayarea
