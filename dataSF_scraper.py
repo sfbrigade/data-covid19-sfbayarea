@@ -50,6 +50,12 @@ def get_ethnicity_json() -> Dict:
     return get_json(race_ethnicity_url, ethnicity_query)
 
 # Confirmed Cases and Deaths by Date and Transmission
+def get_cases_and_deaths() -> Dict:
+    """Get total confirmed cases and deaths by summing over transmission table.
+    Note that total confrimed cases excludes deaths."""
+    query = '?$select=case_disposition, sum(case_count)&$group=case_disposition'
+    return get_json(transmission_url + query)
+
 def get_date_transmission_json() -> Dict:
     """Get cases by date, transmission, and disposition; order by date ascending."""
     date_order_query = '?$order=date'
@@ -88,7 +94,8 @@ def get_test_totals() -> Dict:
 
 if __name__ == '__main__':
     """ When run as a script, logs grouped data queries to console"""
-    print("Cases by age:\n", json.dumps(get_age_json(), indent=4))
+    print("Total cases and deaths: \n", json.dumps(get_cases_and_deaths(), indent=4))
+    # print("Cases by age:\n", json.dumps(get_age_json(), indent=4))
     # print("Cases by gender:\n", json.dumps(get_gender_json(), indent=4))
     # print("Cases by race:\n", json.dumps(get_race_json(), indent=4))
     # print("Cases by ethnicity:\n", json.dumps(get_ethnicity_json(), indent=4))
