@@ -3,7 +3,12 @@ import requests
 import json
 from typing import Dict
 
+<<<<<<< HEAD:data_scrapers/san_francisco_county.py
 # API endpoints
+=======
+#EL: get just the AC columns in dte order. Return the latest date as the cumulative case numbers.
+# API endpoints 
+>>>>>>> Alameda - fetch age, gender, race:county-scrapers/san-francisco-county.py
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
 transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
