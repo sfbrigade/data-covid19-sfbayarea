@@ -4,9 +4,12 @@ import json
 from typing import Dict
 
 <<<<<<< HEAD:data_scrapers/san_francisco_county.py
+<<<<<<< HEAD:data_scrapers/san_francisco_county.py
 # API endpoints
 =======
 #EL: get just the AC columns in dte order. Return the latest date as the cumulative case numbers.
+=======
+>>>>>>> Fetch Alameda county cases and deaths into pandas object:county-scrapers/san-francisco-county.py
 # API endpoints 
 >>>>>>> Alameda - fetch age, gender, race:county-scrapers/san-francisco-county.py
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
