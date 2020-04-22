@@ -3,7 +3,6 @@ import requests
 import json
 from typing import List, Dict
 
-#EL: get just the AC columns in dte order. Return the latest date as the cumulative case numbers.
 # API endpoints 
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
