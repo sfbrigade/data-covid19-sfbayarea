@@ -1,0 +1,149 @@
+{   
+    "name": "Santa Clara County - STANDARD NAME STRING",  
+    "update_date": "yyyy/mm/dd - STANDARD DATE STRING",
+    "update_time": "hh:mm [am/pm] - STANDARD TIME STRING",
+    "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE", 
+    "meta_from_source" : "STORE IMPORTANT NOTES FROM SOURCE HERE",
+    "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
+    "series": {
+        "cases - ?HOW TO STORE THINGS LIKE '<10'? ": {
+            "day1 - ?HOW TO KEY EACH ENTRY?": { 
+                "date": "yyyy/mm/dd - STANDARD DATE STRING",
+                "cases": -1,
+                "cumul_cases": -1
+                },
+            "day2": {
+                "date": "yyyy/mm/dd",
+                "cases": -1,
+                "cumul_cases": -1
+                }
+        },
+        "deaths": {
+            "day1": {
+            "date": "yyyy/mm/dd",
+            "deaths": -1,
+            "cumul_deaths": -1
+            },
+            "day2": {
+                "date": "yyyy/mm/dd",
+                "deaths": -1,
+                "cumul_deaths": -1
+            }
+        },
+        "tests": {
+            "day1": {
+                "date": "yyyy/mm/dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            },
+            "day2": {
+                "date": "yyyy/mm/dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            }
+        }
+    },
+    "case_totals": {
+        "gender" : {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group - ?HOW TO STANDARDIZE AGE BUCKETS? ": {
+            "20 or younger": -1,
+            "21-30": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81-90": -1,
+            "90+" : -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Other":-1,
+            "Native_Amer":-1,
+            "Mixed_Race":-1,
+            "White":-1,
+            "Unknown":-1
+        }
+    },
+    "death_totals":{
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {
+            "20 or younger": -1,
+            "21-30": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81-90": -1,
+            "90+": -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Other": -1,
+            "Native_Amer": -1,
+            "Mixed_Race": -1,
+            "White": -1,
+            "Unknown": -1
+        }
+    },
+    "population_totals ?USE CENSUS DATA? ": {
+        "total_pop": -1,
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {
+            "20 or younger": -1,
+            "21-30": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81-90": -1,
+            "90+": -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Other": -1,
+            "Native_Amer": -1,
+            "Mixed_Race": -1,
+            "White": -1,
+            "Unknown": -1
+        }
+    }
+}
