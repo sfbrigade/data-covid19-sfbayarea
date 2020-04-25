@@ -113,7 +113,7 @@
             "unknown":-1
         }
     },
-    "population_totals ?USE CENSUS DATA? ": {
+    "population_totals": {
         "total_pop": -1,
         "gender": {
             "female": -1,
