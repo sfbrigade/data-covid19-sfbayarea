@@ -96,11 +96,12 @@
             "African_Amer": -1,
             "Asian": -1,
             "Latinx/Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
             "Other": -1,
-            "Native_Amer": -1,
-            "Mixed_Race": -1,
-            "White": -1,
-            "unknown": -1
+            "Pacific Islander":-1,
+            "White":-1,
+            "Unknown":-1
         },
         "underlying_cond": {
             "none":-1,
@@ -137,11 +138,12 @@
             "African_Amer": -1,
             "Asian": -1,
             "Latinx/Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
             "Other": -1,
-            "Native_Amer": -1,
-            "Mixed_Race": -1,
-            "White": -1,
-            "Unknown": -1
+            "Pacific Islander":-1,
+            "White":-1,
+            "Unknown":-1
         }
     }
 }
