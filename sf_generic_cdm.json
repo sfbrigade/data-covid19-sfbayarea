@@ -6,6 +6,7 @@
             "cases": {
                 //"cases_comments": ["Case information is based on confirmed positive laboratory tests reported to the San Francisco Department of Public Health", ""],
                 //"source": "San Francisco Department of Public Health",
+                // "data_last_updated": mm/dd/yyyy,
                 "cumulative_count": 1000,
                 "comments": "",
                 "series": [ 
@@ -132,6 +133,7 @@
                 "cumulative_count": 200,
                 //"deaths_comment": "Deaths are reported by providers and the medical examiner. ",
                 //"source": "providers and the medical examiner",
+                // "data_last_updated": mm/dd/yyyy,
                 "series": [
                     { "date": "4/1/20", "count": 1 },
                     { "date": "4/2/20", "count": 2 },
@@ -202,6 +204,7 @@
                 
             }, 
             "transmissions": {
+                // "data_last_updated": mm/dd/yyyy,
                 "series": [ // series are the actual counts
                     { "date": "4/1/20", "count": 1 },
                     { "date": "4/2/20", "count": 2 },
@@ -244,6 +247,7 @@
 
             },
             "tests": {
+                // "data_last_updated": mm/dd/yyyy,
                 "cumulative_count": 13168,
                 "tests_comment": "Testing for the novel coronavirus is available through commercial, clinical, and hospital laboratories, as well as the San Francisco Public Health Laboratory. While there are severe nationwide shortages of testing material, there continues to be an increasing trend in the number of available testing sites and overall number of tests conducted in San Francisco. ",
                 "tests_comment_2": "Due to the high degree of variation in the time needed to complete tests by different labs there is a delay in this reporting. On March 24....".
