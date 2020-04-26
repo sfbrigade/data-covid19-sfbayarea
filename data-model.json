@@ -1,0 +1,149 @@
+{   
+    "name": "Name1 Name2 County",  
+    "update_date": "yyyy/mm/dd ",
+    "update_time": "hh:mm [am/pm]",
+    "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE", 
+    "meta_from_source" : "STORE IMPORTANT NOTES FROM SOURCE HERE",
+    "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
+    "series": {
+        "cases": [
+            { "date": "yyyy/mm/dd", "cases": -1, "cumul_cases": -1},
+            { "date": "yyyy/mm/dd", "cases": -1, "cumul_cases": -1 }
+       ],
+        "deaths": [
+            { "date": "yyyy/mm/dd", "deaths": -1, "cumul_deaths": -1 },
+            { "date": "yyyy/mm/dd", "deaths": -1, "cumul_deaths": -1}
+        ],
+        "tests": [
+            {
+                "date": "yyyy/mm/dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            },
+            {
+                "date": "yyyy/mm/dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            }
+        ]
+    },
+    "case_totals": {
+        "gender" : {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {
+            "30 or younger": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81" : -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
+            "Other": -1,
+            "Pacific Islander":-1,
+            "White":-1,
+            "Unknown":-1
+        },
+        "transmission_cat": {
+            "community": -1,
+            "from_contact": -1,
+            "unknown": -1
+        }
+    },
+    "death_totals":{
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {
+            "20 or younger": -1,
+            "21-30": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81-90": -1,
+            "90+": -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
+            "Other": -1,
+            "Pacific Islander":-1,
+            "White":-1,
+            "Unknown":-1
+        },
+        "underlying_cond": {
+            "none":-1,
+            ">1" : -1,
+            "unknown": -1
+        },
+        "transmission_cat": {
+            "community":-1,
+            "from_contact":-1,
+            "unknown":-1
+        }
+    },
+    "population_totals": {
+        "total_pop": -1,
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {
+            "20 or younger": -1,
+            "21-30": -1,
+            "31-40": -1,
+            "41-50": -1,
+            "51-60": -1,
+            "61-70": -1,
+            "71-80": -1,
+            "81-90": -1,
+            "90+": -1,
+            "Unknown": -1
+        },
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx/Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
+            "Other": -1,
+            "Pacific Islander":-1,
+            "White":-1,
+            "Unknown":-1
+        }
+    }
+}
