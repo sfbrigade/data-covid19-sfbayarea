@@ -1,4 +1,4 @@
-{ // Commented out lines are data points only found in the dashboard
+{ 
     "County Name": {
         "data": {
             "cases": {
