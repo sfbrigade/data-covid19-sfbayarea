@@ -2,7 +2,7 @@
 import requests
 import json
 from typing import List, Dict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Open data landing page: https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19
@@ -19,35 +19,48 @@ def get_county() -> Dict:
     cases_header = json.loads(requests.get(cases_meta).content)
     timestamp = cases_header["editingInfo"]["lastEditDate"]
     # convert timestamp to datetime object
-    update = datetime.utcfromtimestamp(timestamp/1000)
+    update = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
 
     # get cases, deaths, and demographics data
-    cases_deaths_series = get_timeseries(True)
-    demo_totals, counts_lt_10 = get_demographics(True)
+    cases_deaths_series = get_timeseries()
+    demo_totals, counts_lt_10 = get_demographics()
 
-    header = {
+    out = {
         "name": "Alameda County",
-        "update_date": update.strftime("%Y/%m/%d"),
-        "update_time": update.strftime("%I:%M %p"),
+        "update_time": update.isoformat(timespec='minutes'),
         "source_url": "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19",
-        "meta_from_source": "",
-        "meta_from_baypd": "These datapoints have value less than 10: " + ", ".join([item for item in counts_lt_10])
+        "meta_from_source": "Notes and disclaimers: The City of Berkeley and Alameda County(minus Berkeley) are separate local health jurisdictions(LHJs). We are showing data for each separately and together. The numbers for the Alameda County LHJ and the Berkeley LHJ come from the state’s communicable disease tracking database, CalREDIE. These data are updated daily, with cases sometimes reassigned to other LHJs and sometimes changed from a suspected to a confirmed case, so counts for a particular date in the past may change as information is updated in CalREDIE. Dates reflect the date created in CalREDIE. Furthermore, we review our data routinely and adjust to ensure its integrity and that it most accurately represents the full picture of COVID-19 cases in our county. The case rates likely reflect more the availability of testing than the actual disease burden. For instance, Hayward and places near Hayward have the highest case rates likely because of the availability of drive-through testing. Berkeley LHJ cases do not include two cases that were passengers of the Diamond Princess cruise.",
+        "meta_from_baypd": "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10]),
+        "series": {"cases": [], "deaths": [], "tests": []},
+        "case_totals": {
+            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1},
+            "age_group": {},
+            "race_eth": {"African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1, 
+                        "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1 },
+            "transmission_cat": { "community": -1, "from_contact": -1, "unknown": -1 }
+        },
+        "death_totals": {
+            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1 },
+            "age_group": {},
+            "race_eth": { "African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1,
+                        "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1},
+            "underlying_cond": {},
+            "transmission_cat": { "community": -1, "from_contact": -1, "unknown": -1 }
+        },
     }
 
-    series = {
-        "series": {
-            "cases": {
+     # re-key series
+    new_keys = ["date", "cases", "cumul_cases", "deaths", "cumul_deaths"]
+    cases_deaths_series = [ dict(zip(new_keys, list(entry.values()) ) ) for entry in cases_deaths_series ]
+    death_keys = ["date", "cases", "deaths", "cumul_deaths"]
+    case_keys = ["date", "cases", "cumul_cases"]
+    # parse series into cases and deaths
+    out["series"]["cases"] = [ { k:v for k,v in entry.items() if k in case_keys } for entry in cases_deaths_series]
+    out["series"]["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in cases_deaths_series]
 
-            },
-            "deaths": {
-
-            },
-            "tests": {
-
-            }
-        }
-    }
-
+    # re-key demographics
+    
+    return json.dumps(out, indent=4)
 
 
 # https: // services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/COVID_Counts/FeatureServer/0/query?select = features & where = 0 = 0 & orderby = ObjectID & outFields = * & f = pjson
@@ -58,7 +71,7 @@ def get_timeseries(dataframe = False) -> Dict:
     pandas DataFrame."""
 
     # query API
-    param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'OBJECTID,Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
+    param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
     response = requests.get(cases_deaths, params=param_list)
     parsed = json.loads(response.content)
     features = [obj["attributes"] for obj in parsed['features']]
@@ -71,10 +84,9 @@ def get_timeseries(dataframe = False) -> Dict:
         obj['Date'] = "{}/{}/{}".format(year, month, day)
     
     if not dataframe:
-        return json.dumps(features)
+        return features
     
     fields = parsed["fields"]
-    rows = [entry["OBJECTID"] for entry in features]
     cols = [f['name'] for f in parsed['fields']]
     dframe = pd.DataFrame(data=features, index=rows, columns=cols)
     return dframe
@@ -102,7 +114,7 @@ def get_demographics(dataframe = False) -> Dict:
                     counts_lt_10.append(key)
 
     if not dataframe:
-        return json.dumps(features), counts_lt_10
+        return features, counts_lt_10
 
     rows = [entry['OBJECTID'] for entry in features]
     cols = [f['name'] for f in parsed['fields']]
@@ -114,7 +126,7 @@ def get_demographics(dataframe = False) -> Dict:
 
 if __name__ == '__main__':
     """ When run as a script, logs data to console"""
-    get_county()
+    print(get_county())
     # ac_timeseries = get_timeseries()
     # print("Timeseries cases and deaths: \n", ac_timeseries)
     # ac_cumulative = get_cases_and_deaths(ac_timeseries)
