@@ -1,0 +1,263 @@
+{ // Commented out lines are data points only found in the dashboard
+    "San Francisco": {
+        //"dashboard_comments": ["Data updated daily by 9:00am, see charts for specific notes on data availability. Webpage text last updated Monday, April 20 at 12:30pm", ""],
+        "data": {
+            "data_comments": ["Data for all dates are subject to change and will be updated as more information becomes available. "],
+            "cases": {
+                //"cases_comments": ["Case information is based on confirmed positive laboratory tests reported to the San Francisco Department of Public Health", ""],
+                //"source": "San Francisco Department of Public Health",
+                // "data_last_updated": "mm/dd/yyyy",
+                "cumulative_count": 1000,
+                "comments": "",
+                "series": [ 
+                    { "date": "4/1/20", "count": 1 }, 
+                    { "date": "4/2/20", "count": 2 },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" }
+                ],
+                "tabulations": {
+                    // "demog_comment": "The charts below display available information on demographics and transmission category for cases and deaths in San Francisco. Demographic and transmission data are based on information reported from case interviews, laboratories, and providers. This data may not be immediately available for recently reported cases." 
+                    //"race_eth_comment": "In the race/ethnicity data shown below, the 'Other' category includes those who identified as Other or with a race/ethnicity that does not fit the choices collected. The “Unknown” includes individuals who did not report a race/ethnicity to their provider, could not be contacted, or declined to answer. Comorbidities for COVID-19 deaths are reported as having one or more underlying health conditions, such as chronic disease, present in a patient at the time of death. Because of the low number of deaths due to COVID-19, demographic and risk data proportions are subject to daily fluctuation. Conclusions about trends should be drawn cautiously. Figures will be updated as information becomes available.",
+                    //"data_comment": "Figures will be updated as information becomes available"
+                    "age": {
+                        "18_or_younger": {
+                            "raw_count": 500
+                            //"percentage": 5
+                        }, 
+                        "18_to_30": {
+                            "raw_count": 500
+                            //"percentage": 5
+
+                        }, 
+                        "31_to_40": {
+                            "raw_count": 500
+                            //"percentage": 5
+                        }, 
+                        "41_to_50": {
+                            "raw_count": 500
+                            //"percentage": 5
+
+                        },
+                        "51_to_60": {
+                            "raw_count": 500
+                            //"percentage": 5
+                        }, 
+                        "61_to_70": {
+                            "raw_count": 500
+                            //"percentage": 5
+
+                        }, 
+                        "71_to_80": {
+                            "raw_count": 500
+                            //"percentage": 5
+                        }, 
+                        "81_or_older": {
+                            "raw_count": 500
+                            //"percentage": 5
+
+                        }
+                        // "Unknown": {
+                        //     "raw_count": 500,
+                        //     "percentage": 5
+
+                        // }, 
+
+                    },
+                    "gender": {
+                        // "gender_comment": "To date, no cases reported among trans women or trans men",
+                        "male": {
+                            "raw_count": 500,
+                            //"percentage": 5
+                        }, 
+                        "female": {
+                            "raw_count": 500,
+                            //"percentage": 5
+
+                        }
+                        // "unknown": { 
+                        //     "raw_count": 500,
+                        //     "percentage": 5
+                        // }
+                    }, 
+                    "race_or_ethnicity": { // disclaimer: i'm not trying to imply anything about the relationship between ethnicity and race..
+                        "Multiple_Race": { // front end will need to handle logic to combine these variables / change the names to match the ones on Niko's figma file of visualizations
+                            "raw_count": 7
+                            //"percentage": 5
+                        },   
+                        "Other": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        }, 
+                        "Black_or_African_American": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        },   
+                        "Pacific_Islander": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        },          
+                        "White": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        }, 
+                        "Asian": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        },   
+                        "Unknown": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        }, 
+                        "Hispanic_or_Latinx": { 
+                            "raw_count": 7
+                            //"percentage": 5
+                        }
+                        // "Native_American": { 
+                        //     "raw_count": 7
+                        //     "percentage": 5
+                        // }, "Native American" is not in https://data.sfgov.org/COVID-19/COVID-19-Cases-Summarized-by-Race-and-Ethnicity/vqqm-nsqg, but on the current dashboard? 
+                            // maybe it's b/c the dashboard mentions "This data may not be immediately available for recently reported cases."    
+                    }
+
+                },
+
+            },
+            "deaths": { // deaths by race and ethnicity and by age and gender are only in the dashboard - not even in the linked file under the dashboard
+                "cumulative_count": 200,
+                //"deaths_comment": "Deaths are reported by providers and the medical examiner. ",
+                //"source": "providers and the medical examiner",
+                // "data_last_updated": "mm/dd/yyyy",
+                "series": [
+                    { "date": "4/1/20", "count": 1 },
+                    { "date": "4/2/20", "count": 2 },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" }
+                ],
+                //"tabulations": {
+                    // "demog_comment": "The charts below display available information on demographics and transmission category for cases and deaths in San Francisco. Demographic and transmission data are based on information reported from case interviews, laboratories, and providers. This data may not be immediately available for recently reported cases." 
+                    //"race_eth_comment": "In the race/ethnicity data shown below, the 'Other' category includes those who identified as Other or with a race/ethnicity that does not fit the choices collected. The “Unknown” includes individuals who did not report a race/ethnicity to their provider, could not be contacted, or declined to answer. Comorbidities for COVID-19 deaths are reported as having one or more underlying health conditions, such as chronic disease, present in a patient at the time of death. Because of the low number of deaths due to COVID-19, demographic and risk data proportions are subject to daily fluctuation. Conclusions about trends should be drawn cautiously. Figures will be updated as information becomes available.",
+                    //"data_comment": "Figures will be updated as information becomes available"
+                    // "age": {
+                    //     "60_and_over": {
+                    //         "raw_count": 21
+                    //     }, 
+                    //     "Under_60": {
+                    //         "raw_count": 1
+
+                    //     }   
+                    // },
+                    // "gender": {
+                    //     // "gender_comment": "To date, no cases reported among trans women or trans men",
+                    //     "male": {
+                    //         "raw_count": 500,
+                    //     }, 
+                    //     "female": {
+                    //         "raw_count": 500,
+
+                    //     }
+                    // }, 
+                    // "race_or_ethnicity": { // disclaimer: i'm not trying to imply anything about the relationship between ethnicity and race.. 
+                    //     "Other": { 
+                    //         "raw_count": 7
+                    //     }, 
+                    //     "Black_or_African American": { 
+                    //         "raw_count": 7
+                    //     },          
+                    //     "White": { 
+                    //         "raw_count": 7
+                    //     }, 
+                    //     "Asian": { 
+                    //         "raw_count": 7
+                    //     },   
+                       
+                    //     "Hispanic_or_Latinx": { 
+                    //         "raw_count": 7
+                    //     }    
+                    // },
+                    // "underlying_cond": {
+                    //     "One or More": 1// there's not even a number here on the actual dashboard
+                    // },
+                    // "tabulations": {
+                    // "transmission_category": {
+                    //     "Unknown": {
+                    //         "cases": 9,
+                    //     },
+                    //     "community": {
+                    //         "cases": 9,
+                    //     },
+                    //     "from_contact": {
+                    //         "cases": 9,
+                    //     }
+
+                    // }
+                }   
+                
+            }, 
+            "transmissions": {
+                // "data_last_updated": "mm/dd/yyyy",
+                "series": [ // series are the actual counts
+                    { "date": "4/1/20", "count": 1 },
+                    { "date": "4/2/20", "count": 2 },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" },
+                    { "date": "", "count": "" }
+                ],
+                "tabulations": {
+                    "transmission_category": {
+                        "Unknown": {
+                            "cases": 9,
+                            //"percentage": 0.4
+                        },
+                        "community": {
+                            "cases": 9,
+                            //"percentage": 0.4
+                        },
+                        "from_contact": {
+                            "cases": 9,
+                            //"percentage": 0.4
+                        }
+
+                    },
+                    "case_disposition": {
+                        "Confirmed": {
+                            "cases": 9,
+                            //"percentage": 0.4
+                        },
+                        "Death": {
+                            "cases": 9,
+                            //"percentage": 0.4
+                        },
+
+                    }
+                }                
+            }
+
+
+            },
+            "tests": {
+                // "data_last_updated": "mm/dd/yyyy",
+                "cumulative_count": 13168,
+                "tests_comment": "Testing for the novel coronavirus is available through commercial, clinical, and hospital laboratories, as well as the San Francisco Public Health Laboratory. While there are severe nationwide shortages of testing material, there continues to be an increasing trend in the number of available testing sites and overall number of tests conducted in San Francisco. ",
+                "tests_comment_2": "Due to the high degree of variation in the time needed to complete tests by different labs there is a delay in this reporting. On March 24....".
+                "source": "local and state health department",
+                "series": [
+                    {"result_date": "2020-04-20", "counts": 260, "pos": 200, "pct": 0.12},
+                    {"result_date": "2020-04-20", "counts": 260, "pos": 200, "pct": 0.12},
+                    {"result_date": "2020-04-20", "counts": 260, "pos": 200, "pct": 0.12},
+                    {"result_date": "2020-04-20", "counts": 260, "pos": 200, "pct": 0.12},
+                ],
+       
+            }
+        }         
+    }
+}
+
+
