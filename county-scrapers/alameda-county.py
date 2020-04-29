@@ -59,12 +59,26 @@ def get_county() -> Dict:
     out["series"]["cases"] = [ { k:v for k,v in entry.items() if k in case_keys } for entry in cases_deaths_series]
     out["series"]["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in cases_deaths_series]
 
-    # re-key demographics
+    # parse demographics
+    # note: gender does not currently include other genders
+    gender_keys = {"female": "Female", "male": "Male", "unknown": "Unknown_Sex"} # dict of target_label : source_label for re-keying
+    race_keys = {"Latinx/Hispanic": "Hispanic/Latino", "Asian": "Asian", "African_Amer": "African_American/Black", 
+                 "White":"White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace", 
+                 "Other": "Other_Race", "Unknown": "Unknown_Race"}
     
+    # parse gender cases
+    for k,v in gender_keys.items():
+        out["case_totals"]["gender"][k] = demo_totals[v]
+    # parse race cases and deaths
+    for k, v in race_keys.items():
+        out["case_totals"]["race_eth"][k] = demo_totals[v]
+        out["death_totals"]["race_eth"][k] = demo_totals['Deaths\u2014' + v] # dashes are decoded as the escape sequence '\u2014'
+    # get age cases
+    out["case_totals"]["age_group"] = { k:v for k,v in demo_totals.items() if 'Age' in k}
     return json.dumps(out, indent=4)
 
 # Confirmed Cases and Deaths
-def get_timeseries(dataframe = False) -> Dict:
+def get_timeseries(dataframe = False) -> Dict: 
     """Fetch daily and cumulative cases and deaths by day
     Returns a .json by default. If dataframe set to True, returns a 
     pandas DataFrame."""
@@ -99,25 +113,23 @@ def get_demographics(dataframe = False) -> Dict:
     """Fetch cases and deaths by age, gender, race, ethnicity
     Returns a .json by default. If dataframe set to True, returns a pandas
     DataFrame."""
-    param_list = {'where': '0=0', 'outFields': '*', 'outSR':4326, 'f':'json'}
+    param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
     response = requests.get(demographics, params=param_list)
-    parsed = json.loads(response.content)
+    parsed = response.json()
     fields = parsed['fields']
-    features = [obj['attributes'] for obj in parsed['features']]
+    data = parsed['features'][0]['attributes']
     #make a list of all datapoints with value '<10'
+    # due to some quirk in the json decoding, dashes are stored as the escape sequence '\u2014'
     counts_lt_10 = []
-    for row in features:
-        if row['Geography'] == 'Alameda County':
-            for key, val in row.items():
-                if val == '<10':
-                    counts_lt_10.append(key)
-
+    for key, val in data.items():
+        key = key.replace('\u2014', '-')
+        if val == '<10':
+            counts_lt_10.append(key)
     if not dataframe:
-        return features, counts_lt_10
+        return data, counts_lt_10
 
-    rows = [entry['OBJECTID'] for entry in features]
     cols = [f['name'] for f in parsed['fields']]
-    dframe = pd.DataFrame(data=features, index=rows, columns=cols)
+    dframe = pd.DataFrame(data=data, index=rows, columns=cols)
     return dframe, counts_lt_10
 
 if __name__ == '__main__':
@@ -127,5 +139,5 @@ if __name__ == '__main__':
     # print("Timeseries cases and deaths: \n", ac_timeseries)
     # ac_cumulative = get_cases_and_deaths(ac_timeseries)
     # print("Cumulative cases and deaths: \n", ac_cumulative)
-    # demographics = get_demographics(True)
+    # demographics = get_demographics(False)
     # print("Cases and deaths by demographics: \n", demographics)
