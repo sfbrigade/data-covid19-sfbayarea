@@ -75,7 +75,11 @@ def get_county() -> Dict:
         out["death_totals"]["race_eth"][k] = demo_totals['Deaths\u2014' + v] # dashes are decoded as the escape sequence '\u2014'
     # get age cases
     out["case_totals"]["age_group"] = { k:v for k,v in demo_totals.items() if 'Age' in k}
-    return json.dumps(out, indent=4)
+
+    with open('./county_data/alameda_county.json', 'w', encoding = 'utf-8') as f:
+        json.dump(out, f, ensure_ascii= False, indent=4)
+        
+    return json.dumps(out, indent=4) # for printing to console
 
 # Confirmed Cases and Deaths
 def get_timeseries(dataframe = False) -> Dict: 
