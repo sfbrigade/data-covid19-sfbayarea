@@ -6,16 +6,16 @@
     "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
     "series": {
         "cases": [
-            { "date": "yyyy/mm/dd", "cases": -1, "cumul_cases": -1},
-            { "date": "yyyy/mm/dd", "cases": -1, "cumul_cases": -1 }
+            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1},
+            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1 }
        ],
         "deaths": [
-            { "date": "yyyy/mm/dd", "deaths": -1, "cumul_deaths": -1 },
-            { "date": "yyyy/mm/dd", "deaths": -1, "cumul_deaths": -1}
+            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1 },
+            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1}
         ],
         "tests": [
             {
-                "date": "yyyy/mm/dd",
+                "date": "yyyy-mm-dd",
                 "tests": -1,
                 "positive": -1,
                 "negative": -1,
@@ -26,7 +26,7 @@
                 "cumul_pend": -1
             },
             {
-                "date": "yyyy/mm/dd",
+                "date": "yyyy-mm-dd",
                 "tests": -1,
                 "positive": -1,
                 "negative": -1,
@@ -45,17 +45,16 @@
             "other": -1,
             "unknown": -1
         },
-        "age_group": {
-            "30_or_younger": -1,
-            "31_to_40": -1,
-            "41_to_50": -1,
-            "51_to_60": -1,
-            "61_to_70": -1,
-            "71_to_80": -1,
-            "81_to_90" : -1,
-            "90_or_older": -1,
-            "Unknown": -1
-        },
+        "age_group": [
+            {"group": "18_and_younger", "raw_count": -1 }, 
+            {"group": "18_to_30", "raw_count": -1 },
+            {"group": "31_to_40", "raw_count": -1 },
+            {"group": "41_to_50", "raw_count": -1 },
+            {"group": "51_to_60", "raw_count": -1 },
+            {"group": "61_to_70", "raw_count": -1 },
+            {"group": "71_to_80", "raw_count": -1 },
+            {"group": "81_and_older", "raw_count": -1 }
+        ],
         "race_eth": {
             "African_Amer": -1,
             "Asian": -1,
@@ -80,18 +79,16 @@
             "other": -1,
             "unknown": -1
         },
-        "age_group": {
-            "20_or_younger": -1,
-            "21_to_30": -1,
-            "31_to_40": -1,
-            "41_to_50": -1,
-            "51_to_60": -1,
-            "61_to_70": -1,
-            "71_to_80": -1,
-            "81_to_90": -1,
-            "90_or_older": -1,
-            "Unknown": -1
-        },
+        "age_group": [
+            {"group": "18_and_younger", "raw_count": -1 }, 
+            {"group": "18_to_30", "raw_count": -1 },
+            {"group": "31_to_40", "raw_count": -1 },
+            {"group": "41_to_50", "raw_count": -1 },
+            {"group": "51_to_60", "raw_count": -1 },
+            {"group": "61_to_70", "raw_count": -1 },
+            {"group": "71_to_80", "raw_count": -1 },
+            {"group": "81_and_older", "raw_count": -1 }
+        ],
         "race_eth": {
             "African_Amer": -1,
             "Asian": -1,
@@ -122,18 +119,16 @@
             "other": -1,
             "unknown": -1
         },
-        "age_group": {
-            "20_or_younger": -1,
-            "21_to_30": -1,
-            "31_to_40": -1,
-            "41_to_50": -1,
-            "51_to_60": -1,
-            "61_to_70": -1,
-            "71_to_80": -1,
-            "81_to_90": -1,
-            "90_or_older": -1,
-            "Unknown": -1
-        },
+        "age_group": [
+            {"group": "18_and_younger", "raw_count": -1 }, 
+            {"group": "18_to_30", "raw_count": -1 },
+            {"group": "31_to_40", "raw_count": -1 },
+            {"group": "41_to_50", "raw_count": -1 },
+            {"group": "51_to_60", "raw_count": -1 },
+            {"group": "61_to_70", "raw_count": -1 },
+            {"group": "71_to_80", "raw_count": -1 },
+            {"group": "81_and_older", "raw_count": -1 }
+        ],
         "race_eth": {
             "African_Amer": -1,
             "Asian": -1,
