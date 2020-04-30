@@ -1,4 +1,5 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore
+from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
 from .utils import get_base_url, HEADING_PATTERN, ISO_DATETIME_PATTERN
@@ -27,7 +28,7 @@ class SanFranciscoNews(NewsScraper):
 
     START_URL = 'https://sf.gov/news/topics/794'
 
-    def parse_page(self, html, url):
+    def parse_page(self, html: str, url: str) -> List[dict]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
         news = []

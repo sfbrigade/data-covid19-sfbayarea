@@ -2,6 +2,7 @@
 import click
 import json
 import news
+from typing import Tuple
 
 
 COUNTY_NAMES = tuple(news.scrapers.keys())
@@ -11,7 +12,7 @@ COUNTY_NAMES = tuple(news.scrapers.keys())
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-def main(counties):
+def main(counties: Tuple[str]) -> None:
     if len(counties) == 0:
         counties = ('san_francisco',)
 

@@ -1,4 +1,5 @@
 import requests
+from typing import List
 
 
 class NewsScraper:
@@ -18,9 +19,9 @@ class NewsScraper:
     of news items given some HTML.
     """
 
-    START_URL = None
+    START_URL = ''
 
-    def scrape(self):
+    def scrape(self) -> List[dict]:
         """
         Create and return a news feed.
 
@@ -42,5 +43,5 @@ class NewsScraper:
         news = self.parse_page(response.text, self.START_URL)
         return news
 
-    def parse_page(self, html, url):
+    def parse_page(self, html: str, url: str) -> List[dict]:
         raise NotImplementedError()

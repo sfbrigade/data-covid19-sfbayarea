@@ -1,8 +1,10 @@
+from typing import Dict, Type
 from .alameda import AlamedaNews
+from .base import NewsScraper
 from .san_francisco import SanFranciscoNews
 
 
-scrapers = {
+scrapers: Dict[str, Type[NewsScraper]] = {
     'alameda': AlamedaNews,
     # 'contra_costa': None,
     # 'marin': None,
