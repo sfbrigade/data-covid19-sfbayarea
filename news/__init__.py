@@ -1,8 +1,9 @@
+from .alameda import AlamedaNews
 from .san_francisco import SanFranciscoNews
 
 
 scrapers = {
-    # 'alameda': None,
+    'alameda': AlamedaNews,
     # 'contra_costa': None,
     # 'marin': None,
     # 'napa': None,
