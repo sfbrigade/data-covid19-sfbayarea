@@ -1,28 +1,19 @@
 #!/usr/bin/env python3
+import click
 import json
 import news
-import sys
 
 
-def message(text):
-    print(text, file=sys.stderr)
+COUNTY_NAMES = tuple(news.scrapers.keys())
 
 
-def main():
-    # TODO: use Click or argparse so we can manage more complex options
-    counties = sys.argv[1:]
-
-    # Validate args before starting to scrape
-    for county in counties:
-        if county not in news.scrapers:
-            message(f'Unknown county: "{county}"')
-            sys.exit(1)
-        elif news.scrapers[county] is None:
-            message(f'Scraper for {county} has not yet been written')
-            sys.exit(1)
-
+@click.command(help='Create a news feed for one or more counties. Supported '
+                    f'counties: {", ".join(COUNTY_NAMES)}.')
+@click.argument('counties', metavar='[COUNTY]...', nargs=-1,
+                type=click.Choice(COUNTY_NAMES, case_sensitive=False))
+def main(counties):
     if len(counties) == 0:
-        counties = ['san_francisco']
+        counties = ('san_francisco',)
 
     # Do the work!
     for county in counties:
