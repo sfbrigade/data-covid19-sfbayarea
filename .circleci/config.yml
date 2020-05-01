@@ -24,7 +24,11 @@ jobs:
           name: Pyflakes
           command: |
             . env/bin/activate
-            pyflakes .
+            # Run pyflakes against all python files in this directory and
+            # against all directories except `env`. (Normally we'd just do `.`,
+            # but because the virtual environment is mounted here, that also
+            # lints all the dependencies!)
+            pyflakes *.py *[^env]/
 
       - run:
           name: MyPy
