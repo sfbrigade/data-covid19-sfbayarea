@@ -12,7 +12,7 @@ To run the scraper, you can use the run script by typing `sh run_scraper.sh` int
 The best way to run the API right now is to run the command `FLASK_APP="app.py" FLASK_ENV=development flask run;`. Note that this is not the best way to run the scraper at this time.
 
 ## Data Model
-The following sections document the differences between the counties in the common data model (see `data-model.json` and `sf_generic_cdm.js`) which we will see as we begin to get data from them.
+The following sections document the differences between the counties in the common data model (see `data_models` directory) which we will see as we begin to get data from them.
 
 ### Ages
 
