@@ -6,6 +6,10 @@ import json
 import pandas as pd
 from typing import List, Dict
 from datetime import datetime, timedelta, timezone
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import re
+import os
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Open data landing page: https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19
@@ -94,6 +98,14 @@ def get_timeseries() -> Dict:
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboards."""
     notes = ""
+    driver = webdriver.Firefox()
+    driver.implicitly_wait(30)
+    for url in dashboards:
+        driver.get(url)
+        soup = BeautifulSoup(driver.page_source,'lxml')
+        for p_tag in soup.find_all('p'):
+            if 'Notes' in p_tag.get_text():
+                notes += p_tag.get_text().strip()
     return notes
 
 def get_demographics() -> (Dict, List):
