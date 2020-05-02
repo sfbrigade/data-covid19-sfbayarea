@@ -45,16 +45,7 @@
             "other": -1,
             "unknown": -1
         },
-        "age_group": [
-            {"group": "18_and_younger", "raw_count": -1 }, 
-            {"group": "18_to_30", "raw_count": -1 },
-            {"group": "31_to_40", "raw_count": -1 },
-            {"group": "41_to_50", "raw_count": -1 },
-            {"group": "51_to_60", "raw_count": -1 },
-            {"group": "61_to_70", "raw_count": -1 },
-            {"group": "71_to_80", "raw_count": -1 },
-            {"group": "81_and_older", "raw_count": -1 }
-        ],
+        "age_group": {},
         "race_eth": {
             "African_Amer": -1,
             "Asian": -1,
@@ -79,16 +70,7 @@
             "other": -1,
             "unknown": -1
         },
-        "age_group": [
-            {"group": "18_and_younger", "raw_count": -1 }, 
-            {"group": "18_to_30", "raw_count": -1 },
-            {"group": "31_to_40", "raw_count": -1 },
-            {"group": "41_to_50", "raw_count": -1 },
-            {"group": "51_to_60", "raw_count": -1 },
-            {"group": "61_to_70", "raw_count": -1 },
-            {"group": "71_to_80", "raw_count": -1 },
-            {"group": "81_and_older", "raw_count": -1 }
-        ],
+        "age_group": {},
         "race_eth": {
             "African_Amer": -1,
             "Asian": -1,
