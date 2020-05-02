@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import requests
+import urllib.request
+from bs4 import BeautifulSoup
 import json
 import pandas as pd
 from typing import List, Dict
@@ -7,57 +9,47 @@ from datetime import datetime, timedelta, timezone
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Open data landing page: https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19
+    # Getting strted with the ArcGIS REST API: https://developers.arcgis.com/rest/services-reference/get-started-with-the-services-directory.htm
+    # Services reference for Layer: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm
+
 # Endpoints:
 cases_deaths = 'https://opendata.arcgis.com/datasets/7ea4fd9b8a1040a7b3815f2e0b5f92ba_0/FeatureServer/0/query'
 demographics = 'https://opendata.arcgis.com/datasets/f218564293f9400a8296558e9325f265_0/FeatureServer/0/query'
 cases_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_dates/FeatureServer/0?f=json'
 demographics_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_geography/FeatureServer/0?f=json'
+dashboards = ['https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/1e0ac4385cbe4cc1bffe2cf7f8e7f0d9',
+              'https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/332a092bbc3641bd9ec8373e7c7b5b3d']
 
 def get_county() -> Dict:
     """Fetch county data into standard .json format"""
 
-    # fetch cases metadata
-    cases_header = json.loads(requests.get(cases_meta).content)
-    timestamp = cases_header["editingInfo"]["lastEditDate"]
+    # load data model template into a local dictionary
+    with open('./data_scrapers/_data_model.json') as template:
+        out = json.load(template)
+    
+    # populate dataset headers
+    out["name"] = "Alameda County"
+    out["source_url"] = "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19"
+    out["meta_from_source"] = get_notes()
+
+    # fetch cases metadata, to get the timestamp
+    response = json.loads(requests.get(cases_meta).content)
+    response.raise_for_status()
+    timestamp = response["editingInfo"]["lastEditDate"]
+    # Raise an exception if a timezone is specified. If "dateFieldsTimeReference" is present, we need to edit this scrapr to handle it. 
+    # See: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6
+    if "dateFieldsTimeReference" in cases_header["editingInfo"] or "editFieldsInfo" in cases_header:
+        raise FutureWarning("A timezone may now be specified in the metadata.")
     # convert timestamp to datetime object
     update = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
+    out["update_time"] = update.isoformat()
 
     # get cases, deaths, and demographics data
-    cases_deaths_series = get_timeseries()
+    out["series"] = get_timeseries()
+
+
     demo_totals, counts_lt_10 = get_demographics()
-
-    out = {
-        "name": "Alameda County",
-        "update_time": update.isoformat(timespec='minutes'),
-        "source_url": "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19",
-        "meta_from_source": "Notes and disclaimers: The City of Berkeley and Alameda County(minus Berkeley) are separate local health jurisdictions(LHJs). We are showing data for each separately and together. The numbers for the Alameda County LHJ and the Berkeley LHJ come from the state’s communicable disease tracking database, CalREDIE. These data are updated daily, with cases sometimes reassigned to other LHJs and sometimes changed from a suspected to a confirmed case, so counts for a particular date in the past may change as information is updated in CalREDIE. Dates reflect the date created in CalREDIE. Furthermore, we review our data routinely and adjust to ensure its integrity and that it most accurately represents the full picture of COVID-19 cases in our county. The case rates likely reflect more the availability of testing than the actual disease burden. For instance, Hayward and places near Hayward have the highest case rates likely because of the availability of drive-through testing. Berkeley LHJ cases do not include two cases that were passengers of the Diamond Princess cruise.",
-        "meta_from_baypd": "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10]),
-        "series": {"cases": [], "deaths": [], "tests": []},
-        "case_totals": {
-            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1},
-            "age_group": {},
-            "race_eth": {"African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1, 
-                        "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1 },
-            "transmission_cat": { "community": -1, "from_contact": -1, "unknown": -1 }
-        },
-        "death_totals": {
-            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1 },
-            "age_group": {},
-            "race_eth": { "African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1,
-                        "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1},
-            "underlying_cond": {},
-            "transmission_cat": { "community": -1, "from_contact": -1, "unknown": -1 }
-        },
-    }
-
-     # re-key series
-    new_keys = ["date", "cases", "cumul_cases", "deaths", "cumul_deaths"]
-    cases_deaths_series = [ dict(zip(new_keys, list(entry.values()) ) ) for entry in cases_deaths_series ]
-    death_keys = ["date", "cases", "deaths", "cumul_deaths"]
-    case_keys = ["date", "cases", "cumul_cases"]
-    # parse series into cases and deaths
-    out["series"]["cases"] = [ { k:v for k,v in entry.items() if k in case_keys } for entry in cases_deaths_series]
-    out["series"]["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in cases_deaths_series]
+    out["meta_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
 
     # parse demographics
     # note: gender does not currently include other genders
@@ -84,8 +76,10 @@ def get_county() -> Dict:
 # Confirmed Cases and Deaths
 def get_timeseries(dataframe = False) -> Dict: 
     """Fetch daily and cumulative cases and deaths by day
-    Returns a .json by default. If dataframe set to True, returns a 
-    pandas DataFrame."""
+    Returns the dictionary value for "series": {"cases":[], "deaths":[]} by default.
+    If dataframe set to True, returns a pandas DataFrame."""
+
+    series = {"cases":[], "deaths":[]} # dictionary holding the timeseries for cases and deaths
 
     # query API
     param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
@@ -98,20 +92,32 @@ def get_timeseries(dataframe = False) -> Dict:
         month, day, year = obj['Date'].split('/')
         if int(month) < 10:
             month = '0' + month
-        obj['Date'] = "{}/{}/{}".format(year, month, day)
+        obj['Date'] = "{}-{}-{}".format(year, month, day)
+
+    # re-key series
+    new_keys = ["date", "cases", "cumul_cases", "deaths", "cumul_deaths"]
+    re_keyed = [dict(zip(new_keys, list(entry.values())))
+                           for entry in features]
+
+    # parse series into cases and deaths
+    death_keys = ["date", "cases", "deaths", "cumul_deaths"]
+    case_keys = ["date", "cases", "cumul_cases"]
+    
+    series["cases"] = [{k: v for k, v in entry.items() if k in case_keys} for entry in re_keyed]
+    series["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in re_keyed]
     
     if not dataframe:
-        return features
+        return series
     
     fields = parsed["fields"]
     cols = [f['name'] for f in parsed['fields']]
-    dframe = pd.DataFrame(data=features, index=rows, columns=cols)
+    dframe = pd.DataFrame(data=series, index=rows, columns=cols)
     return dframe
 
-def get_cases_and_deaths(timeseries: pd.DataFrame): 
-    """Get latest date entry for cumulative cases and deaths. 
-    Since data was fetched to sort by date, the latest field will be the last entry. """    
-    return timeseries.tail(1)
+def get_notes() -> str:
+    """Scrape notes and disclaimers from dashboards."""
+    notes = ""
+    return notes
 
 def get_demographics(dataframe = False) -> Dict:
     """Fetch cases and deaths by age, gender, race, ethnicity
@@ -138,10 +144,9 @@ def get_demographics(dataframe = False) -> Dict:
 
 if __name__ == '__main__':
     """ When run as a script, logs data to console"""
-    print(get_county())
+    # print(get_county())
+    print(get_notes())
     # ac_timeseries = get_timeseries()
     # print("Timeseries cases and deaths: \n", ac_timeseries)
-    # ac_cumulative = get_cases_and_deaths(ac_timeseries)
-    # print("Cumulative cases and deaths: \n", ac_cumulative)
     # demographics = get_demographics(False)
     # print("Cases and deaths by demographics: \n", demographics)
