@@ -7,11 +7,13 @@ from typing import List, Dict
 from datetime import datetime, timedelta, timezone
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
-# Open data landing page: https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19
+# Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
+# This is the open data landing page: https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19
     # Getting strted with the ArcGIS REST API: https://developers.arcgis.com/rest/services-reference/get-started-with-the-services-directory.htm
     # Services reference for Layer: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm
 
-# Endpoints:
+# URLs and API endpoints:
+landing_page = "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19"
 cases_deaths = 'https://opendata.arcgis.com/datasets/7ea4fd9b8a1040a7b3815f2e0b5f92ba_0/FeatureServer/0/query'
 demographics = 'https://opendata.arcgis.com/datasets/f218564293f9400a8296558e9325f265_0/FeatureServer/0/query'
 cases_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_dates/FeatureServer/0?f=json'
@@ -24,10 +26,10 @@ with open('./data_scrapers/_data_model.json') as template:
     out = json.load(template)
 
 def get_county() -> Dict:
-    """Main method for populating the out dictionary"""
+    """Main method for populating the 'out' dictionary"""
     # populate dataset headers
     out["name"] = "Alameda County"
-    out["source_url"] = "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19"
+    out["source_url"] = landing_page
     out["meta_from_source"] = get_notes()
 
     # fetch cases metadata, to get the timestamp
@@ -51,7 +53,10 @@ def get_county() -> Dict:
     return out
 
 
+<<<<<<< HEAD
 # https: // services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/COVID_Counts/FeatureServer/0/query?select = features & where = 0 = 0 & orderby = ObjectID & outFields = * & f = pjson
+=======
+>>>>>>> Edit comments
 # Confirmed Cases and Deaths
 def get_timeseries() -> Dict: 
     """Fetch daily and cumulative cases and deaths by day
@@ -69,7 +74,7 @@ def get_timeseries() -> Dict:
     parsed = json.loads(response.content)
     features = [obj["attributes"] for obj in parsed['features']]
     
-    # convert dates to 'yyyy/mm/dd'
+    # convert dates
     for obj in features:
         month, day, year = obj['Date'].split('/')
         if int(month) < 10:
@@ -84,9 +89,8 @@ def get_timeseries() -> Dict:
                            for entry in features]
 
     # parse series into cases and deaths
-    death_keys = ["date", "cases", "deaths", "cumul_deaths"]
+    death_keys = ["date", "deaths", "cumul_deaths"]
     case_keys = ["date", "cases", "cumul_cases"]
-    
     series["cases"] = [{k: v for k, v in entry.items() if k in case_keys} for entry in re_keyed]
     series["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in re_keyed]
 
