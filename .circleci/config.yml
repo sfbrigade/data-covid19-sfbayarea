@@ -1,0 +1,42 @@
+version: 2.1
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+            - data-covid-19-sfbayarea-{{ arch }}-
+
+      - run:
+          name: Install Dependencies
+          command: sh install.sh
+
+      - save_cache:
+          key: data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+          paths:
+            - env
+
+      - run:
+          name: Pyflakes
+          command: |
+            . env/bin/activate
+            # Run pyflakes against all python files in this directory and
+            # against all directories except `env`. (Normally we'd just do `.`,
+            # but because the virtual environment is mounted here, that also
+            # lints all the dependencies!)
+            pyflakes *.py *[^env]/
+
+      - run:
+          name: MyPy
+          command: |
+            . env/bin/activate
+            mypy .
+
+workflows:
+  build:
+    jobs:
+      - lint
