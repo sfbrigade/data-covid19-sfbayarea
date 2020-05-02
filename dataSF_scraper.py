@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import requests
 import json
-from typing import List, Dict
+from typing import Dict
 
-# API endpoints 
+# API endpoints
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
 transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
@@ -58,7 +58,7 @@ def get_cases_and_deaths() -> Dict:
 
 def get_date_transmission_json() -> Dict:
     """Get cases by date, transmission, and disposition; order by date ascending."""
-    date_order_query = '?$order=date'
+    # date_order_query = '?$order=date'
     return get_json(transmission_url)
 
 def get_transmission_json() -> Dict:
