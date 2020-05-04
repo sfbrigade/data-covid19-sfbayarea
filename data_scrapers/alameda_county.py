@@ -20,18 +20,22 @@ import os
 # URLs and API endpoints:
 landing_page = "https://data.acgov.org/search?source=alameda%20county%20public%20health%20department&tags=covid-19"
 cases_deaths = 'https://opendata.arcgis.com/datasets/7ea4fd9b8a1040a7b3815f2e0b5f92ba_0/FeatureServer/0/query'
-demographics = 'https://opendata.arcgis.com/datasets/f218564293f9400a8296558e9325f265_0/FeatureServer/0/query'
+demographics_cases = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_cases/FeatureServer/0/query'
+demographics_deaths = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_deaths_rates/FeatureServer/0/query'
 cases_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_dates/FeatureServer/0?f=json'
 demographics_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/AC_geography/FeatureServer/0?f=json'
 dashboards = ['https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/1e0ac4385cbe4cc1bffe2cf7f8e7f0d9',
               'https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/332a092bbc3641bd9ec8373e7c7b5b3d']
 
-# Load data model template into the 'out' dictionary. 'out' will be global to all methods.
-with open('./data_scrapers/_data_model.json') as template:
-    out = json.load(template)
+
 
 def get_county() -> Dict:
     """Main method for populating the 'out' dictionary"""
+    
+    # Load data model template into a local dictionary called 'out'.
+    with open('./data_scrapers/_data_model.json') as template:
+        out = json.load(template)
+    
     # populate dataset headers
     out["name"] = "Alameda County"
     out["source_url"] = landing_page
@@ -52,7 +56,7 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     out["series"] = get_timeseries()
-    demo_totals, counts_lt_10 = get_demographics()
+    demo_totals, counts_lt_10 = get_demographics(out)
     out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
     out["meta_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
     return out
@@ -110,7 +114,7 @@ def get_notes() -> str:
                 notes += p_tag.get_text().strip()
     return notes
 
-def get_demographics() -> (Dict, List):
+def get_demographics(out:Dict) -> (Dict, List):
     """Fetch cases and deaths by age, gender, race, ethnicity
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}, as well as a list of 
     strings describing datapoints that have a value of "<10". 
@@ -119,12 +123,12 @@ def get_demographics() -> (Dict, List):
 
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
     response = requests.get(demographics, params=param_list)
-    response.raise_for_status()
+    #response.raise_for_status()
     parsed = response.json()
     fields = parsed['fields']
     data = parsed['features'][0]['attributes']
 
-    # copy dictionary structure of global 'out' dictionary to local variable
+    # copy dictionary structure of 'out' dictionary to local variable
     demo_totals = { "case_totals": out["case_totals"], "death_totals": out["death_totals"]} 
 
     # Parse and re-key
@@ -149,7 +153,6 @@ def get_demographics() -> (Dict, List):
 
     #make a list of all datapoints with value '<10'
     counts_lt_10 = []
-    print(demo_totals)
     for cat, cat_dict in demo_totals.items(): # cases, deaths
         for group, group_dict in cat_dict.items(): # dictionaries for age, race/eth
             for key, val in group_dict.items():
