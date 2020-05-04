@@ -39,7 +39,7 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Alameda County"
     out["source_url"] = landing_page
-    out["meta_from_source"] = get_notes()
+    # out["meta_from_source"] = get_notes()
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(cases_meta)
@@ -56,7 +56,7 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     out["series"] = get_timeseries()
-    demo_totals, counts_lt_10 = get_demographics(out)
+    demo_totals = get_demographics(out)
     out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
     out["meta_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
     return out
@@ -121,49 +121,44 @@ def get_demographics(out:Dict) -> (Dict, List):
     To crete a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])' 
     Note that the DataFrame will convert the "<10" strings to NaN. """
 
+    # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
-    response = requests.get(demographics, params=param_list)
-    #response.raise_for_status()
+    # get cases data
+    response = requests.get(demographics_cases, params=param_list)
+    response.raise_for_status()
     parsed = response.json()
-    fields = parsed['fields']
-    data = parsed['features'][0]['attributes']
-
+    cases_data = parsed['features'][0]['attributes']
+    # get deaths data
+    response = requests.get(demographics_deaths, params=param_list)
+    response.raise_for_status()
+    parsed = response.json()
+    deaths_data = parsed['features'][0]['attributes']
+    
     # copy dictionary structure of 'out' dictionary to local variable
     demo_totals = { "case_totals": out["case_totals"], "death_totals": out["death_totals"]} 
 
     # Parse and re-key
     # note: gender does not currently include other genders
     # dict of target_label : source_label for re-keying
-    gender_keys = {"female": "Female", "male": "Male", "unknown": "Unknown_Sex"}
-    race_keys = {"Latinx_or_Hispanic": "Hispanic/Latino", "Asian": "Asian", "African_Amer": "African_American/Black",
+    gender_keys = {"female": "Female", "male": "Male", "unknown": "Unknown_Sex", "mtf": "MTF", "ftm": "FTM"}
+    race_keys = {"Latinx_or_Hispanic": "Hispanic_Latino", "Asian": "Asian", "African_Amer": "African_American_Black",
                  "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
                  "Other": "Other_Race", "Unknown": "Unknown_Race"}
 
-    # parse gender cases
+    # parse gender cases and deaths
     for k, v in gender_keys.items():
-        demo_totals["case_totals"]["gender"][k] = data[v]
+        demo_totals["case_totals"]["gender"][k] = cases_data[v]
+        if k in deaths_data.keys(): # the deaths table does not currently include MTF or FTM
+            demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
     # parse race cases and deaths
     for k, v in race_keys.items():
-        demo_totals["case_totals"]["race_eth"][k] = data[v]
-        # dashes are decoded as the escape sequence '\u2014'
-        demo_totals["death_totals"]["race_eth"][k] = data['Deaths\u2014' + v]
-    # get age cases
-    demo_totals["case_totals"]["age_group"] = {
-        k: v for k, v in data.items() if 'Age' in k}
+        demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
+        demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
+    # get age cases and deaths
+    demo_totals["case_totals"]["age_group"] = { k: v for k, v in cases_data.items() if 'Age' in k }
+    demo_totals["death_totals"]["age_group"] = {k: v for k, v in deaths_data.items() if 'Age' in k}
 
-    #make a list of all datapoints with value '<10'
-    counts_lt_10 = []
-    for cat, cat_dict in demo_totals.items(): # cases, deaths
-        for group, group_dict in cat_dict.items(): # dictionaries for age, race/eth
-            for key, val in group_dict.items():
-                if val == '<10':
-                    counts_lt_10.append(cat + ' ' + key)
-                else:
-                    try:
-                        int(val)
-                    except ValueError:
-                        raise ValueError(f'Non-integer value for {key}')
-    return demo_totals, counts_lt_10
+    return demo_totals
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
