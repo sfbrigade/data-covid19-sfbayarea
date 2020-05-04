@@ -4,6 +4,7 @@ import json
 from typing import Dict
 
 # API endpoints 
+# landing page: https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab
 metadata_url = 'https://data.sfgov.org/api/views/metadata/v1/tvq9-ec9w/'
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
@@ -11,43 +12,44 @@ transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
 hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json'
 tests_url = 'https://data.sfgov.org/resource/nfpa-mg4g.json'
 
-def get_county() -> None:
-    """ Write county data to .json in standard format."""
-    metadata = json.loads(requests.get(metadata_url).content)
-    update_time = metadata["dataUpdatedAt"]
-    out = {
-        "name": "San Francisco County",
-        "update_time": update_time,
-        "source_url": "https://data.sfgov.org/COVID-19/COVID-19-Cases-Summarized-by-Date-Transmission-and/tvq9-ec9w",
-        "meta_from_source": "Transmission Category can be Community, Contact or Unknown. Unknowns may become known as more information becomes available about cases. " + 
-                            "In the race/ethnicity data, the 'Other' category includes those who identified as 'Other' or with a race/ethnicity that does not fit the choices collected. " +
-                            "The “Unknown” includes individuals who did not report a race/ethnicity to their provider, could not be contacted, or declined to answer. " +
-                            "To date, no cases reported among trans women or trans men. " +
-                            "Reported test results only include tests with a positive or negative result.",
-        "meta_from_baypd": "",
-        "series": {"cases": [], "deaths": [], "tests": []},
-        "case_totals": {
-            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1},
-            "age_group": {},
-            "race_eth": {"African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1,
-                         "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1},
-            "transmission_cat": {"community": -1, "from_contact": -1, "unknown": -1}
-        },
-        "death_totals": {
-            "gender": {"female": -1, "male": -1, "other": -1, "unknown": -1},
-            "age_group": {},
-            "race_eth": {"African_Amer": -1, "Asian": -1, "Latinx/Hispanic": -1, "Native_Amer": -1, "Multiple_Race": -1,
-                         "Other": -1, "Pacific Islander": -1, "White": -1, "Unknown": -1},
-            "underlying_cond": {},
-            "transmission_cat": {"community": -1, "from_contact": -1, "unknown": -1}
-        },
-    }
-    out["series"]["cases"] = get_cases_series()
-    out["series"]["deaths"] = get_deaths_series()
-    with open('./county_data/san_francisco_county.json', 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=4)
-    return json.dumps(out, indent=4)  # for printing to console
+# Load data model template into the 'out' dictionary. 'out' will be global to all methods.
+with open('./data_scrapers/_data_model.json') as template:
+    out = json.load(template)
 
+def get_county() -> Dict:
+    """Main method for populating the 'out' dictionary"""
+    
+    # fetch metadata
+    response = requests.get(metadata_url)
+    response.raise_for_status()
+    metadata = json.loads(response.content)
+
+    # populate headers
+    out["name"]: "San Francisco County"
+    out["source_url"]: "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
+    out["update_time"]: metadata["dataUpdatedAt"]
+    out["meta_from_source"]: metadata["description"] # EL: add descriptions from other endpoints here
+    out["meta_from_baypd"]: "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests."
+    
+      # get timeseries and demographic totals
+    out["series"] = get_timeseries()
+    demo_totals = get_demographics()
+    out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
+     
+    return out
+
+
+def get_timeseries() -> Dict:
+    """
+    Returns the dictionary value for "series": {"cases":[], "deaths":[], "tests":[]}.
+    To create a DataFrame from this dictionary, run
+    'pd.DataFrame(get_timeseries())'
+    """
+    out_series = out["series"] # copy dictionary structure for series
+    out_series["cases"] = get_cases_series()
+    out_series["deaths"] = get_deaths_series()
+    out_series["tests"] = get_tests_series()
+    return out_series
 
 # Confirmed Cases and Deaths by Date and Transmission
 # Note that cumulative totals are not directly reported,
@@ -66,7 +68,6 @@ def get_cases_series() -> Dict:
         entry["cumul_cases"] = cumul
     return out
 
-
 def get_deaths_series() -> Dict:
     """Get  deaths timeseries, sum over transmision cat by date"""
     params = {'case_disposition': 'Death',
@@ -81,6 +82,36 @@ def get_deaths_series() -> Dict:
         cumul += entry["deaths"]
         entry["cumul_deaths"] = cumul
     return out
+
+
+# Daily count of tests with count and percent of positive tests
+def get_tests_series() -> Dict:
+    """Get tests by day, order by date ascending"""
+    test_series = [] # copy the dictionary structure of an entry in the tests series
+    date_order_query = '?$order=result_date' 
+    response = requests.get(tests_url + date_order_query)
+    response.raise_for_status()
+    series = json.loads(response.content)
+
+    # parse source series into out series, calculating cumulative values
+    cumul_tests, cumul_pos, cumul_neg = 0,0,0
+    for entry in series:
+        out_entry = dict()
+        out_entry["date"] = entry["result_date"][0:10]
+        out_entry["tests"] = int(entry["tests"])
+        out_entry["positive"] = int(entry["pos"])
+        out_entry["negative"] = out_entry["tests"] - out_entry["positive"]
+        # calculate cumulative values
+        cumul_tests += out_entry["tests"]
+        cumul_pos += out_entry["positive"]
+        cumul_neg += out_entry["negative"]
+        out_entry["cumul_tests"] = cumul_tests
+        out_entry["cumul_pos"] = cumul_pos
+        out_entry["cumul_neg"] = cumul_neg
+        test_series.append(out_entry)
+    return test_series
+
+
 
 # Confirmed cases by age and gender
 def get_age_gender_json() -> Dict:
@@ -127,20 +158,7 @@ def get_transmission_json() -> Dict:
     cat_query = '?$select=transmission_category, sum(case_count)&$group=transmission_category'
     return json.loads(requests.get(transmission_url + cat_query))
 
-# Daily count of tests with count and percent of positive tests
-def get_tests() -> Dict:
-    """Get tests by day, order by date ascending"""
-    date_order_query = '?$order=result_date'
-    return get_json(tests_url + date_order_query)
 
-def get_test_totals() -> Dict:
-    """Get total tests and total number of positive tests, to date"""
-    total_test_query = '?$select=sum(tests) as tests'
-    tests = get_json(tests_url + total_test_query)
-    total_positives_query = '?$select=sum(pos) as total_positives'
-    positives = get_json(tests_url + total_positives_query)
-    tests[0].update(positives[0])
-    return tests
 
 # COVID+ patients from all SF hospitals in ICU vs. acute care, by date
 # Note: this source will be superseded by data from CHHS
@@ -155,12 +173,4 @@ def get_icu_beds() -> Dict:
 
 if __name__ == '__main__':
     """ When run as a script, logs grouped data queries to console"""
-    get_county()
-    # print("Total cases and deaths: \n", json.dumps(get_cases_and_deaths(), indent=4))
-    # print("Cases by age:\n", json.dumps(get_age_json(), indent=4))
-    # print("Cases by gender:\n", json.dumps(get_gender_json(), indent=4))
-    # print("Cases by race:\n", json.dumps(get_race_json(), indent=4))
-    # print("Cases by ethnicity:\n", json.dumps(get_ethnicity_json(), indent=4))
-    # print("Cases by transmission\n", json.dumps(get_transmission_json(), indent=4))
-    # print("Cases by ICU beds\n", json.dumps(get_icu_beds(), indent=4))
-    # print("Total tests\n", json.dumps(get_test_totals(), indent=4))
+    print(json.dumps(get_timeseries(), indent=4))
