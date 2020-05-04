@@ -43,6 +43,8 @@
             "female": -1,
             "male": -1,
             "other": -1,
+            "mtf":-1,
+            "ftm":-1,
             "unknown": -1
         },
         "age_group": {},
@@ -67,6 +69,8 @@
         "gender": {
             "female": -1,
             "male": -1,
+            "mtf": -1,
+            "ftm": -1,
             "other": -1,
             "unknown": -1
         },
@@ -98,6 +102,8 @@
         "gender": {
             "female": -1,
             "male": -1,
+            "mtf": -1,
+            "ftm": -1,
             "other": -1,
             "unknown": -1
         },
