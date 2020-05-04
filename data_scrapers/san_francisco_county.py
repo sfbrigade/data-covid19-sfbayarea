@@ -35,7 +35,6 @@ def get_county() -> Dict:
     out["series"] = get_timeseries()
     demo_totals = get_demographics()
     out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
-     
     return out
 
 
@@ -52,39 +51,43 @@ def get_timeseries() -> Dict:
     return out_series
 
 # Confirmed Cases and Deaths by Date and Transmission
-# Note that cumulative totals are not directly reported,
-# we are summing over the daily reported numbers
+# Note that cumulative totals are not directly reported, we are summing over the daily reported numbers
 def get_cases_series() -> Dict:
     """Get cases timeseries, sum over transmision cat by date"""
     params = { 'case_disposition':'Confirmed','$select':'date,sum(case_count) as cases', '$group':'date', '$order':'date'}   
-    out = json.loads(requests.get(transmission_url, params = params).content)
-    # convert date from ISO string to 'yyyy/mm/dd'. convert number strings to int.
+    response = requests.get(transmission_url, params=params)
+    response.raise_for_status()
+    cases_series = json.loads(response.content)
+    # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
     cumul = 0
-    for entry in out:
-        entry["date"] = entry["date"][0:10].replace('-','/')
+    for entry in cases_series:
+        entry["date"] = entry["date"][0:10]
         entry["cases"] = int(entry["cases"])
         cumul += entry["cases"]
         entry["cumul_cases"] = cumul
-    return out
+    return cases_series
 
 def get_deaths_series() -> Dict:
     """Get  deaths timeseries, sum over transmision cat by date"""
     params = {'case_disposition': 'Death',
               '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
-    out = json.loads(requests.get(transmission_url, params=params).content)
-    # convert date from ISO string to 'yyyy/mm/dd'. convert number strings to int.
+    response = requests.get(transmission_url, params=params)
+    response.raise_for_status()
+    death_series = json.loads(response.content)
+    # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
     cumul = 0
-    for entry in out:
-        entry["date"] = entry["date"][0:10].replace('-', '/')
+    for entry in death_series:
+        entry["date"] = entry["date"][0:10]
         entry["deaths"] = int(entry["deaths"])
         cumul += entry["deaths"]
         entry["cumul_deaths"] = cumul
-    return out
+    return death_series
 
 
-# Daily count of tests with count and percent of positive tests
+# Daily count of tests with count of positive tests
+# Note that SF county does not include pending tests, and does not directly report negative tests or cumulative tests.
 def get_tests_series() -> Dict:
     """Get tests by day, order by date ascending"""
     test_series = [] # copy the dictionary structure of an entry in the tests series
@@ -112,26 +115,43 @@ def get_tests_series() -> Dict:
     return test_series
 
 
+def get_demographics() -> Dict:
+    """
+    Fetch cases by age, gender, race_eth. Fetch cases by transmission category
+    Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}.
+    Note that SF does not provide death totals, so these datapoints will be -1.
+    To crete a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics())'
+    """
+    # copy dictionary structure of global 'out' dictionary to local variable
+    demo_totals = {"case_totals": out["case_totals"], "death_totals": out["death_totals"]}
+    demo_totals["case_totals"]["gender"] = get_gender_table()
+    demo_totals["case_totals"]["age_group"] = get_age_table()
+    demo_totals["case_totals"]["transmission_cat"] = get_transmission_table()
+    return demo_totals
 
-# Confirmed cases by age and gender
-def get_age_gender_json() -> Dict:
-    """fetch age x gender data"""
-    return json.loads(requests.get(age_gender_url))
-
-def get_age_json() -> Dict:
-    """group data by age"""
+def get_age_table() -> Dict:
+    """Get cases by age"""
     age_query = '?$select=age_group, sum(confirmed_cases)&$order=age_group&$group=age_group'
-    return json.loads(requests.get(age_gender_url + age_query))
+    response = requests.get(age_gender_url + age_query)
+    response.raise_for_status()
+    return json.loads(response.content)
 
-def get_gender_json() -> Dict:
-    """group data by gender"""
+def get_gender_table() -> Dict:
+    """Get cases by gender"""
     gender_query = '?$select=gender, sum(confirmed_cases)&$group=gender'
-    return json.loads(requests.get(age_gender_url + gender_query))
+    response = requests.get(age_gender_url + gender_query)
+    response.raise_for_status()
+    return json.loads(response.content)
 
+def get_transmission_table() -> Dict:
+    """Get cases by transmission category"""
+    cat_query = '?$select=transmission_category, sum(case_count)&$group=transmission_category'
+    response = requests.get(transmission_url + cat_query)
+    response.raise_for_status()
+    return json.loads(response.content)
 
 # Confirmed cases by race and ethnicity
 # Note that SF reporting race x ethnicty requires special handling
-
 # In the race/ethnicity data shown below, the "Other” category 
 # includes those who identified as Other or with a race/ethnicity that does not fit the choices collected. 
 # The “Unknown” includes individuals who did not report a race/ethnicity to their provider, 
@@ -143,21 +163,6 @@ def get_gender_json() -> Dict:
 def get_race_ethnicity_json() -> Dict:
     """ fetch race x ethnicity data """
     return json.loads(requests.get(race_ethnicity_url))
-
-
-
-
-# we probably won't use the transmission timeseries
-def get_date_transmission_json() -> Dict:
-    """Get cases by date, transmission, and disposition; order by date ascending."""
-    date_order_query = '?$order=date'
-    return json.loads(requests.get(transmission_url+date_order_query))
-
-def get_transmission_json() -> Dict:
-    """Group data by transmission category"""
-    cat_query = '?$select=transmission_category, sum(case_count)&$group=transmission_category'
-    return json.loads(requests.get(transmission_url + cat_query))
-
 
 
 # COVID+ patients from all SF hospitals in ICU vs. acute care, by date
@@ -173,4 +178,4 @@ def get_icu_beds() -> Dict:
 
 if __name__ == '__main__':
     """ When run as a script, logs grouped data queries to console"""
-    print(json.dumps(get_timeseries(), indent=4))
+    print(json.dumps(get_county(), indent=4))
