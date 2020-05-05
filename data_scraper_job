@@ -27,5 +27,5 @@
 # | | | | +- Day Of Week (0-6) (Sunday = 0)   | @daily -> 0 0 * * *; @weekly -> 0 0 * * 0; @monthly ->0 0 1 * *;
 # | | | | |                                   | @yearly -> 0 0 1 1 *;
 
-0 9 * * * cd /path/to/scraper/installation/directory && ./run_scraper.sh > data.json
+0 9 * * * cd /path/to/scraper/installation/directory && ./run_scraper.sh
 # To install, run "crontab data_scraper_job"
