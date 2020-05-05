@@ -56,8 +56,10 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     out["series"] = get_timeseries()
-    demo_totals = get_demographics(out)
+    demo_totals, counts_lt_10 = get_demographics(out)
     out.update(demo_totals)
+    if counts_lt_10:
+        out["metadata_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
     return out
 
 
@@ -125,7 +127,8 @@ def get_demographics(out:Dict) -> (Dict, List):
     """Fetch cases and deaths by age, gender, race, ethnicity
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}, as well as a list of 
     strings describing datapoints that have a value of "<10". 
-    To crete a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])' 
+    To create a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])' 
+    Note that the DataFrame will convert the "<10" strings to NaN.
     """
     # Dicts of target_label : source_label for re-keying. 
     # Note that the cases table includes MTF and FTM, but the deaths table does not. 
@@ -148,25 +151,39 @@ def get_demographics(out:Dict) -> (Dict, List):
     response.raise_for_status()
     parsed = response.json()
     deaths_data = parsed['features'][0]['attributes']
-    
+   
     # copy dictionary structure of 'out' dictionary to local variable
     demo_totals = { "case_totals": out["case_totals"], "death_totals": out["death_totals"]} 
 
     # Parse and re-key
     # gender cases and deaths
-    for k, v in gender_keys.items():
+    for k, v in GENDER_KEYS.items():
         demo_totals["case_totals"]["gender"][k] = cases_data[v]
         if k in deaths_data.keys(): # the deaths table does not currently include MTF or FTM
             demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
     # race cases and deaths
-    for k, v in race_keys.items():
+    for k, v in RACE_KEYS.items():
         demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
     # get age cases and deaths
     demo_totals["case_totals"]["age_group"] = { k: v for k, v in cases_data.items() if 'Age' in k }
     demo_totals["death_totals"]["age_group"] = {k: v for k, v in deaths_data.items() if 'Age' in k}
 
-    return demo_totals
+    # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which 
+    # will be decoded as Python's `None`
+    counts_lt_10 = []
+    for cat, cat_dict in demo_totals.items():  # cases, deaths
+        for group, group_dict in cat_dict.items():  # dictionaries for age, race/eth
+            for key, val in group_dict.items():
+                if val == '<10':
+                    counts_lt_10.append(f"{cat}.{group}.{key}")
+                elif val!= None: # if the value wasn't null
+                    try:
+                        int(val)
+                    except ValueError:
+                        raise ValueError(f'Non-integer value for {key}')
+
+    return demo_totals, counts_lt_10
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
