@@ -52,7 +52,7 @@ def get_county() -> Dict:
     # get cases, deaths, and demographics data
     out["series"] = get_timeseries()
     demo_totals = get_demographics(out)
-    out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
+    out.update(demo_totals)
     return out
 
 
@@ -69,6 +69,14 @@ def get_timeseries() -> Dict:
     """
 
     series = {"cases":[], "deaths":[]} # dictionary holding the timeseries for cases and deaths
+    # Dictionary of 'source_label': 'target_label' for re-keying
+    TIMESERIES_KEYS = {
+        'Date': 'date',
+        'AC_Cases': 'cases',
+        'AC_CumulCases': 'cumul_cases',
+        'AC_Deaths': 'deaths',
+        'AC_CumulDeaths': 'cumul_deaths'
+    }
 
     # query API
     param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
@@ -86,10 +94,10 @@ def get_timeseries() -> Dict:
             day = '0' + day
         obj['Date'] = "{}-{}-{}".format(year, month, day)
 
-    # re-key series
-    new_keys = ["date", "cases", "cumul_cases", "deaths", "cumul_deaths"]
-    re_keyed = [dict(zip(new_keys, list(entry.values())))
-                           for entry in features]
+  
+
+    re_keyed = [{TIMESERIES_KEYS[key]: value for key, value in entry.items()}
+                for entry in features]
 
     # parse series into cases and deaths
     death_keys = ["date", "deaths", "cumul_deaths"]
@@ -110,6 +118,14 @@ def get_demographics(out:Dict) -> (Dict, List):
     strings describing datapoints that have a value of "<10". 
     To crete a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])' 
     """
+    # Dicts of target_label : source_label for re-keying. 
+    # Note that the cases table includes MTF and FTM, but the deaths table does not. 
+    GENDER_KEYS = {"female": "Female", "male": "Male",
+                   "unknown": "Unknown_Sex", "mtf": "MTF", "ftm": "FTM"} 
+    RACE_KEYS = {"Latinx_or_Hispanic": "Hispanic_Latino", "Asian": "Asian", "African_Amer": "African_American_Black",
+                 "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
+                 "Other": "Other_Race", "Unknown": "Unknown_Race"}
+
 
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
@@ -128,19 +144,12 @@ def get_demographics(out:Dict) -> (Dict, List):
     demo_totals = { "case_totals": out["case_totals"], "death_totals": out["death_totals"]} 
 
     # Parse and re-key
-    # note: gender does not currently include other genders
-    # dict of target_label : source_label for re-keying
-    gender_keys = {"female": "Female", "male": "Male", "unknown": "Unknown_Sex", "mtf": "MTF", "ftm": "FTM"}
-    race_keys = {"Latinx_or_Hispanic": "Hispanic_Latino", "Asian": "Asian", "African_Amer": "African_American_Black",
-                 "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
-                 "Other": "Other_Race", "Unknown": "Unknown_Race"}
-
-    # parse gender cases and deaths
+    # gender cases and deaths
     for k, v in gender_keys.items():
         demo_totals["case_totals"]["gender"][k] = cases_data[v]
         if k in deaths_data.keys(): # the deaths table does not currently include MTF or FTM
             demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
-    # parse race cases and deaths
+    # race cases and deaths
     for k, v in race_keys.items():
         demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
