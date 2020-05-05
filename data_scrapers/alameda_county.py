@@ -25,8 +25,8 @@ dashboards = ['https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/1e0
 
 
 def get_county() -> Dict:
-    """Main method for populating the 'out' dictionary"""
-    
+    """Main method for populating county data .json"""
+
     # Load data model template into a local dictionary called 'out'.
     with open('./data_scrapers/_data_model.json') as template:
         out = json.load(template)
@@ -39,7 +39,7 @@ def get_county() -> Dict:
     # fetch cases metadata, to get the timestamp
     response = requests.get(cases_meta)
     response.raise_for_status()
-    cases_header = json.loads(response.text)
+    cases_header = response.json()
     timestamp = cases_header["editingInfo"]["lastEditDate"]
     # Raise an exception if a timezone is specified. If "dateFieldsTimeReference" is present, we need to edit this scrapr to handle it. 
     # See: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6
@@ -53,7 +53,6 @@ def get_county() -> Dict:
     out["series"] = get_timeseries()
     demo_totals = get_demographics(out)
     out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
-    out["meta_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
     return out
 
 
@@ -75,7 +74,7 @@ def get_timeseries() -> Dict:
     param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
     response = requests.get(cases_deaths, params=param_list)
     response.raise_for_status()
-    parsed = json.loads(response.content)
+    parsed = response.json()
     features = [obj["attributes"] for obj in parsed['features']]
     
     # convert dates
@@ -110,7 +109,7 @@ def get_demographics(out:Dict) -> (Dict, List):
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}, as well as a list of 
     strings describing datapoints that have a value of "<10". 
     To crete a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])' 
-    Note that the DataFrame will convert the "<10" strings to NaN. """
+    """
 
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
