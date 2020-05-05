@@ -58,10 +58,6 @@ def get_county() -> Dict:
     return out
 
 
-<<<<<<< HEAD
-# https: // services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/services/COVID_Counts/FeatureServer/0/query?select = features & where = 0 = 0 & orderby = ObjectID & outFields = * & f = pjson
-=======
->>>>>>> Edit comments
 # Confirmed Cases and Deaths
 def get_timeseries() -> Dict: 
     """Fetch daily and cumulative cases and deaths by day
@@ -167,7 +163,11 @@ def get_demographics(out:Dict) -> (Dict, List):
         for group, group_dict in cat_dict.items():  # dictionaries for age, race/eth
             for key, val in group_dict.items():
                 if val == '<10':
+<<<<<<< HEAD
                     counts_lt_10.append(f"{cat}.{group}.{key}")
+=======
+                    counts_lt_10.append("f{}.{}.{}", cat, group, key)
+>>>>>>> Replace handling for value \'<10\'
                 elif val!= None: # if the value wasn't null
                     try:
                         int(val)
@@ -175,9 +175,12 @@ def get_demographics(out:Dict) -> (Dict, List):
                         raise ValueError(f'Non-integer value for {key}')
 
     return demo_totals, counts_lt_10
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> Replace handling for value \'<10\'
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
