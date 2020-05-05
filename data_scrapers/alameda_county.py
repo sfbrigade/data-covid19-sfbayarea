@@ -179,9 +179,12 @@ def get_demographics(out:Dict) -> (Dict, List):
                 if val == '<10':
                     counts_lt_10.append(f"{cat}.{group}.{key}")
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     counts_lt_10.append("f{}.{}.{}", cat, group, key)
 >>>>>>> Replace handling for value \'<10\'
+=======
+>>>>>>> Fix get_notes()
 =======
 >>>>>>> Fix get_notes()
                 elif val!= None: # if the value wasn't null
