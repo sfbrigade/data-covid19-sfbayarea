@@ -39,7 +39,7 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Alameda County"
     out["source_url"] = landing_page
-    # out["meta_from_source"] = get_notes()
+    out["meta_from_source"] = get_notes()
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(cases_meta)
@@ -112,16 +112,22 @@ def get_timeseries() -> Dict:
 
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboards."""
-    notes = ""
+    notes = []
     driver = webdriver.Firefox()
     driver.implicitly_wait(30)
     for url in dashboards:
+        has_notes = False
         driver.get(url)
-        soup = BeautifulSoup(driver.page_source,'lxml')
+        soup = BeautifulSoup(driver.page_source,'html5lib')
         for p_tag in soup.find_all('p'):
             if 'Notes' in p_tag.get_text():
-                notes += p_tag.get_text().strip()
-    return notes
+                notes.append(p_tag.get_text().strip())
+                has_notes = True
+        if not has_notes:
+            raise(FutureWarning("This dashboard url has changed. None of the <p> elements contain the text \'Notes\': " + url))
+        driver.get('about:blank') # loads empty page to allow loading of next page
+    driver.quit()
+    return '\n\n'.join(notes)
 
 def get_demographics(out:Dict) -> (Dict, List):
     """Fetch cases and deaths by age, gender, race, ethnicity
@@ -176,11 +182,7 @@ def get_demographics(out:Dict) -> (Dict, List):
         for group, group_dict in cat_dict.items():  # dictionaries for age, race/eth
             for key, val in group_dict.items():
                 if val == '<10':
-<<<<<<< HEAD
                     counts_lt_10.append(f"{cat}.{group}.{key}")
-=======
-                    counts_lt_10.append("f{}.{}.{}", cat, group, key)
->>>>>>> b603d5425aa174afe49721f2d0633d0751dfc141
                 elif val!= None: # if the value wasn't null
                     try:
                         int(val)
