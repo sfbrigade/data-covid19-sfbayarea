@@ -176,7 +176,11 @@ def get_demographics(out:Dict) -> (Dict, List):
         for group, group_dict in cat_dict.items():  # dictionaries for age, race/eth
             for key, val in group_dict.items():
                 if val == '<10':
+<<<<<<< HEAD
                     counts_lt_10.append(f"{cat}.{group}.{key}")
+=======
+                    counts_lt_10.append("f{}.{}.{}", cat, group, key)
+>>>>>>> b603d5425aa174afe49721f2d0633d0751dfc141
                 elif val!= None: # if the value wasn't null
                     try:
                         int(val)
