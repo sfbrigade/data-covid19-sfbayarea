@@ -1,0 +1,9 @@
+
+# on mac, had to run `brew install geckodriver` for selenium FireFox driver
+# we should think about maybe running the whole scraping
+# suite in a docker container? Although I don't know
+# if you can install a browser in a container...hm.
+
+requests
+selenium
+beautifulsoup4==4.9.0
