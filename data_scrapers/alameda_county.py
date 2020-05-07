@@ -3,7 +3,6 @@ import requests
 import urllib.request
 from bs4 import BeautifulSoup
 import json
-import pandas as pd
 from typing import List, Dict
 from datetime import datetime, timedelta, timezone
 from selenium import webdriver
