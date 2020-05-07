@@ -1,0 +1,88 @@
+"""
+Tools for modeling news feeds and serializing to multiple formats.
+"""
+
+from dataclasses import dataclass, field, fields
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+
+
+def format_datetime(date_obj: datetime) -> str:
+    """
+    Get an ISO 8601-formatted string for a datetime, but ensure that UTC is
+    represented with the shortened 'Z' form (i.e. W3C-style).
+    """
+    formatted = date_obj.isoformat()
+    if formatted.endswith('+00:00'):
+        formatted = formatted[:-6] + 'Z'
+    return formatted
+
+
+@dataclass
+class NewsItem:
+    id: str
+    # Technically url, title, and date_published are optional, but in practical
+    # terms, we require them to always be set.
+    url: str
+    title: str
+    date_published: datetime = field(default_factory=datetime.utcnow)
+    summary: Optional[str] = None
+    date_modified: Optional[datetime] = None
+    author: Optional[Dict[str, str]] = None
+    tags: Optional[List[str]] = None
+
+    def format_json_simple(self) -> Dict:
+        return {
+            'url': self.url,
+            'text': self.title,
+            'date': format_datetime(self.date_published)
+        }
+
+    def format_json_feed(self) -> Dict:
+        if not self.id:
+            raise ValueError('You must specify an `id` for this news item')
+
+        result = {}
+        for item_field in fields(self):
+            value = getattr(self, item_field.name)
+            if value:
+                if isinstance(value, datetime):
+                    value = format_datetime(value)
+                result[item_field.name] = value
+
+        return result
+
+
+@dataclass
+class NewsFeed:
+    title: str
+    home_page_url: Optional[str] = None
+    feed_url: Optional[str] = None
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    # dict with keys: 'name', 'url', 'avatar' (all optional)
+    author: Optional[Dict[str, str]] = None
+    expired: bool = False
+    items: List[NewsItem] = field(default_factory=list, init=False)
+
+    def format_json_simple(self) -> Dict:
+        return {
+            'newsItems': [item.format_json_simple() for item in self.items]
+        }
+
+    def format_json_feed(self) -> Dict:
+        if not self.title:
+            raise ValueError('You must specify a `title` for this feed')
+
+        feed: Dict[str, Any] = {
+            'version': 'https://jsonfeed.org/version/1'
+        }
+        for item_field in fields(self):
+            if item_field.name == 'items':
+                value = [item.format_json_feed() for item in self.items]
+            else:
+                value = getattr(self, item_field.name)
+            if value:
+                feed[item_field.name] = value
+
+        return feed
