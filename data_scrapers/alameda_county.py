@@ -58,9 +58,9 @@ def get_county() -> Dict:
     demo_totals, counts_lt_10 = get_demographics(out)
     out.update(demo_totals)
     if counts_lt_10:
-        out["metadata_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
+        out["meta_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
     else:
-        out["metadata_from_baypd"] = ""
+        out["meta_from_baypd"] = ""
     return out
 
 
