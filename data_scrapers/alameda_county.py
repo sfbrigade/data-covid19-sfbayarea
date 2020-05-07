@@ -55,6 +55,8 @@ def get_county() -> Dict:
     out.update(demo_totals)
     if counts_lt_10:
         out["metadata_from_baypd"] = "These datapoints have a value less than 10: " + ", ".join([item for item in counts_lt_10])
+    else:
+        out["metadata_from_baypd"] = ""
     return out
 
 
@@ -180,6 +182,7 @@ def get_demographics(out:Dict) -> (Dict, List):
                     counts_lt_10.append(f"{cat}.{group}.{key}")
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     counts_lt_10.append("f{}.{}.{}", cat, group, key)
 >>>>>>> Replace handling for value \'<10\'
@@ -188,6 +191,11 @@ def get_demographics(out:Dict) -> (Dict, List):
 =======
 >>>>>>> Fix get_notes()
                 elif val!= None: # if the value wasn't null
+=======
+                elif val is None: # proactively set None values to our default value of -1
+                    group_dict[key] = - 1
+                else: # if else, this value should be a number. check that val can be cast to an int. 
+>>>>>>> Enforce default values
                     try:
                         int(val)
                     except ValueError:
