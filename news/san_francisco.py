@@ -28,7 +28,11 @@ class SanFranciscoNews(NewsScraper):
       'date': '2020-04-23T04:11:56Z'}]
     """
 
-    FEED_TITLE = 'San Francisco County COVID-19 News'
+    FEED_INFO = dict(
+        title='San Francisco County COVID-19 News',
+        home_page_url='https://sf.gov/news/topics/794'
+    )
+
     START_URL = 'https://sf.gov/news/topics/794'
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:

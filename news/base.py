@@ -1,5 +1,5 @@
 import requests
-from typing import List
+from typing import Dict, List
 from .feed import NewsFeed, NewsItem
 
 
@@ -19,8 +19,11 @@ class NewsScraper:
     scraping should start, then implement `parse_page()`, which returns a list
     of news items given some HTML.
     """
-    FEED_TITLE = ''
+    FEED_INFO: Dict = {}
     START_URL = ''
+
+    def create_feed(self) -> NewsFeed:
+        return NewsFeed(**self.FEED_INFO)
 
     def scrape(self) -> NewsFeed:
         """
@@ -38,7 +41,7 @@ class NewsScraper:
           'text': 'Expansion of coronavirus testing for all essential workers in SF',
           'date': '2020-04-23T04:11:56Z'}]
         """
-        feed = NewsFeed(title=self.FEED_TITLE)
+        feed = self.create_feed()
         # TODO: we may want to iterate through multiple pages in the future
         response = requests.get(self.START_URL)
         response.raise_for_status()
