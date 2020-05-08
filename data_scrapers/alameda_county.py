@@ -5,6 +5,10 @@ from bs4 import BeautifulSoup
 import json
 from typing import List, Dict
 from datetime import datetime, timedelta, timezone
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import re
+import os
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
@@ -104,7 +108,6 @@ def get_timeseries() -> Dict:
     case_keys = ["date", "cases", "cumul_cases"]
     series["cases"] = [{k: v for k, v in entry.items() if k in case_keys} for entry in re_keyed]
     series["deaths"] = [{k: v for k, v in entry.items() if k in death_keys} for entry in re_keyed]
-
     return series
 
 def get_notes() -> str:
@@ -180,34 +183,14 @@ def get_demographics(out:Dict) -> (Dict, List):
             for key, val in group_dict.items():
                 if val == '<10':
                     counts_lt_10.append(f"{cat}.{group}.{key}")
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                    counts_lt_10.append("f{}.{}.{}", cat, group, key)
->>>>>>> Replace handling for value \'<10\'
-=======
->>>>>>> Fix get_notes()
-=======
->>>>>>> Fix get_notes()
-                elif val!= None: # if the value wasn't null
-=======
                 elif val is None: # proactively set None values to our default value of -1
                     group_dict[key] = - 1
                 else: # if else, this value should be a number. check that val can be cast to an int. 
->>>>>>> Enforce default values
                     try:
                         int(val)
                     except ValueError:
                         raise ValueError(f'Non-integer value for {key}')
-
     return demo_totals, counts_lt_10
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> Replace handling for value \'<10\'
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
