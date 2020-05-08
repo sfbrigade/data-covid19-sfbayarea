@@ -16,12 +16,16 @@ Below are the top-level datapoints.
 * `update_time`: A timestamp string in [ISO 8601](https://www.w3.org/TR/NOTE-datetime) format. If no timezone offset is specified, try converting the timestamp from UTC. We'll keep a running list of places to search for timezone info [here](#timezone).
 * `source_url`: There may be a few endpoints that you're working with. In case these change, use a data landing page or data directory that's less likely to change. These are called things like "data portal." Try to point to a place where the user can view our download the source data directly (instead of a dashboard).
 * `meta_from_source`: Even if you have access to a metadata file, you may want to look at the dashboards, landing pages, and even press releases surrounding the data in order to get important notes about data collection. Look for keywords like "Notes", "disclaimers", and any blocks of text in visualizations. We would like to scrape these automatically if possible. You may need to use a different process than the process used to fetch the data itself. See [Scraping Techniques](#scraping-techniques) for ideas. The default value if no metadata is available is the empty string `""`.
-* `meta_from_paypd`: This field is for our use, to note any oddities transforming the source data to our data model. See [Non-Number Values](#non-number-values) for an example. 
+* `meta_from_paypd`: This field is for our use, to note any oddities transforming the source data to our data model. See [Non-Number Values](#non-number-values) for an example. The default value if no metadata is available is the empty string `""`.
 
 2. __Series__: Timeseries for cases, deaths, and tests  
 Below is the data model for the `series` object, containing three keys: `cases`, `deaths`, and `tests`. Each series is an ordered array or list of new counts by day, and cumulative counts to date.  
 The main thing to note here is that some counties do not report cumulative counts directly, and some do. If a county does report cumulative counts, it could be an indication that the cumulative datapoint is not simply a sum over the daily new counts. For example, perhaps some patients who were counted in the daily count are later reclassified to a different county for the cumulative count. Look for notes and disclaimers around case totals, and include these in the `meta_from_source` field. If a county does report cumulative counts, we want to reflect the numbers they are directly reporting. Only sum over the daily new counts if cumulative counts are not directly reported.  
-Another item to note is that some counties do not including pending tests. Be sure to note that in the `meta_from_source` field.  
+
+For `series` and `deaths`, no datapoint should have a value of -1, since we are only including dates for which the county provides data.  
+
+For `tests`, set the series to the empty list `[]` if the county does not provide testing data. If they only provide total numbers to date, grab those numbers for our cumulative data points. __Add logic to your scraper to append future entries to the existing list, so that we can begin constructing a time-series__. If they leave out pending tests, leave the pending fields as -1, and note that pending tests are excluded in the `meta_from_source` field.
+
 ``` 
 "series": {
         "cases": [
@@ -148,8 +152,7 @@ Here are some places to search for timezone info.
 * ArcGIS: On a feature service layer, try [editFieldsInfo.dateFieldsTemeReference](https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6)
 
 ## Non-Number Values
-
-
+Our data model only allows for numbers for datapoints. You have to translate all datapoints from the source county from either a non-negative number, or -1 to indicate that data is not available. However, you may see a non-number value as a value for a datapoint, and the value can't meaningfully be translated to a non-negative number or -1(it's not just a string representation of a number, or 'null' or 'NA'). For example, Alameda county was storing some datapoints as the string "<10" to indicate that the number of cases was between [0,10). In that case, we automatically populate`meta_from_baypd`with a string of notes to indicate where "<10" occurs, and we translate all those occurences to -1.
 
 ## Amending the Data Model
 We aim to not lose any detail in translating the source data from the county to our data model. You may find datapoints that our current data model does not track. For example, most counties were tracking non-binary and non-cis genders all under "Other Gender", so an early iteration of our data model followed suit with only "Male, "Female" and "Other". Alameda County later added columns for "MTF" and "FTM", so we amended to model to reflect that. It's not a complete picture (let's all keep an eye out for non-binary and in-transition), and there are issues with having different gender classes for trans-people, but basically we want to be as detailed as the most detailed county. Even if the new categories have null values, we want to make space for them if they're being differentiated at the county level. If you notice new categories, please make PR to amend [_data_model.json](./_data_model.json).  
