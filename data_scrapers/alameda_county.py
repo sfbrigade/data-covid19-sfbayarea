@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 import requests
-import urllib.request
 from bs4 import BeautifulSoup
 import json
 from typing import List, Dict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-import re
-import os
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
