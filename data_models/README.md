@@ -1,9 +1,8 @@
 # The County Data Model
 The county data model lives as [_data_model.json](./_data_model.json).  
 This is a legal .json file with the standard structure and default values. Note which items are ordered lists/arrays, such as timeseries, and age groups. Note also that default values are set to -1, which represents any data not present (this could show up in the source data as 'null', 'N/A', etc.) Below is a brief walk-through of the model, with links to more details as needed.
-1. Headers  
-Below are the top-level datapoints. 
-
+1. __Headers__  
+Below are the top-level datapoints.
 ```
 {   
     "name": "Name1 Name2 County",  
@@ -19,21 +18,147 @@ Below are the top-level datapoints.
 * `meta_from_source`: Even if you have access to a metadata file, you may want to look at the dashboards, landing pages, and even press releases surrounding the data in order to get important notes about data collection. Look for keywords like "Notes", "disclaimers", and any blocks of text in visualizations. We would like to scrape these automatically if possible. You may need to use a different process than the process used to fetch the data itself. See [Scraping Techniques](#scraping-techniques) for ideas. The default value if no metadata is available is the empty string `""`.
 * `meta_from_paypd`: This field is for our use, to note any oddities transforming the source data to our data model. See [Non-Number Values](#non-number-values) for an example. 
 
+2. __Series__: Timeseries for cases, deaths, and tests  
+Below is the data model for the `series` object, containing three keys: `cases`, `deaths`, and `tests`. Each series is an ordered array or list of new counts by day, and cumulative counts to date.  
+The main thing to note here is that some counties do not report cumulative counts directly, and some do. If a county does report cumulative counts, it could be an indication that the cumulative datapoint is not simply a sum over the daily new counts. For example, perhaps some patients who were counted in the daily count are later reclassified to a different county for the cumulative count. Look for notes and disclaimers around case totals, and include these in the `meta_from_source` field. If a county does report cumulative counts, we want to reflect the numbers they are directly reporting. Only sum over the daily new counts if cumulative counts are not directly reported.  
+Another item to note is that some counties do not including pending tests. Be sure to note that in the `meta_from_source` field.  
+``` 
+"series": {
+        "cases": [
+            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1},
+            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1 }
+       ],
+        "deaths": [
+            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1 },
+            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1}
+        ],
+        "tests": [
+            {
+                "date": "yyyy-mm-dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            },
+            {
+                "date": "yyyy-mm-dd",
+                "tests": -1,
+                "positive": -1,
+                "negative": -1,
+                "pending": -1,
+                "cumul_tests": -1,
+                "cumul_pos": -1,
+                "cumul_neg": -1,
+                "cumul_pend": -1
+            }
+        ]
+    }
+```
 
 
+3. __Case Totals and Death Totals__  
+Below are the tabulations we are making by gender, age group, race/ethnicity, and transmission category for cases and deaths. Note that `death_totals` also has a table for underlying conditions (count of deaths by number of underlying conditions). These are the most valuable datapoints that we can offer, since they are not captured in readily available data, and it is not easy to aggregate them over a regional level. They are also the datapoints that are most likely to change and most difficult to standardize across counties. Please see discussions below on [Race and Ethnicity](#race-ethnicity), [Age Group](#age-group), [Gender](#gender) and [Amending the Data Model](#amending-the-data-model).
+```
+    "death_totals":{
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "mtf": -1,
+            "ftm": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": {},
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx_or_Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
+            "Other": -1,
+            "Pacific_Islander":-1,
+            "White":-1,
+            "Unknown":-1
+        },
+        "underlying_cond": {
+            "none":-1,
+            "greater_than_1" : -1,
+            "unknown": -1
+        },
+        "transmission_cat": {
+            "community":-1,
+            "from_contact":-1,
+            "unknown":-1
+        }
+    }
+```
+4. __Population__
+At a later date, we will update the scrapers to get demographics for each county's population from the [2018 ACS](https://www.census.gov/programs-surveys/acs/). These will be stored in the `population_totals` field.  
+The fields will be used for normalizing the county case and death tabulations, and are reproduced below. The County categories are likely to have more specific gender catgories, different age brackets, and a flattening of race x ethnicity, compared to the ACS. It is an outstanding question as to how we will fit the ACS to the structure below. 
+```
+"population_totals": {
+        "total_pop": -1,
+        "gender": {
+            "female": -1,
+            "male": -1,
+            "mtf": -1,
+            "ftm": -1,
+            "other": -1,
+            "unknown": -1
+        },
+        "age_group": [
+            {"group": "18_and_younger", "raw_count": -1 }, 
+            {"group": "18_to_30", "raw_count": -1 },
+            {"group": "31_to_40", "raw_count": -1 },
+            {"group": "41_to_50", "raw_count": -1 },
+            {"group": "51_to_60", "raw_count": -1 },
+            {"group": "61_to_70", "raw_count": -1 },
+            {"group": "71_to_80", "raw_count": -1 },
+            {"group": "81_and_older", "raw_count": -1 }
+        ],
+        "race_eth": {
+            "African_Amer": -1,
+            "Asian": -1,
+            "Latinx_or_Hispanic": -1,
+            "Native_Amer":-1,
+            "Multiple_Race":-1,
+            "Other": -1,
+            "Pacific_Islander":-1,
+            "White":-1,
+            "Unknown":-1
+        }
+    }
+```
+5. __Hospitalization Data__  
+We plan to retrieve hospitalization data by county from a common source, the [California Health and Human Services Open Data Portal (CHHS)](https://data.chhs.ca.gov/dataset/california-covid-19-hospital-data-and-case-statistics/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e?inner_span=True.) 
+These datapoints are not currently reflected in the data model. 
 
-2. [Age Group](#age-group)
+# Notes and resources 
+Contributions welcome!
+## Scraping Techniques
+Examples:  
+  * Scraping notes from a dashboard with Selenium and Beautiful Soup: [get_notes(), in alameda_county.py](./alameda_county.py)
+
+## Timezone  
+Here are some places to search for timezone info.
+* ArcGIS: On a feature service layer, try [editFieldsInfo.dateFieldsTemeReference](https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6)
 
 ## Non-Number Values
 
-## Scraping Techniques
+
 
 ## Amending the Data Model
-We aim to capture as much detail about cases as the county is capturing. You may find datapoints that our current data model does not track. For example, most counties were tracking non-binary and non-cis genders all under "Other Gender", so an early iteration of our data model followed suit. Alameda County later added columns for their gender tables for MTF and FTM, so we amended to model to reflect that. Even if the new categories have null values, we want to make space for them. If you notice new categories, please make PR to amend [_data_model.json](./_data_model.json).  
+We aim to not lose any detail in translating the source data from the county to our data model. You may find datapoints that our current data model does not track. For example, most counties were tracking non-binary and non-cis genders all under "Other Gender", so an early iteration of our data model followed suit with only "Male, "Female" and "Other". Alameda County later added columns for "MTF" and "FTM", so we amended to model to reflect that. It's not a complete picture (let's all keep an eye out for non-binary and in-transition), and there are issues with having different gender classes for trans-people, but basically we want to be as detailed as the most detailed county. Even if the new categories have null values, we want to make space for them if they're being differentiated at the county level. If you notice new categories, please make PR to amend [_data_model.json](./_data_model.json).  
 Scraper authors, please keep an eye out for amendments to the data model.
 
 # Race and Ethnicity
 
+# Gender
+One issue we will run into is that 
 
 # Age Group
 
@@ -187,8 +312,6 @@ Data broken down by gender is not available.
 ### Deaths
 Data broken down by gender is not available.
 
-# Timezone  
-Here are some places to search for timezone info.
-* ArcGIS: On a feature service layer, try [editFieldsInfo.dateFieldsTemeReference](https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6)
+
 
 
