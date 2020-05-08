@@ -32,7 +32,7 @@ def get_county() -> Dict:
     """Main method for populating county data .json"""
 
     # Load data model template into a local dictionary called 'out'.
-    with open('./data_scrapers/_data_model.json') as template:
+    with open('./data_models/data_model.json') as template:
         out = json.load(template)
     
     # populate dataset headers
