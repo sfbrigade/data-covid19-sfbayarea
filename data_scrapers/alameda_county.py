@@ -5,6 +5,10 @@ from bs4 import BeautifulSoup
 import json
 from typing import List, Dict
 from datetime import datetime, timedelta, timezone
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import re
+import os
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
@@ -183,6 +187,7 @@ def get_demographics(out:Dict) -> (Dict, List):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     counts_lt_10.append("f{}.{}.{}", cat, group, key)
 >>>>>>> Replace handling for value \'<10\'
@@ -196,6 +201,11 @@ def get_demographics(out:Dict) -> (Dict, List):
                     group_dict[key] = - 1
                 else: # if else, this value should be a number. check that val can be cast to an int. 
 >>>>>>> Enforce default values
+=======
+                elif val is None: # proactively set None values to our default value of -1
+                    group_dict[key] = - 1
+                else: # if else, this value should be a number. check that val can be cast to an int. 
+>>>>>>> e33027196b33ce6c08b2fb8bc0b92d529f7625d0
                     try:
                         int(val)
                     except ValueError:
@@ -203,11 +213,14 @@ def get_demographics(out:Dict) -> (Dict, List):
 
     return demo_totals, counts_lt_10
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
 
 =======
 >>>>>>> Replace handling for value \'<10\'
+=======
+>>>>>>> e33027196b33ce6c08b2fb8bc0b92d529f7625d0
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
