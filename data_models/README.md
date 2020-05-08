@@ -142,10 +142,10 @@ We plan to retrieve hospitalization data by county from a common source, the [Ca
 These datapoints are not currently reflected in the data model. 
 
 # Notes and resources 
-Contributions welcome!
+Please contribute!
 ## Scraping Techniques
 Examples:  
-  * Scraping notes from a dashboard with Selenium and Beautiful Soup: [get_notes(), in alameda_county.py](./alameda_county.py)
+  * Scraping notes from a list of dashboards with Selenium and Beautiful Soup: [get_notes(), in alameda_county.py](./alameda_county.py)
 
 ## Timezone  
 Here are some places to search for timezone info.
@@ -159,9 +159,12 @@ We aim to not lose any detail in translating the source data from the county to 
 Scraper authors, please keep an eye out for amendments to the data model.
 
 # Race and Ethnicity
+We need to collapse counties that report race and ethnicity into one race/ethnicity dimension. This section will be updated pending information about San Francisco County's methods for reporting race and ethnicity.
 
 # Gender
-One issue we will run into is that 
+One future potential issue is that some counties still lump non-binary and cis-gender people under "Other", and other counties have started to differentiate. Our data model would ideally match the most detailed county's gender categories. A county with only the "Other" county would have the value of -1 for the non male/female categories, indicating that they are not collecting that information. However, this means that our "Other" category would not be internally comparable or consistent. The "Other" category for a county that has "Male, Female, Other, MTF, FTM" as separate datapoints should really be called "Other - not MTF, not FTM" and is not comparable to the "Other" category for a county that only has "Male, Female, Other". 
+ 
+That might be ok since most of our visualizations will be at the county level. If we want to visualize gender impact at the regional level, we will have to decide if we want to some over the non Female/Male categories to be comparable to the most general counties.
 
 # Age Group
 
