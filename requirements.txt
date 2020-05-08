@@ -13,8 +13,3 @@ selenium==3.141.0
 urllib3==1.25.8
 webdrivermanager==0.8.0
 Werkzeug==1.0.0
-<<<<<<< HEAD
-pandas==1.0.3
-=======
-
->>>>>>> e33027196b33ce6c08b2fb8bc0b92d529f7625d0
