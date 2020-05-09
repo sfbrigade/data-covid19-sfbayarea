@@ -3,7 +3,7 @@ import requests
 import json
 from typing import Dict
 
-# API endpoints
+# API endpoints 
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
 transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
