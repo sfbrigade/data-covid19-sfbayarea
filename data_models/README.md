@@ -63,7 +63,6 @@ For `tests`, set the series to the empty list `[]` if the county does not provid
     }
 ```
 
-
 3. __Case Totals and Death Totals__  
 Below are the tabulations we are making by gender, age group, race/ethnicity, and transmission category for cases and deaths. Note that `death_totals` also has a table for underlying conditions (count of deaths by number of underlying conditions). These are the most valuable datapoints that we can offer, since they are not captured in readily available data, and it is not easy to aggregate them over a regional level. They are also the datapoints that are most likely to change and most difficult to standardize across counties. Please see discussions below on [Race and Ethnicity](#race-ethnicity), [Age Group](#age-group), [Gender](#gender) and [Amending the Data Model](#amending-the-data-model).
 ```
@@ -102,7 +101,7 @@ Below are the tabulations we are making by gender, age group, race/ethnicity, an
 ```
 4. __Population__
 At a later date, we will update the scrapers to get demographics for each county's population from the [2018 ACS](https://www.census.gov/programs-surveys/acs/). These will be stored in the `population_totals` field.  
-The fields will be used for normalizing the county case and death tabulations, and are reproduced below. The County categories are likely to have more specific gender catgories, different age brackets, and a flattening of race x ethnicity, compared to the ACS. It is an outstanding question as to how we will fit the ACS to the structure below. 
+The fields will be used for normalizing the county case and death tabulations, and are reproduced below. The County categories are likely to have more specific gender catgories, different age brackets, and a flattening of race x ethnicity, compared to the ACS. It is an outstanding question as to how we will fit the ACS to the structure of our data model. 
 ```
 "population_totals": {
         "total_pop": -1,
@@ -138,8 +137,7 @@ The fields will be used for normalizing the county case and death tabulations, a
     }
 ```
 5. __Hospitalization Data__  
-We plan to retrieve hospitalization data by county from a common source, the [California Health and Human Services Open Data Portal (CHHS)](https://data.chhs.ca.gov/dataset/california-covid-19-hospital-data-and-case-statistics/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e?inner_span=True.) 
-These datapoints are not currently reflected in the data model. 
+We plan to retrieve hospitalization data by county from a common source, the [California Health and Human Services Open Data Portal (CHHS)](https://data.chhs.ca.gov/dataset/california-covid-19-hospital-data-and-case-statistics/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e?inner_span=True.). These datapoints are not currently reflected in the data model.
 
 # Notes and resources 
 Please contribute!
@@ -162,15 +160,14 @@ Scraper authors, please keep an eye out for amendments to the data model.
 We need to collapse counties that report race and ethnicity into one race/ethnicity dimension. This section will be updated pending information about San Francisco County's methods for reporting race and ethnicity.
 
 # Gender
-One future potential issue is that some counties still lump non-binary and cis-gender people under "Other", and other counties have started to differentiate. Our data model would ideally match the most detailed county's gender categories. A county with only the "Other" county would have the value of -1 for the non male/female categories, indicating that they are not collecting that information. However, this means that our "Other" category would not be internally comparable or consistent. The "Other" category for a county that has "Male, Female, Other, MTF, FTM" as separate datapoints should really be called "Other - not MTF, not FTM" and is not comparable to the "Other" category for a county that only has "Male, Female, Other". 
- 
-That might be ok since most of our visualizations will be at the county level. If we want to visualize gender impact at the regional level, we will have to decide if we want to some over the non Female/Male categories to be comparable to the most general counties.
+One future potential issue is that some counties still lump non-binary and cis-gender people under "Other", and other counties have started to differentiate. Our data model would ideally match the most detailed county's gender categories. A county with only the "Other" county would have the value of -1 for the non male/female categories, indicating that they are not collecting that information. However, this means that our `"Other"` category would not be internally comparable or consistent. The `"Other"` category for a county that has "Male, Female, Other, MTF, FTM" as separate datapoints should really be called `"Other - not MTF, not FTM"` and is not comparable to the `"Other"` category for a county that only has "Male, Female, Other".
+
+That might be ok since most of our visualizations will be at the county level. If we want to visualize gender category impact at the regional level, we will have to decide if we want to sum over the non Female/Male categories to be comparable to the most general counties.
 
 # Age Group
 
 The county data model does not specify standard age groups. This is because counties bucket age groups differently, and we would lose a lot of detail in order to sum the age-groups into standard buckets that would fit all counties. Our solution is to capture the age group data just as the county is reporting it. Please be sure to use the age group table provided by the county.  
 Below is a snapshot of the age group brackets per county as of April 29, 2020. These may have changed, please inspect your county source. Note that the brackets may also vary by cases and deaths.
-
 
 ## San Francisco
 ### Cases
@@ -186,7 +183,6 @@ Below is a snapshot of the age group brackets per county as of April 29, 2020. T
 		]
 ### Deaths
 Data broken down by gender is not available on the json files, only on the dashboard.
-
 
 ## Alameda
 ### Cases
@@ -204,7 +200,6 @@ Data broken down by gender is not available on the json files, only on the dashb
 ### Deaths
 Data broken down by gender is not available.
 
-
 ## Sonoma
 ### Cases
 	"age_group": [
@@ -216,7 +211,6 @@ Data broken down by gender is not available.
 		]
 ### Deaths
 Data broken down by gender is not available.
-
 
 ## Santa Clara
 ### Cases
@@ -245,7 +239,6 @@ Data broken down by gender is not available.
 		{"group": "90_and_older", "raw_count": -1 }
 		]        
 
-
 ## San Mateo
 ### Cases
 	"age": [
@@ -272,7 +265,6 @@ Data broken down by gender is not available.
 		{"group": "90_and_older", "raw_count": -1 }
 		]  
 
-
 ## Contra Costa
 ### Cases
 	age_group": [
@@ -285,7 +277,6 @@ Data broken down by gender is not available.
 ### Deaths
 Data broken down by gender is not available.
 
-
 ## Marin
 ### Cases and Deaths
 	age_group": [
@@ -296,8 +287,6 @@ Data broken down by gender is not available.
 		{"group": "65_and_older", "raw_count": -1 }
 		]
 
-
-
 ## Solano
 ### Cases and Deaths
 	age_group": [
@@ -305,7 +294,6 @@ Data broken down by gender is not available.
 		{"group": "19_to_64", "raw_count": -1 },
 		{"group": "65_and_older", "raw_count": -1 }
 		]
-
 
 ## Napa
 ### Cases
@@ -317,7 +305,3 @@ Data broken down by gender is not available.
 		]
 ### Deaths
 Data broken down by gender is not available.
-
-
-
-
