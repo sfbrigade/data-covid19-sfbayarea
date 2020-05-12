@@ -72,14 +72,19 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
         transmissions[type] = int(number)
     return transmissions
 
-
+def transform_age(age_tag: element.Tag) -> Dict[str, int]:
+    age_brackets = {}
+    rows = age_tag.findAll('tr')[1:]
+    for row in rows:
+        row_cells = row.findAll(['th', 'td'])
+        bracket, cases, _pct = [el.text for el in row_cells]
+        age_brackets[bracket] = int(cases)
+    return age_brackets
 
 try:
     cases, source, tests, age, sex, region, regions, hospitalized, underlying, symptoms = tables
 except ValueError as e:
     raise FutureWarning('The number of values on the page has changed -- please adjust the page')
-
-base_series = transform_cases(cases)
 
 model = {
     'name': 'Sonoma County',
@@ -87,10 +92,11 @@ model = {
     'source': url,
     'meta_from_source': get_source_meta(sonoma_soup),
     'meta_from_baypd': '',
-    'series': {},
+    'series': transform_cases(cases),
     'case_totals': {
-    'transmission_cat': transform_transmission(source)
+        'transmission_cat': transform_transmission(source),
+        'age_group': transform_age(age)
     }
 }
 
-print(base_series)
+print(model)
