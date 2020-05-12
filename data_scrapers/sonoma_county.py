@@ -27,21 +27,36 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     definitions_text = definitions_header.find_parent().text
     return definitions_text
 
-# def transform_cases(cases_tag: element.Tag) -> List[Dict]:
-#     cases = []
-#     cumul_cases = 0
-#     deaths = []
-#     cumul_deaths = 0
-#     recovered = []
-#     cumul_recovered = 0
-#     rows = cases_tag.findAll('tr')[1:]
-#     for row in rows:
-#         row_cells = row.findAll(['th', 'td'])
-#         date = row_cells[0].text.replace('/', '-')
-#         infected, new_infected, dead, recoveries = [int(el.text) for el in row_cells[1:]]
-#         print(infected)
-#         cumul_cases += new_infected
-#         cases.append({ 'date': date, 'cases': infected, 'cumul_cases': cumul_cases})
+def transform_cases(cases_tag: element.Tag) -> List[Dict]:
+    cases = []
+    cumul_cases = 0
+    deaths = []
+    cumul_deaths = 0
+    recovered = []
+    cumul_recovered = 0
+    active = []
+    cumul_active = 0
+    rows = cases_tag.findAll('tr')[1:]
+    for row in rows:
+        row_cells = row.findAll(['th', 'td'])
+        date = row_cells[0].text.replace('/', '-')
+
+        # instead of 0, this dashboard reports the string '-'
+        active_cases, new_infected, dead, recoveries = [0 if el.text == '–' else int(el.text) for el in row_cells[1:]]
+
+        cumul_cases += new_infected
+        cases.append({ 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases })
+
+        new_deaths = dead - cumul_deaths
+        deaths.append({ 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead })
+
+        new_recovered = recoveries - cumul_recovered
+        recovered.append({ 'date': date, 'recovered': new_recovered, 'cumul_recovered': recoveries })
+
+        new_active = active_cases - cumul_active
+        active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
+
+    return { 'cases': cases, 'deaths': deaths, 'recovered': recovered, 'active': active }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     transmissions = {}
@@ -57,7 +72,16 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
         transmissions[type] = int(number)
     return transmissions
 
-    model = {
+
+
+try:
+    cases, source, tests, age, sex, region, regions, hospitalized, underlying, symptoms = tables
+except ValueError as e:
+    raise FutureWarning('The number of values on the page has changed -- please adjust the page')
+
+base_series = transform_cases(cases)
+
+model = {
     'name': 'Sonoma County',
     'update_time': generate_update_time(sonoma_soup),
     'source': url,
@@ -65,12 +89,8 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     'meta_from_baypd': '',
     'series': {},
     'case_totals': {
-        'transmission_cat': transform_transmission(source)
+    'transmission_cat': transform_transmission(source)
     }
 }
 
-try:
-    cases, source, tests, age, sex, region, regions, hospitalized, underlying, symptoms = tables
-except ValueError as e:
-    raise FutureWarning('The number of values on the page has changed -- please ')
-# transform_cases(cases)
+print(base_series)
