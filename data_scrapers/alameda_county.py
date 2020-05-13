@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import json
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from datetime import datetime, timezone
-from selenium import webdriver
+from selenium import webdriver  # type: ignore
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
@@ -68,7 +68,7 @@ def get_timeseries() -> Dict:
     'pd.DataFrame(get_timeseries())'
     """
 
-    series = {"cases":[], "deaths":[]} # dictionary holding the timeseries for cases and deaths
+    series: Dict[str, List] = {"cases":[], "deaths":[]} # dictionary holding the timeseries for cases and deaths
     # Dictionary of 'source_label': 'target_label' for re-keying
     TIMESERIES_KEYS = {
         'Date': 'date',
@@ -80,7 +80,7 @@ def get_timeseries() -> Dict:
 
     # query API
     param_list = {'where':'0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths', 'outSR': 4326,'orderByField': 'Date', 'f': 'json'}
-    response = requests.get(cases_deaths, params=param_list)
+    response = requests.get(cases_deaths, params=param_list)  # type: ignore
     response.raise_for_status()
     parsed = response.json()
     features = [obj["attributes"] for obj in parsed['features']]
@@ -125,7 +125,7 @@ def get_notes() -> str:
     driver.quit()
     return '\n\n'.join(notes)
 
-def get_demographics(out:Dict) -> (Dict, List):
+def get_demographics(out: Dict) -> Tuple[Dict, List]:
     """Fetch cases and deaths by age, gender, race, ethnicity
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}, as well as a list of 
     strings describing datapoints that have a value of "<10". 
@@ -144,12 +144,13 @@ def get_demographics(out:Dict) -> (Dict, List):
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':4326, 'f':'json'}
     # get cases data
-    response = requests.get(demographics_cases, params=param_list)
+    response = requests.get(demographics_cases, params = param_list) # type: ignore
     response.raise_for_status()
     parsed = response.json()
     cases_data = parsed['features'][0]['attributes']
     # get deaths data
-    response = requests.get(demographics_deaths, params=param_list)
+    response = requests.get(demographics_deaths,
+                            params=param_list)  # type: ignore
     response.raise_for_status()
     parsed = response.json()
     deaths_data = parsed['features'][0]['attributes']
