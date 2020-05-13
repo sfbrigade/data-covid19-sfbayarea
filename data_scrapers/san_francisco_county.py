@@ -12,17 +12,19 @@ transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
 hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json'
 tests_url = 'https://data.sfgov.org/resource/nfpa-mg4g.json'
 
-# Load data model template into the 'out' dictionary. 'out' will be global to all methods.
-with open('./data_scrapers/_data_model.json') as template:
-    out = json.load(template)
+
 
 def get_county() -> Dict:
-    """Main method for populating the 'out' dictionary"""
-    
+    """Main method for populating county data .json"""
+
+    # Load data model template into a local dictionary called 'out'.
+    with open('./data_models/data_model.json') as template:
+        out = json.load(template)
+
     # fetch metadata
     response = requests.get(metadata_url)
     response.raise_for_status()
-    metadata = json.loads(response.content)
+    metadata = response.json()
 
     # populate headers
     out["name"]: "San Francisco County"
@@ -33,8 +35,9 @@ def get_county() -> Dict:
     
       # get timeseries and demographic totals
     out["series"] = get_timeseries()
-    demo_totals = get_demographics()
-    out["case_totals"], out["death_totals"] = demo_totals["case_totals"], demo_totals["death_totals"]
+    demo_totals = get_demographics(out)
+    out.update(demo_totals)
+
     return out
 
 
@@ -44,7 +47,7 @@ def get_timeseries() -> Dict:
     To create a DataFrame from this dictionary, run
     'pd.DataFrame(get_timeseries())'
     """
-    out_series = out["series"] # copy dictionary structure for series
+    out_series = {"cases": [], "deaths": [], "tests":[] }  # dictionary structure for time_series
     out_series["cases"] = get_cases_series()
     out_series["deaths"] = get_deaths_series()
     out_series["tests"] = get_tests_series()
@@ -57,7 +60,7 @@ def get_cases_series() -> Dict:
     params = { 'case_disposition':'Confirmed','$select':'date,sum(case_count) as cases', '$group':'date', '$order':'date'}   
     response = requests.get(transmission_url, params=params)
     response.raise_for_status()
-    cases_series = json.loads(response.content)
+    cases_series = response.json()
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
     cumul = 0
@@ -74,7 +77,7 @@ def get_deaths_series() -> Dict:
               '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
     response = requests.get(transmission_url, params=params)
     response.raise_for_status()
-    death_series = json.loads(response.content)
+    death_series = response.json()
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
     cumul = 0
@@ -94,7 +97,7 @@ def get_tests_series() -> Dict:
     date_order_query = '?$order=result_date' 
     response = requests.get(tests_url + date_order_query)
     response.raise_for_status()
-    series = json.loads(response.content)
+    series = response.json()
 
     # parse source series into out series, calculating cumulative values
     cumul_tests, cumul_pos, cumul_neg = 0,0,0
@@ -115,7 +118,7 @@ def get_tests_series() -> Dict:
     return test_series
 
 
-def get_demographics() -> Dict:
+def get_demographics(out:Dict) -> Dict:
     """
     Fetch cases by age, gender, race_eth. Fetch cases by transmission category
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}.
@@ -127,6 +130,7 @@ def get_demographics() -> Dict:
     demo_totals["case_totals"]["gender"] = get_gender_table()
     demo_totals["case_totals"]["age_group"] = get_age_table()
     demo_totals["case_totals"]["transmission_cat"] = get_transmission_table()
+    demo_totals["case_totals"]["race_eth"] = get_race_eth_table()
     return demo_totals
 
 def get_age_table() -> Dict:
@@ -134,36 +138,95 @@ def get_age_table() -> Dict:
     age_query = '?$select=age_group, sum(confirmed_cases)&$order=age_group&$group=age_group'
     response = requests.get(age_gender_url + age_query)
     response.raise_for_status()
-    return json.loads(response.content)
+    data = response.json()
+    age_table = dict()
+    for entry in data:
+        k = entry["age_group"]
+        v = int(entry["sum_confirmed_cases"])
+        age_table[k] = v
+    return age_table
 
 def get_gender_table() -> Dict:
     """Get cases by gender"""
+    # Dict of source_label:target_label for re-keying.
+    # Note: non cis genders not currently reported 
+    GENDER_KEYS = {"Female": "female", "Male": "male",
+                   "Unknown": "unknown"}
     gender_query = '?$select=gender, sum(confirmed_cases)&$group=gender'
     response = requests.get(age_gender_url + gender_query)
     response.raise_for_status()
-    return json.loads(response.content)
+    data = response.json()   
+    # re-key
+    gender_data = dict()
+    for entry in data:
+        k = GENDER_KEYS[ entry["gender"] ]
+        gender_data[k] = entry["sum_confirmed_cases"]
+    return gender_data
 
 def get_transmission_table() -> Dict:
     """Get cases by transmission category"""
+    # Dict of source_label:target_label for re-keying
+    TRANSMISSION_KEYS = { "Community": "community", "From Contact": "from_contact", "Unknown": "unknown" }
     cat_query = '?$select=transmission_category, sum(case_count)&$group=transmission_category'
     response = requests.get(transmission_url + cat_query)
     response.raise_for_status()
-    return json.loads(response.content)
+    data = response.json()
+    # re-key
+    transmission_data = dict()
+    for entry in data:
+        k = TRANSMISSION_KEYS[ entry["transmission_category"] ]
+        transmission_data[k] = int(entry["sum_case_count"])
+    return transmission_data
 
 # Confirmed cases by race and ethnicity
 # Note that SF reporting race x ethnicty requires special handling
-# In the race/ethnicity data shown below, the "Other” category 
+# "In the race/ethnicity data shown below, the "Other” category 
 # includes those who identified as Other or with a race/ethnicity that does not fit the choices collected. 
 # The “Unknown” includes individuals who did not report a race/ethnicity to their provider, 
-# could not be contacted, or declined to answer.
-# Sum over race categories, except for unknown. 
-# Sum over Hispanic/Latino (all races). "Unknown" should only be unknown race & 
-# unknown ethnicity, or, if no race, unknown ethnicity
+# could not be contacted, or declined to answer."
 
-def get_race_ethnicity_json() -> Dict:
+def get_race_eth_table() -> Dict:
     """ fetch race x ethnicity data """
-    return json.loads(requests.get(race_ethnicity_url))
+    response = requests.get(race_ethnicity_url)
+    response.raise_for_status()
+    # Dict of target_label : source_label for re-keying.
+    # Note: Native_Amer not currently reported
+    RACE_ETH_KEYS = {"Latinx_or_Hispanic": "Hispanic or Latino", "Asian": "Asian", "African_Amer": "Black or African American",
+                 "White": "White", "Pacific_Islander": "Native Hawaiian or Other Pacific Islander", "Multiple_Race": "Multiple Race",
+                 "Other": "Other", "Unknown": "Unknown"}
+    data = response.json()
+    # re-key and aggregate to flatten race x ethnicity
+    race_eth_data: Dict[str,int] = { k:0 for k in RACE_ETH_KEYS.keys() } # initalize all categories to 0 for aggregating
 
+    for item in data: # iterate through all race x ethnicity objects
+        cases = int(item["confirmed_cases"])
+        cols = item.keys()
+
+        # handle unknown
+        # sum over only items for which BOTH race and ethnicity are Unknown, or one is Unknown and the other is not reported
+        if "race" in cols and "ethnicity" in cols:
+            if item["race"] == "Unknown" and item["ethnicity"] == "Unknown": # both race and ethnicity are Unknown
+                race_eth_data["Unknown"] += cases
+        elif "ethnicity" in cols and item["ethnicity"] == "Unknown": # or, race not reported and ethnicity is unknown
+            race_eth_data["Unknown"] += cases
+        elif "race" in cols and item["race"] == "Unknown": # or, ethnicity not reported and race is unknown
+            race_eth_data["Unknown"] += cases
+        
+        # sum over 'Hispanic or Latino', all races
+        if "ethnicity" in cols and item["ethnicity"] == "Hispanic or Latino":
+            race_eth_data["Latinx_or_Hispanic"] += cases
+        
+        # sum over all known races
+        if "race" in cols and item["race"] != "Unknown": 
+            if item["race"] == "Other":  # except for race = Other, ethnicity = Hispanic or Latino; exclude Other/Hispanic Latino from Other
+                if "ethnicity" in cols and item["ethnicity"] != "Hispanic or Latino": 
+                    race_eth_data["Other"] += cases
+            else:
+                for k,v in RACE_ETH_KEYS.items(): # look up this item's re-key
+                    if v == item["race"]:
+                        race_eth_data[k] += cases
+
+    return race_eth_data
 
 # COVID+ patients from all SF hospitals in ICU vs. acute care, by date
 # Note: this source will be superseded by data from CHHS
@@ -177,5 +240,5 @@ def get_icu_beds() -> Dict:
     return get_json(hospitalizations_url + icu_query)
 
 if __name__ == '__main__':
-    """ When run as a script, logs grouped data queries to console"""
+    """ When run as a script, logs data to console"""
     print(json.dumps(get_county(), indent=4))
