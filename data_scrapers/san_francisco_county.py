@@ -5,14 +5,17 @@ from typing import Dict
 
 # API endpoints 
 # landing page: https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab
-metadata_url = 'https://data.sfgov.org/api/views/metadata/v1/tvq9-ec9w/'
-age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
-race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
-transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
-hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json'
-tests_url = 'https://data.sfgov.org/resource/nfpa-mg4g.json'
 
+RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k', 
+                'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g' }
 
+metadata_url = 'https://data.sfgov.org/api/views/metadata/v1/'
+data_url = 'https://data.sfgov.org/resource/'
+age_gender_url = f"{data_url}{RESOURCE_IDS['age_gender']}.json"
+race_ethnicity_url = f"{data_url}{RESOURCE_IDS['race_eth']}.json"
+transmission_url = f"{data_url}{RESOURCE_IDS['cases_deaths_transmission']}.json"
+tests_url = f"{data_url}{RESOURCE_IDS['tests']}.json"
+hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json' # will be deprecated 
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -22,16 +25,22 @@ def get_county() -> Dict:
         out = json.load(template)
 
     # fetch metadata
-    response = requests.get(metadata_url)
-    response.raise_for_status()
-    metadata = response.json()
+    meta_from_source = ''
+    update_times = []
+    for k,v in RESOURCE_IDS.items():
+        url = f"{metadata_url}{v}.json"
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        meta_from_source += data["description"] + '\n\n'
+        update_times.append(data["dataUpdatedAt"])
 
     # populate headers
-    out["name"]: "San Francisco County"
-    out["source_url"]: "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
-    out["update_time"]: metadata["dataUpdatedAt"]
-    out["meta_from_source"]: metadata["description"] # EL: add descriptions from other endpoints here
-    out["meta_from_baypd"]: "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests."
+    out["name"] = "San Francisco County"
+    out["source_url"] = "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
+    out["update_time"] =  sorted(update_times)[0] # get earliest update time 
+    out["meta_from_source"] =  meta_from_source
+    out["meta_from_baypd"] =  "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests."
     
       # get timeseries and demographic totals
     out["series"] = get_timeseries()
