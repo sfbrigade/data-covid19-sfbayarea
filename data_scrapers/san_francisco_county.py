@@ -200,7 +200,7 @@ def get_race_eth_table() -> Dict:
     # Dict of target_label : source_label for re-keying.
     # Note: Native_Amer not currently reported
     RACE_ETH_KEYS = {"Latinx_or_Hispanic": "Hispanic or Latino", "Asian": "Asian", "African_Amer": "Black or African American",
-                 "White": "White", "Pacific_Islander": "Native Hawaiian or Other Pacific Islander", "Multiple_Race": "Multiple Race",
+                 "White": "White", "Pacific_Islander": "Native Hawaiian or Other Pacific Islander", "Native_Amer": "Native American", "Multiple_Race": "Multiple Race",
                  "Other": "Other", "Unknown": "Unknown"}
     data = response.json()
     # re-key and aggregate to flatten race x ethnicity
