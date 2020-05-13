@@ -15,7 +15,11 @@ COUNTY_NAMES = tuple(data_scrapers.scrapers.keys())
 def main(counties: Tuple[str]) -> None:
     out = dict()
     if len(counties) == 0:
+<<<<<<< HEAD
         counties = ('alameda',)
+=======
+        counties = ('san_franicsco',)
+>>>>>>> Add CLI to run data scrapers
 
     # Run each scraper's get_county() method. Assign the output to out[county]
     for county in counties:
