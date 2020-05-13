@@ -15,7 +15,6 @@ age_gender_url = f"{data_url}{RESOURCE_IDS['age_gender']}.json"
 race_ethnicity_url = f"{data_url}{RESOURCE_IDS['race_eth']}.json"
 transmission_url = f"{data_url}{RESOURCE_IDS['cases_deaths_transmission']}.json"
 tests_url = f"{data_url}{RESOURCE_IDS['tests']}.json"
-hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json' # will be deprecated 
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -236,17 +235,6 @@ def get_race_eth_table() -> Dict:
                         race_eth_data[k] += cases
 
     return race_eth_data
-
-# COVID+ patients from all SF hospitals in ICU vs. acute care, by date
-# Note: this source will be superseded by data from CHHS
-def get_hospitalization_json() -> Dict:
-    """Get number of COVID+ patients by bed category (ICU or regular), order by date ascending."""
-    date_order_query='?$order=reportdate'
-    return get_json(hospitalizations_url + date_order_query)
-def get_icu_beds() -> Dict:
-    """group data by bed type: ICU or regular"""
-    icu_query='?$select=dphcategory, sum(patientcount)&$group=dphcategory'
-    return get_json(hospitalizations_url + icu_query)
 
 if __name__ == '__main__':
     """ When run as a script, logs data to console"""
