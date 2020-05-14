@@ -1,8 +1,10 @@
 from bs4 import BeautifulSoup  # type: ignore
+import dateutil.parser
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
-from .utils import get_base_url, HEADING_PATTERN, ISO_DATETIME_PATTERN
+from .feed import NewsItem
+from .utils import get_base_url, HEADING_PATTERN
 
 
 class SanFranciscoNews(NewsScraper):
@@ -26,9 +28,14 @@ class SanFranciscoNews(NewsScraper):
       'date': '2020-04-23T04:11:56Z'}]
     """
 
+    FEED_INFO = dict(
+        title='San Francisco County COVID-19 News',
+        home_page_url='https://sf.gov/news/topics/794'
+    )
+
     START_URL = 'https://sf.gov/news/topics/794'
 
-    def parse_page(self, html: str, url: str) -> List[dict]:
+    def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
         news = []
@@ -46,15 +53,14 @@ class SanFranciscoNews(NewsScraper):
             if not title:
                 raise ValueError(f'No title content found for article {index}')
 
-            date = article.find('time')['datetime']
-            if not ISO_DATETIME_PATTERN.match(date):
+            date_string = article.find('time')['datetime']
+            try:
+                date = dateutil.parser.parse(date_string)
+            except ValueError:
                 raise ValueError(f'Article {index} date is not in ISO 8601'
-                                 f'format: "{date}"')
+                                 f'format: "{date_string}"')
 
-            news.append({
-                'url': url,
-                'text': title,
-                'date': date
-            })
+            news.append(NewsItem(id=url, url=url, title=title,
+                                 date_published=date))
 
         return news
