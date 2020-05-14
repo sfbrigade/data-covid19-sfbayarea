@@ -5,8 +5,8 @@ Tools for modeling news feeds and serializing to multiple formats.
 from dataclasses import dataclass, field, fields
 from datetime import datetime
 import locale
-from lxml.builder import E
-import lxml.etree as ElementTree
+from lxml.builder import E  # type: ignore
+import lxml.etree as ElementTree  # type: ignore
 from typing import Dict, List, Optional, Any
 
 

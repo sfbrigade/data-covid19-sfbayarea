@@ -14,8 +14,10 @@ COUNTY_NAMES = tuple(news.scrapers.keys())
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
 @click.option('--format', default='json_simple',
-              type=click.Choice(('json_feed', 'json_simple', 'rss')))
-def main(counties: Tuple[str], format: str) -> None:
+              type=click.Choice(('json_feed', 'json_simple', 'rss')),
+              multiple=True)
+@click.option('--output', help='write output file(s) to this directory')
+def main(counties: Tuple[str], format: str, output: str) -> None:
     if len(counties) == 0:
         counties = ('san_francisco',)
 
@@ -24,14 +26,24 @@ def main(counties: Tuple[str], format: str) -> None:
         scraper = news.scrapers[county]()
         feed = scraper.scrape()
 
-        if format == 'json_simple':
-            data = json.dumps(feed.format_json_simple(), indent=2)
-        elif format == 'json_feed':
-            data = json.dumps(feed.format_json_feed(), indent=2)
-        else:
-            data = feed.format_rss()
+        for format_name in format:
+            if format_name == 'json_simple':
+                data = json.dumps(feed.format_json_simple(), indent=2)
+                extension = '.simple.json'
+            elif format_name == 'json_feed':
+                data = json.dumps(feed.format_json_feed(), indent=2)
+                extension = '.json'
+            else:
+                data = feed.format_rss()
+                extension = '.rss'
 
-        print(data)
+            if output:
+                parent = Path(output)
+                parent.mkdir(exist_ok=True)
+                with parent.joinpath(f'{county}{extension}').open('w+') as f:
+                    f.write(data)
+            else:
+                print(data)
 
 
 if __name__ == '__main__':
