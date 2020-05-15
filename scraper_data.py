@@ -3,6 +3,7 @@ import click
 import json
 import data_scrapers
 from typing import Tuple
+from pathlib import Path
 
 
 COUNTY_NAMES = tuple(data_scrapers.scrapers.keys())
@@ -12,21 +13,25 @@ COUNTY_NAMES = tuple(data_scrapers.scrapers.keys())
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-def main(counties: Tuple[str]) -> None:
+@click.option('--output', help='write output file to this directory')
+
+def main(counties: Tuple[str], output:str) -> None:
     out = dict()
     if len(counties) == 0:
-<<<<<<< HEAD
-        counties = ('alameda',)
-=======
-        counties = ('san_franicsco',)
->>>>>>> Add CLI to run data scrapers
+        counties = COUNTY_NAMES
 
     # Run each scraper's get_county() method. Assign the output to out[county]
     for county in counties:
         out[county] = data_scrapers.scrapers[county].get_county()
-    
-    with open('data.json', 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+
+    if output:
+        parent = Path(output)
+        parent.mkdir(exist_ok = True) # if output directory does not exist, create it
+        with parent.joinpath('data.json').open('w', encoding='utf-8') as f:
+            json.dump(out, f, ensure_ascii=False, indent=2)
+
+    else:
+        print(json.dumps(out,indent=2))
 
 if __name__ == '__main__':
     main()
