@@ -6,7 +6,7 @@ from typing import Tuple
 from pathlib import Path
 
 
-COUNTY_NAMES = tuple(data_scrapers.scrapers.keys())
+COUNTY_NAMES : Tuple[str,...]= tuple(data_scrapers.scrapers.keys())
 
 
 @click.command(help='Create a .json with data for one or more counties. Supported '
@@ -15,7 +15,7 @@ COUNTY_NAMES = tuple(data_scrapers.scrapers.keys())
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
 @click.option('--output', help='write output file to this directory')
 
-def main(counties: Tuple[str], output:str) -> None:
+def main(counties: Tuple[str,...], output:str) -> None:
     out = dict()
     if len(counties) == 0:
         counties = COUNTY_NAMES
