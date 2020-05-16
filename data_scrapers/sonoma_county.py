@@ -10,6 +10,18 @@ page = requests.get(url)
 sonoma_soup = BeautifulSoup(page.content, 'html.parser')
 tables = sonoma_soup.findAll('table')[4:] # we don't need the first three tables
 
+def get_rows(tag: element.Tag) -> List[element.ResultSet]:
+    '''
+    Gets all tr elements in a tag but the first, which is the header
+    '''
+    return tag.findAll('tr')[1:]
+
+def get_cells(row: List[element.ResultSet]) -> List[str]:
+    '''
+    Gets all th and tr elements within a single tr element
+    '''
+    return [el.text for el in row.findAll(['th', 'td'])]
+
 def generate_update_time(soup: BeautifulSoup) -> str:
     update_time_text = soup.find('time').text.strip()
     # format is May 6, 2020 10:00 AM
@@ -37,9 +49,10 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     cumul_recovered = 0
     active = []
     cumul_active = 0
-    rows = cases_tag.findAll('tr')[1:]
+    rows = get_rows(cases_tag)
     for row in rows:
         row_cells = row.findAll(['th', 'td'])
+        # print(type(row_cells))
         date = row_cells[0].text.replace('/', '-')
 
         # instead of 0, this dashboard reports the string '-'
@@ -62,12 +75,11 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     transmissions = {}
-    rows = transmission_tag.findAll('tr')[1:]
+    rows = get_rows(transmission_tag)
     # turns the transmission categories on the page into the ones we're using
     transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
     for row in rows:
-        row_cells = row.findAll(['th', 'td'])
-        type, number, _pct = [el.text for el in row_cells]
+        type, number, _pct = get_cells(row)
         if type not in transmission_type_conversion:
             raise FutureWarning('The transmission type {0} was not found in transmission_type_conversion'.format(type))
         type = transmission_type_conversion[type]
@@ -76,21 +88,18 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
     tests = {}
-    rows = tests_tag.findAll('tr')[1:]
+    rows = get_rows(tests_tag)
     for row in rows:
-        row_cells = row.findAll(['th', 'td'])
-        result, number, _pct = [el.text for el in row_cells]
+        result, number, _pct = get_cells(row)
         lower_res = result.lower()
         tests[lower_res] = int(number.replace(',', ''))
-    print(tests)
     return tests;
 
 def transform_age(age_tag: element.Tag) -> Dict[str, int]:
     age_brackets = {}
-    rows = age_tag.findAll('tr')[1:]
+    rows = get_rows(age_tag)
     for row in rows:
-        row_cells = row.findAll(['th', 'td'])
-        bracket, cases, _pct = [el.text for el in row_cells]
+        bracket, cases, _pct = get_cells(row)
         age_brackets[bracket] = int(cases)
     return age_brackets
 
