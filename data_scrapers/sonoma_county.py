@@ -74,6 +74,17 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
         transmissions[type] = int(number)
     return transmissions
 
+def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
+    tests = {}
+    rows = tests_tag.findAll('tr')[1:]
+    for row in rows:
+        row_cells = row.findAll(['th', 'td'])
+        result, number, _pct = [el.text for el in row_cells]
+        lower_res = result.lower()
+        tests[lower_res] = int(number.replace(',', ''))
+    print(tests)
+    return tests;
+
 def transform_age(age_tag: element.Tag) -> Dict[str, int]:
     age_brackets = {}
     rows = age_tag.findAll('tr')[1:]
@@ -84,7 +95,7 @@ def transform_age(age_tag: element.Tag) -> Dict[str, int]:
     return age_brackets
 
 try:
-    hist_cases, cases_by_source, cases_by_race, tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
+    hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
 except ValueError as e:
     raise FutureWarning('The number of values on the page has changed -- please adjust the page')
 
@@ -98,6 +109,9 @@ model = {
     'case_totals': {
         'transmission_cat': transform_transmission(cases_by_source),
         'age_group': transform_age(cases_by_age)
+    },
+    'tests_totals': {
+        'tests': transform_tests(total_tests),
     }
 }
 
