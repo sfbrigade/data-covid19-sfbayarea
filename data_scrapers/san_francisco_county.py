@@ -207,30 +207,31 @@ def get_race_eth_table() -> Dict:
 
     for item in data: # iterate through all race x ethnicity objects
         cases = int(item["confirmed_cases"])
-        cols = item.keys()
+        race = item.get('race', 'Unknown') # if race not  reported, assign "Unknown"
+        ethnicity = item.get('ethnicity', 'Unknown') # if ethnicity not reported, assign "Unknown"
 
-        # handle unknown
-        # sum over only items for which BOTH race and ethnicity are Unknown, or one is Unknown and the other is not reported
-        if "race" in cols and "ethnicity" in cols:
-            if item["race"] == "Unknown" and item["ethnicity"] == "Unknown": # both race and ethnicity are Unknown
-                race_eth_data["Unknown"] += cases
-        elif "ethnicity" in cols and item["ethnicity"] == "Unknown": # or, race not reported and ethnicity is unknown
-            race_eth_data["Unknown"] += cases
-        elif "race" in cols and item["race"] == "Unknown": # or, ethnicity not reported and race is unknown
-            race_eth_data["Unknown"] += cases
+        # add cases where BOTH race and ethnicity are Unknown or not reported to our "Unknown"
+        if race == 'Unknown' and ethnicity == 'Unknown':
+            race_eth_data['Unknown'] += cases
+
+        #per SF county, include Unknown Race/Not Hispanic or Latino ethnicity in Unknown
+        if race == 'Unknown' and ethnicity == 'Not Hispanic or Latino':
+            race_eth_data['Unknown'] += cases
 
         # sum over 'Hispanic or Latino', all races
-        if "ethnicity" in cols and item["ethnicity"] == "Hispanic or Latino":
+        if ethnicity == "Hispanic or Latino":
             race_eth_data["Latinx_or_Hispanic"] += cases
 
         # sum over all known races
-        if "race" in cols and item["race"] != "Unknown":
-            if item["race"] == "Other":  # except for race = Other, ethnicity = Hispanic or Latino; exclude Other/Hispanic Latino from Other
-                if "ethnicity" in cols and item["ethnicity"] != "Hispanic or Latino":
-                    race_eth_data["Other"] += cases
+        if race != "Unknown":
+            if race == "Other" and ethnicity != "Hispanic or Latino":  # exclude Other/Hispanic Latino from Other
+                race_eth_data["Other"] += cases
+            if race == "White" and ethnicity == "Hispanic or Latino": # exclude White/Hispanic Latino from White
+                continue
             else:  # look up this item's re-key
                 re_key = RACE_ETH_KEYS[ item["race"] ]
                 race_eth_data[re_key] += cases
+
     return race_eth_data
 
 if __name__ == '__main__':
