@@ -2,7 +2,7 @@
 import requests
 import json
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element
 
 url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
@@ -27,7 +27,8 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     definitions_text = definitions_header.find_parent().text
     return definitions_text
 
-def transform_cases(cases_tag: element.Tag) -> List[Dict]:
+# apologies for this horror of a output type
+def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
     cases = []
     cumul_cases = 0
     deaths = []
@@ -56,6 +57,7 @@ def transform_cases(cases_tag: element.Tag) -> List[Dict]:
         new_active = active_cases - cumul_active
         active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
+    # print(deaths)
     return { 'cases': cases, 'deaths': deaths, 'recovered': recovered, 'active': active }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
@@ -82,7 +84,7 @@ def transform_age(age_tag: element.Tag) -> Dict[str, int]:
     return age_brackets
 
 try:
-    cases, source, tests, age, sex, region, regions, hospitalized, underlying, symptoms = tables
+    hist_cases, cases_by_source, cases_by_race, tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
 except ValueError as e:
     raise FutureWarning('The number of values on the page has changed -- please adjust the page')
 
@@ -92,11 +94,11 @@ model = {
     'source': url,
     'meta_from_source': get_source_meta(sonoma_soup),
     'meta_from_baypd': '',
-    'series': transform_cases(cases),
+    'series': transform_cases(hist_cases),
     'case_totals': {
-        'transmission_cat': transform_transmission(source),
-        'age_group': transform_age(age)
+        'transmission_cat': transform_transmission(cases_by_source),
+        'age_group': transform_age(cases_by_age)
     }
 }
 
-print(model)
+# print(model)
