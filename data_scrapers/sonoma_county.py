@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import requests
 import json
+import re
 from datetime import datetime
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element
@@ -103,21 +104,44 @@ def transform_age(age_tag: element.Tag) -> Dict[str, int]:
         age_brackets[bracket] = int(cases)
     return age_brackets
 
+def get_unknown_race(race_eth_tag: element.Tag) -> int:
+    parent = race_eth_tag.parent
+    note = parent.find('p').text
+    matches = re.search('(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
+    if not matches:
+        raise FutureWarning('The format of the note with unknown race data has changed')
+    return(int(matches.groups()[0]))
+
+def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
+    race_cases = {}
+    race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
+    rows = get_rows(race_eth_tag)
+    for row in rows:
+        group_name, cases, _pct = get_cells(row)
+        if group_name not in race_transform:
+            raise FutureWarning('The racial group {0} is new in the data -- please adjust the scraper accordingly')
+        internal_name = race_transform[group_name]
+        race_cases[internal_name] = int(cases)
+    race_cases['Unknown'] = get_unknown_race(race_eth_tag)
+    return race_cases
+
 try:
+    # we have a lot more data here than we are using
     hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
 except ValueError as e:
-    raise FutureWarning('The number of values on the page has changed -- please adjust the page')
+    raise FutureWarning('The number of values on the page has changed -- please adjust the scraper')
 
 model = {
     'name': 'Sonoma County',
     'update_time': generate_update_time(sonoma_soup),
     'source': url,
     'meta_from_source': get_source_meta(sonoma_soup),
-    'meta_from_baypd': '',
+    'meta_from_baypd': 'Racial "Other" category includes "Black/African American, American Indian/Alaska Native, and Other"',
     'series': transform_cases(hist_cases),
     'case_totals': {
         'transmission_cat': transform_transmission(cases_by_source),
-        'age_group': transform_age(cases_by_age)
+        'age_group': transform_age(cases_by_age),
+        'race_eth': transform_race_eth(cases_by_race)
     },
     'tests_totals': {
         'tests': transform_tests(total_tests),
