@@ -173,10 +173,7 @@ def get_transmission_table() -> Dict:
     response.raise_for_status()
     data = response.json()
     # re-key
-    transmission_data = dict()
-    for entry in data:
-        k = TRANSMISSION_KEYS[ entry["transmission_category"] ]
-        transmission_data[k] = int(entry["sum_case_count"])
+    transmission_data = { entry["transmission_category"]: int(entry["sum_case_count"]) for entry in data }
     return transmission_data
 
 # Confirmed cases by race and ethnicity
