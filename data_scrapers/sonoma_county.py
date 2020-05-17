@@ -162,17 +162,19 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
             hospitalizations['not_hospitalized'] = int(number)
     return hospitalizations
 
-# def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
-#     """
-#
-#     """
-#     hospitalized = {}
-#     rows = get_rows(hospital_tag)
-#     for row in rows:
-#         gender, no, yes = get_cells(row)
-#         yes_int = int(yes.replace('%', ''))
-#         hospitalized[gender] = (yes_int / 100)
-#     return hospitalized
+def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
+    """
+    Takes in a BeautifulSoup tag representing the percent of cases hospitalized
+    by gender and returns a dictionary of those percentages in float form
+    e.g. 9% is 0.09
+    """
+    hospitalized = {}
+    rows = get_rows(hospital_tag)
+    for row in rows:
+        gender, no, yes = get_cells(row)
+        yes_int = int(yes.replace('%', ''))
+        hospitalized[gender] = (yes_int / 100)
+    return hospitalized
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -205,7 +207,7 @@ def get_county() -> Dict:
         },
         'hospitalizations': {
             'hospitalized_cases': transform_total_hospitalizations(hospitalized),
-            # 'gender': transform_gender_hospitalizations(hospitalized_by_gender)
+            'gender': transform_gender_hospitalizations(hospitalized_by_gender)
         }
     }
     return model
