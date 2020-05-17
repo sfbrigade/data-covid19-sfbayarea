@@ -6,11 +6,6 @@ from datetime import datetime
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 
-url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
-page = requests.get(url)
-sonoma_soup = BeautifulSoup(page.content, 'html.parser')
-tables = sonoma_soup.findAll('table')[4:] # we don't need the first three tables
-
 def get_rows(tag: element.Tag) -> List[element.ResultSet]:
     '''
     Gets all tr elements in a tag but the first, which is the header
@@ -141,33 +136,40 @@ def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, st
         hospitalized[gender] = yes
     return hospitalized
 
-try:
-    # we have a lot more data here than we are using
-    hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
-except ValueError as e:
-    raise FutureWarning('The number of values on the page has changed -- please adjust the scraper')
+def get_county():
+    url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
+    page = requests.get(url)
+    sonoma_soup = BeautifulSoup(page.content, 'html.parser')
+    tables = sonoma_soup.findAll('table')[4:] # we don't need the first three tables
 
-model = {
-    'name': 'Sonoma County',
-    'update_time': generate_update_time(sonoma_soup),
-    'source': url,
-    'meta_from_source': get_source_meta(sonoma_soup),
-    'meta_from_baypd': 'Racial "Other" category includes "Black/African American, American Indian/Alaska Native, and Other"',
-    'series': transform_cases(hist_cases),
-    'case_totals': {
-        'transmission_cat': transform_transmission(cases_by_source),
-        'age_group': generic_transform(cases_by_age),
-        'race_eth': transform_race_eth(cases_by_race),
-        'gender': generic_transform(cases_by_gender)
-    },
-    'tests_totals': {
-        'tests': transform_tests(total_tests),
-    },
-    'hospitalizations': {
-        'hospitalized_cases': transform_total_hospitalizations(hospitalized),
-        'gender': transform_gender_hospitalizations(hospitalized_by_gender)
+    try:
+        # we have a lot more data here than we are using
+        hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
+    except ValueError as e:
+        raise FutureWarning('The number of values on the page has changed -- please adjust the scraper')
+
+    model = {
+        'name': 'Sonoma County',
+        'update_time': generate_update_time(sonoma_soup),
+        'source': url,
+        'meta_from_source': get_source_meta(sonoma_soup),
+        'meta_from_baypd': 'Racial "Other" category includes "Black/African American, American Indian/Alaska Native, and Other"',
+        'series': transform_cases(hist_cases),
+        'case_totals': {
+            'transmission_cat': transform_transmission(cases_by_source),
+            'age_group': generic_transform(cases_by_age),
+            'race_eth': transform_race_eth(cases_by_race),
+            'gender': generic_transform(cases_by_gender)
+        },
+        'tests_totals': {
+            'tests': transform_tests(total_tests),
+        },
+        'hospitalizations': {
+            'hospitalized_cases': transform_total_hospitalizations(hospitalized),
+            'gender': transform_gender_hospitalizations(hospitalized_by_gender)
+        }
     }
-}
+    return model
 
 if __name__ == '__main__':
-    print(json.dumps(model, indent=4))
+    print(json.dumps(get_county(), indent=4))
