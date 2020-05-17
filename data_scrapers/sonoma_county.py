@@ -32,7 +32,6 @@ def generate_update_time(soup: BeautifulSoup) -> str:
 def get_source_meta(soup: BeautifulSoup) -> str:
     h3_tags = soup.findAll('h3')
     definitions_header = None
-    # can't use
     for el in h3_tags:
         if el.text == 'Definitions':
             definitions_header = el
@@ -140,7 +139,7 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
             hospitalizations['not_hospitalized'] = int(number)
     return hospitalizations
 
-def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
+def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, str]:
     hospitalized = {}
     rows = get_rows(hospital_tag)
     for row in rows:
