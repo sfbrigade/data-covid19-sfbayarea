@@ -161,11 +161,8 @@ def get_gender_table() -> Dict:
     response.raise_for_status()
     data = response.json()
     # re-key
-    gender_data = dict()
-    for entry in data:
-        k = GENDER_KEYS[ entry["gender"] ]
-        gender_data[k] = entry["sum_confirmed_cases"]
-    return gender_data
+    return {GENDER_KEYS[entry["gender"]]: entry["sum_confirmed_cases"]
+            for entry in data}
 
 def get_transmission_table() -> Dict:
     """Get cases by transmission category"""
