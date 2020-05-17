@@ -2,6 +2,7 @@
 import requests
 import json
 from typing import Dict
+from collections import Counter
 
 # API endpoints
 # landing page: https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab
@@ -146,9 +147,7 @@ def get_age_table() -> Dict:
     data = response.json()
     age_table = dict()
     for entry in data:
-        k = entry["age_group"]
-        v = int(entry["sum_confirmed_cases"])
-        age_table[k] = v
+        age_table.append( { entry["age_group"] : int(entry["sum_confirmed_cases"]) } )
     return age_table
 
 def get_gender_table() -> Dict:
@@ -157,7 +156,7 @@ def get_gender_table() -> Dict:
     # Note: non cis genders not currently reported
     GENDER_KEYS = {"Female": "female", "Male": "male",
                    "Unknown": "unknown"}
-    params = {'select':'gender, sum(confirmed_cases)', 'group':'gender'}
+    params = {'$select':'gender, sum(confirmed_cases)', '$group':'gender'}
     response = requests.get(age_gender_url, params=params)
     response.raise_for_status()
     data = response.json()
