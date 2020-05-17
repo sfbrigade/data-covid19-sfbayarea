@@ -108,20 +108,17 @@ def get_tests_series() -> Dict:
     series = response.json()
 
     # parse source series into out series, calculating cumulative values
-    cumul_tests, cumul_pos, cumul_neg = 0,0,0
+    # Counter is from the built-in `collections` module.
+    totals = Counter()
     for entry in series:
-        out_entry = dict()
-        out_entry["date"] = entry["result_date"][0:10]
-        out_entry["tests"] = int(entry["tests"])
-        out_entry["positive"] = int(entry["pos"])
-        out_entry["negative"] = out_entry["tests"] - out_entry["positive"]
-        # calculate cumulative values
-        cumul_tests += out_entry["tests"]
-        cumul_pos += out_entry["positive"]
-        cumul_neg += out_entry["negative"]
-        out_entry["cumul_tests"] = cumul_tests
-        out_entry["cumul_pos"] = cumul_pos
-        out_entry["cumul_neg"] = cumul_neg
+        out_entry = dict(date=entry["result_date"][0:10],
+                         tests=int(entry["tests"]),
+                         positive=int(entry["pos"]))
+        out_entry['negative'] = out_entry["tests"] - out_entry["positive"]
+        totals.update(out_entry)
+        out_entry.update(cumul_tests=totals['tests'],
+                         cumul_pos=totals['positive'],
+                         cumul_neg=totals['negative'])
         test_series.append(out_entry)
     return test_series
 
