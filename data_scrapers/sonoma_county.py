@@ -186,7 +186,7 @@ def get_county() -> Dict:
     try:
         # we have a lot more data here than we are using
         hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
-    except ValueError as e:
+    except ValueError:
         raise FutureWarning('The number of values on the page has changed -- please adjust the scraper')
 
     model = {
