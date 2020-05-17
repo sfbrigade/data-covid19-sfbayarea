@@ -102,8 +102,8 @@ def get_deaths_series() -> Dict:
 def get_tests_series() -> Dict:
     """Get tests by day, order by date ascending"""
     test_series = [] # copy the dictionary structure of an entry in the tests series
-    date_order_query = '?$order=result_date'
-    response = requests.get(tests_url + date_order_query)
+    params = {'order':'result_date'}
+    response = requests.get(tests_url, params=params)
     response.raise_for_status()
     series = response.json()
 
@@ -143,8 +143,8 @@ def get_demographics(out:Dict) -> Dict:
 
 def get_age_table() -> Dict:
     """Get cases by age"""
-    age_query = '?$select=age_group, sum(confirmed_cases)&$order=age_group&$group=age_group'
-    response = requests.get(age_gender_url + age_query)
+    params = {'select':'age_group, sum(confirmed_cases)', 'order':'age_group','group':'age_group'}
+    response = requests.get(age_gender_url, params = params)
     response.raise_for_status()
     data = response.json()
     age_table = dict()
@@ -160,8 +160,8 @@ def get_gender_table() -> Dict:
     # Note: non cis genders not currently reported
     GENDER_KEYS = {"Female": "female", "Male": "male",
                    "Unknown": "unknown"}
-    gender_query = '?$select=gender, sum(confirmed_cases)&$group=gender'
-    response = requests.get(age_gender_url + gender_query)
+    params = {'select':'gender, sum(confirmed_cases)', 'group':'gender'}
+    response = requests.get(age_gender_url, params=params)
     response.raise_for_status()
     data = response.json()
     # re-key
@@ -175,8 +175,8 @@ def get_transmission_table() -> Dict:
     """Get cases by transmission category"""
     # Dict of source_label:target_label for re-keying
     TRANSMISSION_KEYS = { "Community": "community", "From Contact": "from_contact", "Unknown": "unknown" }
-    cat_query = '?$select=transmission_category, sum(case_count)&$group=transmission_category'
-    response = requests.get(transmission_url + cat_query)
+    params = { 'select':'transmission_category, sum(case_count)', 'group':'transmission_category' }
+    response = requests.get(transmission_url, params=params)
     response.raise_for_status()
     data = response.json()
     # re-key
