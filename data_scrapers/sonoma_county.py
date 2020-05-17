@@ -7,30 +7,43 @@ from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 
 def get_rows(tag: element.Tag) -> List[element.ResultSet]:
-    '''
+    """
     Gets all tr elements in a tag but the first, which is the header
-    '''
+    """
     return tag.findAll('tr')[1:]
 
 def get_cells(row: element.ResultSet) -> List[str]:
-    '''
+    """
     Gets all th and tr elements within a single tr element
-    '''
+    """
     return [el.text for el in row.findAll(['th', 'td'])]
 
 def generate_update_time(soup: BeautifulSoup) -> str:
+    """
+    Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
+    """
     update_time_text = soup.find('time').text.strip()
-    # format is May 6, 2020 10:00 AM
     update_datetime = datetime.strptime(update_time_text, '%B %d, %Y %I:%M %p')
     return update_datetime.isoformat()
 
 def get_source_meta(soup: BeautifulSoup) -> str:
+    """
+    Finds the 'Definitions' header on the page and gets all of the text in it
+    """
     definitions_header = soup.find('h3', string='Definitions')
     definitions_text = definitions_header.find_parent().text
     return definitions_text.replace('\n', ' ')
 
 # apologies for this horror of a output type
 def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
+    """
+    Takes in a BeautifulSoup tag for the cases table and returns all cases
+    (historic and active), deaths, and recoveries in the form:
+    { 'cases': [], 'deaths': [], 'recovered': [], 'active': [] }
+    Where each list contains dictionaries (representing each day's data)
+    of form (example for cases):
+    { 'date': '', 'cases': -1, 'cumul_cases': -1 }
+    """
     cases = []
     cumul_cases = 0
     deaths = []
@@ -60,10 +73,14 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         new_active = active_cases - cumul_active
         active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
-    # print(deaths)
     return { 'cases': cases, 'deaths': deaths, 'recovered': recovered, 'active': active }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
+    """
+    Takes in a BeautifulSoup tag for the transmissions table and breaks it into
+    a dictionary of type:
+    {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
+    """
     transmissions = {}
     rows = get_rows(transmission_tag)
     # turns the transmission categories on the page into the ones we're using
@@ -86,9 +103,11 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
     return tests;
 
 def generic_transform(tag: element.Tag) -> Dict[str, int]:
-    '''
-    Transform function for tables which don't require any special processing
-    '''
+    """
+    Transform function for tables which don't require any special processing.
+    Takes in a BeautifulSoup tag for a table and returns a dictionary
+    in which the keys are strings and the values integers
+    """
     categories = {}
     rows = get_rows(tag)
     for row in rows:
@@ -97,6 +116,10 @@ def generic_transform(tag: element.Tag) -> Dict[str, int]:
     return categories
 
 def get_unknown_race(race_eth_tag: element.Tag) -> int:
+    """
+    Gets the notes under the 'Cases by race and ethnicity' table to find the
+    number of cases where the person's race is unknown
+    """
     parent = race_eth_tag.parent
     note = parent.find('p').text
     matches = re.search('(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
@@ -105,6 +128,12 @@ def get_unknown_race(race_eth_tag: element.Tag) -> int:
     return(int(matches.groups()[0]))
 
 def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
+    """
+    Takes in the BeautifulSoup tag for the cases by race/ethnicity table and
+    transforms it into an object of form:
+    'race_eth': {'Asian': -1, 'Latinx_or_Hispanic': -1, 'Other': -1, 'White':-1, 'Unknown': -1}
+    NB: These are the only races reported seperatley by Sonoma county at this time
+    """
     race_cases = {}
     race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
     rows = get_rows(race_eth_tag)
@@ -118,6 +147,11 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     return race_cases
 
 def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
+    """
+    Takes in a BeautifulSoup tag of the cases by hospitalization table and
+    returns a dictionary with the numbers of hospitalized and non-hospitalized
+    cases
+    """
     hospitalizations = {}
     rows = get_rows(hospital_tag)
     for row in rows:
@@ -129,6 +163,9 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
     return hospitalizations
 
 def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, str]:
+    """
+
+    """
     hospitalized = {}
     rows = get_rows(hospital_tag)
     for row in rows:
@@ -136,7 +173,8 @@ def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, st
         hospitalized[gender] = yes
     return hospitalized
 
-def get_county():
+def get_county() -> Dict:
+    """Main method for populating county data .json"""
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
     page = requests.get(url)
     sonoma_soup = BeautifulSoup(page.content, 'html.parser')
