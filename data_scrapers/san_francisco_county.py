@@ -3,6 +3,7 @@ import requests
 import json
 from typing import Dict
 from collections import Counter
+from utils import get_data_model
 
 # API endpoints
 # landing page: https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab
@@ -21,8 +22,7 @@ def get_county() -> Dict:
     """Main method for populating county data .json"""
 
     # Load data model template into a local dictionary called 'out'.
-    with open('./data_models/data_model.json') as template:
-        out = json.load(template)
+    out = get_data_model()
 
     # fetch metadata
     meta_from_source = ''
