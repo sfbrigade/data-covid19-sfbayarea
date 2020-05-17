@@ -3,7 +3,10 @@ import requests
 import json
 from typing import Dict
 from collections import Counter
+<<<<<<< HEAD
 from utils import get_data_model
+=======
+>>>>>>> Return a list for age_table
 
 # API endpoints
 # landing page: https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab
