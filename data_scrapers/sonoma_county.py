@@ -4,7 +4,7 @@ import json
 import re
 from datetime import datetime
 from typing import List, Dict, Union
-from bs4 import BeautifulSoup, element
+from bs4 import BeautifulSoup, element # type: ignore
 
 url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
 page = requests.get(url)
@@ -17,7 +17,7 @@ def get_rows(tag: element.Tag) -> List[element.ResultSet]:
     '''
     return tag.findAll('tr')[1:]
 
-def get_cells(row: List[element.ResultSet]) -> List[str]:
+def get_cells(row: element.ResultSet) -> List[str]:
     '''
     Gets all th and tr elements within a single tr element
     '''
@@ -32,6 +32,7 @@ def generate_update_time(soup: BeautifulSoup) -> str:
 def get_source_meta(soup: BeautifulSoup) -> str:
     h3_tags = soup.findAll('h3')
     definitions_header = None
+    # can't use
     for el in h3_tags:
         if el.text == 'Definitions':
             definitions_header = el
@@ -125,6 +126,17 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
     return race_cases
 
+def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
+    hospitalizations = {}
+    rows = get_rows(hospital_tag)
+    for row in rows:
+        hospitalized, number, _pct = get_cells(row)
+        if hospitalized == 'Yes':
+            hospitalizations['hospitalized'] = int(number)
+        else:
+            hospitalizations['not_hospitalized'] = int(number)
+    return hospitalizations
+
 try:
     # we have a lot more data here than we are using
     hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
@@ -145,7 +157,11 @@ model = {
     },
     'tests_totals': {
         'tests': transform_tests(total_tests),
+    },
+    'hospitalizations': {
+        'hospitalized_cases': transform_total_hospitalizations(hospitalized)
     }
 }
 
-# print(model)
+if __name__ == '__main__':
+    print(json.dumps(model, indent=4))
