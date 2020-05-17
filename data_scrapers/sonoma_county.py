@@ -97,13 +97,16 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
         tests[lower_res] = int(number.replace(',', ''))
     return tests;
 
-def transform_age(age_tag: element.Tag) -> Dict[str, int]:
-    age_brackets = {}
-    rows = get_rows(age_tag)
+def generic_transform(tag: element.Tag) -> Dict[str, int]:
+    '''
+    Transform function for tables which don't require any special processing
+    '''
+    categories = {}
+    rows = get_rows(tag)
     for row in rows:
-        bracket, cases, _pct = get_cells(row)
-        age_brackets[bracket] = int(cases)
-    return age_brackets
+        cat, cases, _pct = get_cells(row)
+        categories[cat] = int(cases)
+    return categories
 
 def get_unknown_race(race_eth_tag: element.Tag) -> int:
     parent = race_eth_tag.parent
@@ -137,6 +140,14 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
             hospitalizations['not_hospitalized'] = int(number)
     return hospitalizations
 
+def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
+    hospitalized = {}
+    rows = get_rows(hospital_tag)
+    for row in rows:
+        gender, yes, no = get_cells(row)
+        hospitalized[gender] = yes
+    return hospitalized
+
 try:
     # we have a lot more data here than we are using
     hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
@@ -152,14 +163,16 @@ model = {
     'series': transform_cases(hist_cases),
     'case_totals': {
         'transmission_cat': transform_transmission(cases_by_source),
-        'age_group': transform_age(cases_by_age),
-        'race_eth': transform_race_eth(cases_by_race)
+        'age_group': generic_transform(cases_by_age),
+        'race_eth': transform_race_eth(cases_by_race),
+        'gender': generic_transform(cases_by_gender)
     },
     'tests_totals': {
         'tests': transform_tests(total_tests),
     },
     'hospitalizations': {
-        'hospitalized_cases': transform_total_hospitalizations(hospitalized)
+        'hospitalized_cases': transform_total_hospitalizations(hospitalized),
+        'gender': transform_gender_hospitalizations(hospitalized_by_gender)
     }
 }
 
