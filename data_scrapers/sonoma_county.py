@@ -30,15 +30,9 @@ def generate_update_time(soup: BeautifulSoup) -> str:
     return update_datetime.isoformat()
 
 def get_source_meta(soup: BeautifulSoup) -> str:
-    h3_tags = soup.findAll('h3')
-    definitions_header = None
-    for el in h3_tags:
-        if el.text == 'Definitions':
-            definitions_header = el
-    if definitions_header == None:
-        raise FutureWarning('The source metadata has moved -- please look at the Sonoma County webpage and locate it, then update the scraper with this information')
+    definitions_header = soup.find('h3', string='Definitions')
     definitions_text = definitions_header.find_parent().text
-    return definitions_text
+    return definitions_text.replace('\n', ' ')
 
 # apologies for this horror of a output type
 def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
