@@ -138,8 +138,18 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
                  "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
                  "Other": "Other_Race", "Unknown": "Unknown_Race"}
     # list of ordered (target_label, source_label) tuples  for re-keying the age table
-    AGE_SERIES = [ ("18_and_under", "Age_LT18"), ("18_to_30", "Age_18_30"), ("31_to_40", "Age_31_40"), ("41_to_50", "Age_41_50"), ("51_to_60", "Age_51_60"), ("61_to_70", "Age_61_70"), ("71_to_80", "Age_71_80"), ("81_and_older", "Age_81_Up"), ("Unknown", "Unknown_Age") ]
-    AGE_SOURCE_LABELS = set( [ source for target, source in AGE_SERIES] )
+    AGE_KEYS = { "18_and_under":"Age_LT18", "18_to_30":"Age_18_30", "31_to_40":"Age_31_40", "41_to_50":"Age_41_50", "51_to_60":"Age_51_60", "61_to_70":"Age_61_70", "71_to_80":"Age_71_80", "81_and_older":"Age_81_Up", "Unknown":"Unknown_Age" }
+    AGE_TABLE = [
+        {"group": "18_and_under", "raw_count": -1},
+        {"group": "18_to_30", "raw_count": -1},
+        {"group": "31_to_40", "raw_count": -1},
+        {"group": "41_to_50", "raw_count": -1},
+        {"group": "51_to_60", "raw_count": -1},
+        {"group": "61_to_70", "raw_count": -1},
+        {"group": "71_to_80", "raw_count": -1},
+        {"group": "81_and_older", "raw_count": -1},
+        {"group": "Unknown", "raw_count": -1}
+    ]
 
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':'4326', 'f':'json'}
@@ -169,7 +179,7 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
     # get age cases and deaths
     # get age groups. Our data model calls for a list, but these may be out of age order.
-    demo_totals["case_totals"]["age_group"] = { k:v for k, v in cases_data.items() if k in AGE_SOURCE_LABELS }
+    demo_totals["case_totals"]["age_group"] = { k:v for k, v in cases_data.items() if 'Age' in k }
     demo_totals["death_totals"]["age_group"] = { k:v for k, v in deaths_data.items() if 'Age' in k }
 
     # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
@@ -189,12 +199,19 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
                         raise ValueError(f'Non-integer value for {key}')
 
 
-    # re-key and re-format age table as a list
-    cases_age_table = [ {"group": target_label, "raw_count": demo_totals['case_totals']['age_group'][source_label] } for target_label, source_label in AGE_SERIES ]
-    deaths_age_table = [ {"group": target_label, "raw_count": demo_totals['death_totals']['age_group']['Deaths_' + source_label] } for target_label, source_label in AGE_SERIES ]
+    # re-key and re-format age tables as a list
+    cases_age_table = []
+    deaths_age_table = []
+    for age_group in AGE_TABLE:
+        group = age_group["group"]
+        age_key = AGE_KEYS[group]
+        cases_count = demo_totals['case_totals']['age_group'][age_key]
+        deaths_count = demo_totals['death_totals']['age_group']['Deaths_'+age_key]
+        cases_age_table.append( {"group":group, "raw_count":cases_count} )
+        deaths_age_table.append( {"group":group, "raw_count":deaths_count} )
 
     demo_totals['case_totals']['age_group'] = cases_age_table
-    # demo_totals['death_totals']['age_group'] = deaths_age_table
+    demo_totals['death_totals']['age_group'] = deaths_age_table
 
     return demo_totals, counts_lt_10
 
