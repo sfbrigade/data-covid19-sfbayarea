@@ -167,26 +167,40 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
     # get age cases and deaths
     # get age groups. Our data model calls for a list, but these may be out of age order.
-    demo_totals["case_totals"]["age_group"] = [ k: v for k, v in cases_data.items() if 'Age' in k ]
-    demo_totals["death_totals"]["age_group"] = [ k: v for k, v in deaths_data.items() if 'Age' in k]
+    demo_totals["case_totals"]["age_group"] = [ {k:v} for k, v in cases_data.items() if 'Age' in k ]
+    demo_totals["death_totals"]["age_group"] = [ {k:v} for k, v in deaths_data.items() if 'Age' in k]
 
     # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
     # will be decoded as Python's `None`
     counts_lt_10 = []
     for cat, cat_dict in demo_totals.items():  # cases, deaths
-        for group, group_dict in cat_dict.items():  # dictionaries for age, race/eth
-            for key, val in group_dict.items():
-                if val == '<10':
-                    counts_lt_10.append(f"{cat}.{group}.{key}")
-                elif val is None: # proactively set None values to our default value of -1
-                    group_dict[key] = - 1
-                else: # if else, this value should be a number. check that val can be cast to an int.
-                    try:
-                        int(val)
-                    except ValueError:
-                        raise ValueError(f'Non-integer value for {key}')
+        for group, table in cat_dict.items():  # dictionaries for age, race/eth
+            if group == "age_group":
+                # the age_group is a list of dicts with a single mapping of age_bin:count
+                counts = []
+                for age_dict in table:
+                    counts += get_counts_lt_10(age_dict)
+                counts_lt_10 += [f"{cat}.{group}.{item}" for item in counts]
+            else: # otherwise, table is a dict
+                counts = get_counts_lt_10(table)
+                counts_lt_10 +=  [ f"{cat}.{group}.{item}" for item in counts]
     return demo_totals, counts_lt_10
+
+def get_counts_lt_10(data: Dict) -> List:
+    counts = []
+    for key, val in data.items():
+        if val == '<10':
+            counts.append(f"{key}")
+        elif val is None:  # proactively set None values to our default value of -1
+            data[key] = - 1
+        else:  # this value should be a number. check that val can be cast to an int.
+            try:
+                int(val)
+            except ValueError:
+                raise ValueError(f'Non-integer value for {key}')
+    return counts
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
     print(json.dumps(get_county(), indent=4))
+
