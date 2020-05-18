@@ -137,7 +137,9 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
     RACE_KEYS = {"Latinx_or_Hispanic": "Hispanic_Latino", "Asian": "Asian", "African_Amer": "African_American_Black",
                  "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
                  "Other": "Other_Race", "Unknown": "Unknown_Race"}
-
+    # list of ordered (target_label, source_label) tuples  for re-keying the age table
+    AGE_SERIES = [ ("18_and_under", "Age_LT18"), ("18_to_30", "Age_18_30"), ("31_to_40", "Age_31_40"), ("41_to_50", "Age_41_50"), ("51_to_60", "Age_51_60"), ("61_to_70", "Age_61_70"), ("71_to_80", "Age_71_80"), ("81_and_older", "Age_81_Up"), ("Unknown", "Unknown_Age") ]
+    AGE_SOURCE_LABELS = set( [ source for target, source in AGE_SERIES] )
 
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':'4326', 'f':'json'}
@@ -167,38 +169,34 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
     # get age cases and deaths
     # get age groups. Our data model calls for a list, but these may be out of age order.
-    demo_totals["case_totals"]["age_group"] = [ {k:v} for k, v in cases_data.items() if 'Age' in k ]
-    demo_totals["death_totals"]["age_group"] = [ {k:v} for k, v in deaths_data.items() if 'Age' in k]
+    demo_totals["case_totals"]["age_group"] = { k:v for k, v in cases_data.items() if k in AGE_SOURCE_LABELS }
+    demo_totals["death_totals"]["age_group"] = { k:v for k, v in deaths_data.items() if 'Age' in k }
 
     # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
     # will be decoded as Python's `None`
     counts_lt_10 = []
     for cat, cat_dict in demo_totals.items():  # cases, deaths
         for group, table in cat_dict.items():  # dictionaries for age, race/eth
-            if group == "age_group":
-                # the age_group is a list of dicts with a single mapping of age_bin:count
-                counts = []
-                for age_dict in table:
-                    counts += get_counts_lt_10(age_dict)
-                counts_lt_10 += [f"{cat}.{group}.{item}" for item in counts]
-            else: # otherwise, table is a dict
-                counts = get_counts_lt_10(table)
-                counts_lt_10 +=  [ f"{cat}.{group}.{item}" for item in counts]
-    return demo_totals, counts_lt_10
+            for key, val in table.items():
+                if val == '<10':
+                    counts_lt_10.append(f"{cat}.{group}.{item}" for item in counts)
+                elif val is None:  # proactively set None values to our default value of -1
+                    table[key] = - 1
+                else:  # this value should be a number. check that val can be cast to an int.
+                    try:
+                        int(val)
+                    except ValueError:
+                        raise ValueError(f'Non-integer value for {key}')
 
-def get_counts_lt_10(data: Dict) -> List:
-    counts = []
-    for key, val in data.items():
-        if val == '<10':
-            counts.append(f"{key}")
-        elif val is None:  # proactively set None values to our default value of -1
-            data[key] = - 1
-        else:  # this value should be a number. check that val can be cast to an int.
-            try:
-                int(val)
-            except ValueError:
-                raise ValueError(f'Non-integer value for {key}')
-    return counts
+
+    # re-key and re-format age table as a list
+    cases_age_table = [ {"group": target_label, "raw_count": demo_totals['case_totals']['age_group'][source_label] } for target_label, source_label in AGE_SERIES ]
+    deaths_age_table = [ {"group": target_label, "raw_count": demo_totals['death_totals']['age_group']['Deaths_' + source_label] } for target_label, source_label in AGE_SERIES ]
+
+    demo_totals['case_totals']['age_group'] = cases_age_table
+    # demo_totals['death_totals']['age_group'] = deaths_age_table
+
+    return demo_totals, counts_lt_10
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
