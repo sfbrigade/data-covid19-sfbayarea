@@ -162,12 +162,32 @@ class SanFranciscoApi(SocrataApi):
     def get_age_table(self) -> List[Dict]:
         """Get cases by age"""
         resource_id = self.resource_ids['age_gender']
+        # Dict of target_label:source_label for lookups
+        AGE_KEYS = {"18_and_under": "under 18", "81_and_older": "81+", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",  "51_to_60": "51-60", "61_to_70":"61-70", "71_to_80": "71-80"}
+
+
         params = {'$select': 'age_group, sum(confirmed_cases)', '$order': 'age_group', '$group': 'age_group'}
         data = self.request(resource_id, params=params)
-        age_table = []
-        for entry in data:
-            age_table.append(
-                {entry["age_group"]: int(entry["sum_confirmed_cases"])})
+
+        # structure age_table per our README
+        age_table = [
+            {"group": "18_and_under", "raw_count": -1},
+            {"group": "18_to_30", "raw_count": -1},
+            {"group": "31_to_40", "raw_count": -1},
+            {"group": "41_to_50", "raw_count": -1},
+            {"group": "51_to_60", "raw_count": -1},
+            {"group": "61_to_70", "raw_count": -1},
+            {"group": "71_to_80", "raw_count": -1},
+            {"group": "81_and_older", "raw_count": -1}
+	    ]
+        # flatten data into a dictionary of age_group:cases
+        data = { item["age_group"] : int(item["sum_confirmed_cases"]) for item in data }
+
+        # fill in values in age table
+        for age_group in age_table:
+            age_key = AGE_KEYS[ age_group["group"] ]
+            age_group["raw_count"] = data[age_key]
+
         return age_table
 
     def get_gender_table(self) -> Dict:
