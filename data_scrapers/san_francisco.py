@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json
-from typing import Dict, List
+from typing import Dict, List, Any
 from collections import Counter
 from data_scrapers.utils import get_data_model, SocrataApi
 
@@ -170,7 +170,7 @@ class SanFranciscoApi(SocrataApi):
         data = self.request(resource_id, params=params)
 
         # structure age_table per our README
-        age_table = [
+        age_table : List[Dict[str,Any]] = [
             {"group": "18_and_under", "raw_count": -1},
             {"group": "18_to_30", "raw_count": -1},
             {"group": "31_to_40", "raw_count": -1},

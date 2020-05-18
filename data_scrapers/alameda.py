@@ -189,7 +189,7 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
         for group, table in cat_dict.items():  # dictionaries for age, race/eth
             for key, val in table.items():
                 if val == '<10':
-                    counts_lt_10.append(f"{cat}.{group}.{item}" for item in counts)
+                    counts_lt_10.append(f"{cat}.{group}.{key}")
                 elif val is None:  # proactively set None values to our default value of -1
                     table[key] = - 1
                 else:  # this value should be a number. check that val can be cast to an int.
