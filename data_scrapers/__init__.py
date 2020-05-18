@@ -1,6 +1,6 @@
 from typing import Dict, Any
-import data_scrapers.alameda_county as alameda
-import data_scrapers.san_francisco_county as san_francisco
+import data_scrapers.alameda as alameda
+import data_scrapers.san_francisco as san_francisco
 
 scrapers: Dict[str, Any] = {
     'alameda': alameda,
