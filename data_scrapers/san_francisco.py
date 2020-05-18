@@ -215,12 +215,11 @@ class SanFranciscoApi(SocrataApi):
 
         for item in data:  # iterate through all race x ethnicity objects
             cases = int(item["confirmed_cases"])
-            # if race not  reported, assign "Unknown"
-            race = item.get('race', 'Unknown')
-            # if ethnicity not reported, assign "Unknown"
-            ethnicity = item.get('ethnicity', 'Unknown')
+            # if race not  reported, assign "Native American"
+            race = item.get('race','Native American')
+            ethnicity = item.get('ethnicity')
 
-            # add cases where BOTH race and ethnicity are Unknown or not reported to our "Unknown"
+            # add cases where BOTH race and ethnicity are Unknown to our "Unknown"
             if race == 'Unknown' and ethnicity == 'Unknown':
                 race_eth_data['Unknown'] += cases
 
@@ -234,12 +233,12 @@ class SanFranciscoApi(SocrataApi):
 
             # sum over all known races
             if race != "Unknown":
-                if race == "Other" and ethnicity != "Hispanic or Latino":  # exclude Other/Hispanic Latino from Other
-                    race_eth_data["Other"] += cases
+                if race == "Other" and ethnicity == "Hispanic or Latino":  # exclude Other/Hispanic Latino from Other
+                    continue
                 if race == "White" and ethnicity == "Hispanic or Latino":  # exclude White/Hispanic Latino from White
                     continue
                 else:  # look up this item's re-key
-                    re_key = RACE_ETH_KEYS[item["race"]]
+                    re_key = RACE_ETH_KEYS[race]
                     race_eth_data[re_key] += cases
 
         return race_eth_data
