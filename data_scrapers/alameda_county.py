@@ -166,8 +166,9 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
         demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
     # get age cases and deaths
-    demo_totals["case_totals"]["age_group"] = { k: v for k, v in cases_data.items() if 'Age' in k }
-    demo_totals["death_totals"]["age_group"] = {k: v for k, v in deaths_data.items() if 'Age' in k}
+    # get age groups. Our data model calls for a list, but these may be out of age order.
+    demo_totals["case_totals"]["age_group"] = [ k: v for k, v in cases_data.items() if 'Age' in k ]
+    demo_totals["death_totals"]["age_group"] = [ k: v for k, v in deaths_data.items() if 'Age' in k]
 
     # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
     # will be decoded as Python's `None`
