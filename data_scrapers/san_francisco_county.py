@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json
-from typing import Dict, List, Counter
+from typing import Dict, List
 from collections import Counter
 from utils import get_data_model, SocrataApi
 
