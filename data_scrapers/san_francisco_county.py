@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-import requests
 import json
 from typing import Dict, List, Counter
 from collections import Counter
 from utils import get_data_model, SocrataApi
-from urllib.parse import urljoin
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
@@ -193,7 +191,7 @@ class SanFranciscoApi(SocrataApi):
         params = { '$select': 'transmission_category, sum(case_count)', '$group': 'transmission_category'}
         data = self.request(resource_id, params=params)
         # re-key
-        transmission_data = {entry["transmission_category"]: int(entry["sum_case_count"]) for entry in data}
+        transmission_data = { TRANSMISSION_KEYS[ entry["transmission_category"] ]: int(entry["sum_case_count"]) for entry in data}
         return transmission_data
 
     # Confirmed cases by race and ethnicity
