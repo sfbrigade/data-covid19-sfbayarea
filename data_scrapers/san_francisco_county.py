@@ -2,7 +2,7 @@
 import json
 from typing import Dict, List
 from collections import Counter
-from utils import get_data_model, SocrataApi
+from data_scrapers.utils import get_data_model, SocrataApi
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """

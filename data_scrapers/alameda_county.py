@@ -5,6 +5,7 @@ import json
 from typing import List, Dict, Tuple
 from datetime import datetime, timezone
 from selenium import webdriver  # type: ignore
+from data_scrapers.utils import get_data_model
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
@@ -22,14 +23,11 @@ demographics_meta = 'https://services3.arcgis.com/1iDJcsklY3l3KIjE/arcgis/rest/s
 dashboards = ['https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/1e0ac4385cbe4cc1bffe2cf7f8e7f0d9',
               'https://ac-hcsa.maps.arcgis.com/apps/opsdashboard/index.html#/332a092bbc3641bd9ec8373e7c7b5b3d']
 
-
-
 def get_county() -> Dict:
     """Main method for populating county data .json"""
 
     # Load data model template into a local dictionary called 'out'.
-    with open('./data_models/data_model.json') as template:
-        out = json.load(template)
+    out = get_data_model()
 
     # populate dataset headers
     out["name"] = "Alameda County"
