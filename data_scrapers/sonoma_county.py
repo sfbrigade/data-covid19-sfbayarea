@@ -10,13 +10,13 @@ def get_rows(tag: element.Tag) -> List[element.ResultSet]:
     """
     Gets all tr elements in a tag but the first, which is the header
     """
-    return tag.findAll('tr')[1:]
+    return tag.find_all('tr')[1:]
 
 def get_cells(row: element.ResultSet) -> List[str]:
     """
     Gets all th and tr elements within a single tr element
     """
-    return [el.text for el in row.findAll(['th', 'td'])]
+    return [el.text for el in row.find_all(['th', 'td'])]
 
 def generate_update_time(soup: BeautifulSoup) -> str:
     """
@@ -54,7 +54,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     cumul_active = 0
     rows = get_rows(cases_tag)
     for row in rows:
-        row_cells = row.findAll(['th', 'td'])
+        row_cells = row.find_all(['th', 'td'])
         # print(type(row_cells))
         date = row_cells[0].text.replace('/', '-')
 
@@ -181,7 +181,7 @@ def get_county() -> Dict:
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
     page = requests.get(url)
     sonoma_soup = BeautifulSoup(page.content, 'html.parser')
-    tables = sonoma_soup.findAll('table')[4:] # we don't need the first three tables
+    tables = sonoma_soup.find_all('table')[4:] # we don't need the first three tables
 
     try:
         # we have a lot more data here than we are using
