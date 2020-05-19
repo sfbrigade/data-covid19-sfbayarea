@@ -13,13 +13,17 @@ def get_data_model() -> Dict:
     return out
 
 class SocrataApi:
-    """ Class for starting a Session with Socrata endpoints and sending requests"""
-    def __init__(self, base_url):
+    """
+    Class for starting a session for requests via Socrata APIs.
+    Initialize with a base_url and an optional dictionary of resource_ids = { key:id_string }
+    """
+    def __init__(self, base_url, resource_ids = None):
         self.session = requests.Session()
         self.cached_sess = CacheControl(self.session)
         self.base_url = base_url
         self.resource_url = urljoin(self.base_url, '/resource/')
         self.metadata_url = urljoin(self.base_url, '/api/views/metadata/v1/')
+        self.resource_ids = resource_ids
 
     def request(self, url, **kwargs):
         response = self.cached_sess.get(url, **kwargs)
