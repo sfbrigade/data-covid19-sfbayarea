@@ -32,7 +32,7 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     """
     definitions_header = soup.find('h3', string='Definitions')
     definitions_text = definitions_header.find_parent().text
-    return definitions_text.replace('\n', ' ')
+    return definitions_text.replace('\n', '/').strip()
 
 # apologies for this horror of a output type
 def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
