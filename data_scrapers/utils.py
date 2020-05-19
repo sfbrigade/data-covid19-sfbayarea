@@ -3,6 +3,7 @@ import json
 from typing import Dict
 import requests
 from urllib.parse import urljoin
+from cachecontrol import CacheControl
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
@@ -15,12 +16,13 @@ class SocrataApi:
     """ Class for starting a Session with Socrata endpoints and sending requests"""
     def __init__(self, base_url):
         self.session = requests.Session()
+        self.cached_sess = CacheControl(self.session)
         self.base_url = base_url
         self.resource_url = urljoin(self.base_url, '/resource/')
         self.metadata_url = urljoin(self.base_url, '/api/views/metadata/v1/')
 
     def request(self, url, **kwargs):
-        response = self.session.get(url, **kwargs)
+        response = self.cached_sess.get(url, **kwargs)
         response.raise_for_status()
         return response.json()
 
