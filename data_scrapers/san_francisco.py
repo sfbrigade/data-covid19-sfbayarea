@@ -20,7 +20,8 @@ def get_county() -> Dict:
     out["source_url"] = "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
     out["update_time"] = sorted(update_times)[0]  # get earliest update time
     out["meta_from_source"] = meta_from_source
-    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests."
+    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests." +
+    "Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD has chosen to label the cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. "
 
     # get timeseries and demographic totals
     out["series"] = session.get_timeseries()
@@ -215,14 +216,14 @@ class SanFranciscoApi(SocrataApi):
         return transmission_data
 
     # Confirmed cases by race and ethnicity
-    # Note that SF reporting race x ethnicty requires special handling
-    # "In the race/ethnicity data shown below, the "Other” category
-    # includes those who identified as Other or with a race/ethnicity that does not fit the choices collected.
-    # The “Unknown” includes individuals who did not report a race/ethnicity to their provider,
-    # could not be contacted, or declined to answer."
-
     def get_race_eth_table(self) -> Dict:
-        """ fetch race x ethnicity data """
+        """
+        Fetch race x ethnicity data. Individuals are assigned to one race/eth category.
+        Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'.
+        Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification.
+        Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race label.
+        TO-DO: update this code when the Native American cases are assigned a race label.
+        """
         resource_id = self.resource_ids["race_eth"]
         # Dict of source_label:target_label for re-keying.
         # Note: Native_Amer not currently reported
@@ -235,30 +236,18 @@ class SanFranciscoApi(SocrataApi):
 
         for item in data:  # iterate through all race x ethnicity objects
             cases = int(item["confirmed_cases"])
-            # if race not  reported, assign "Native American"
-            race = item.get('race','Native American')
-            ethnicity = item.get('ethnicity')
+            race = item.get('race','Native American') # if race not  reported, assign "Native American"
+            ethnicity = item.get('ethnicity', 'Unknown') # all datapoints appear to report an ethnicity, but if not, default to 'Unknown'. This doesn't currently affect our final numbers.
 
-            # add cases where BOTH race and ethnicity are Unknown to our "Unknown"
-            if race == 'Unknown' and ethnicity == 'Unknown':
-                race_eth_data['Unknown'] += cases
-
-            #per SF county, include Unknown Race/Not Hispanic or Latino ethnicity in Unknown
-            if race == 'Unknown' and ethnicity == 'Not Hispanic or Latino':
-                race_eth_data['Unknown'] += cases
-
-            # sum over 'Hispanic or Latino', all races
+            # assign 'Hispanic or Latino' individuals
             if ethnicity == "Hispanic or Latino":
                 race_eth_data["Latinx_or_Hispanic"] += cases
 
-            # sum over all known races
-            if race != "Unknown":
-                if race == "Other" and ethnicity == "Hispanic or Latino":  # exclude Other/Hispanic Latino from Other
-                    continue
-                if race == "White" and ethnicity == "Hispanic or Latino":  # exclude White/Hispanic Latino from White
-                    continue
-                else:  # look up this item's re-key
-                    re_key = RACE_ETH_KEYS[race]
+            # for individuals who are not Hispanic or Latino, assign them their race.
+            # This means that counts for all race categories, including Other and Unknown race, exclude individuals who also
+            # identified as Hispanic or Latino.
+            if ethnicity != "Hispanic or Latino":
+                    re_key = RACE_ETH_KEYS[race] # look up this item's re-key
                     race_eth_data[re_key] += cases
 
         return race_eth_data
