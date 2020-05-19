@@ -3,7 +3,7 @@ import json
 from typing import Dict
 import requests
 from urllib.parse import urljoin
-from cachecontrol import CacheControl
+from cachecontrol import CacheControl # type: ignore
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
