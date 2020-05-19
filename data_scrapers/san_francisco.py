@@ -6,6 +6,8 @@ from data_scrapers.utils import get_data_model, SocrataApi
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
+    # TODO: Add deaths data when it is available through the api.
+    # TODO: In get_race_eth_table(), update code when SF provides a race label for the Native American datapoint.
 
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
@@ -20,7 +22,7 @@ def get_county() -> Dict:
     out["source_url"] = "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
     out["update_time"] = sorted(update_times)[0]  # get earliest update time
     out["meta_from_source"] = meta_from_source
-    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race."
+    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. BayPD is not currently reporting deaths by demographic groups. These will be made available when the data is accessible."
 
     # get timeseries and demographic totals
     out["series"] = session.get_timeseries()
