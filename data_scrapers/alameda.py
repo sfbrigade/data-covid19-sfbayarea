@@ -32,7 +32,7 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Alameda County"
     out["source_url"] = landing_page
-    out["meta_from_source"] = get_notes()
+    # out["meta_from_source"] = get_notes()
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(cases_meta)
@@ -139,17 +139,6 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
                  "Other": "Other_Race", "Unknown": "Unknown_Race"}
     # list of ordered (target_label, source_label) tuples  for re-keying the age table
     AGE_KEYS = { "18_and_under":"Age_LT18", "18_to_30":"Age_18_30", "31_to_40":"Age_31_40", "41_to_50":"Age_41_50", "51_to_60":"Age_51_60", "61_to_70":"Age_61_70", "71_to_80":"Age_71_80", "81_and_older":"Age_81_Up", "Unknown":"Unknown_Age" }
-    AGE_TABLE = [
-        {"group": "18_and_under", "raw_count": -1},
-        {"group": "18_to_30", "raw_count": -1},
-        {"group": "31_to_40", "raw_count": -1},
-        {"group": "41_to_50", "raw_count": -1},
-        {"group": "51_to_60", "raw_count": -1},
-        {"group": "61_to_70", "raw_count": -1},
-        {"group": "71_to_80", "raw_count": -1},
-        {"group": "81_and_older", "raw_count": -1},
-        {"group": "Unknown", "raw_count": -1}
-    ]
 
     # format query to get entry for Alameda County
     param_list = {'where': "Geography='Alameda County'", 'outFields': '*', 'outSR':'4326', 'f':'json'}
@@ -164,51 +153,51 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
     parsed = response.json()
     deaths_data = parsed['features'][0]['attributes']
 
-    # copy dictionary structure of 'out' dictionary to local variable
-    demo_totals = { "case_totals": out["case_totals"], "death_totals": out["death_totals"]}
+    # join cases and deaths tables in a temporary dictionary, to use for checking for values <10
+    demo_data = {"case_totals": cases_data, "death_totals": deaths_data}
+    # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
+    # will be decoded as Python's `None`
+    counts_lt_10 = []
+    for cat, data in demo_data.items():
+        for key, val in data.items():
+            if key in GENDER_KEYS.values():
+                demo = 'gender'
+            elif key in RACE_KEYS.values():
+                demo = 'race'
+            elif key in AGE_KEYS.values():
+                demo = 'age_group'
+            elif key == "Geography":
+                continue # exclude the k,v pair "Geography":"Alameda County"
+            if val == '<10':
+                counts_lt_10.append(f"{cat}.{demo}.{key}")
+            elif val is None:  # proactively set None values to our default value of -1
+                data[key] = - 1
+            else:  # this value should be a number. check that val can be cast to an int.
+                try:
+                    int(val)
+                except ValueError:
+                    raise ValueError(f'Non-integer value for {key}')
 
-    # Parse and re-key
+    # copy dictionary structure of 'out' dictionary to local variable
+    demo_totals = {
+        "case_totals": out["case_totals"], "death_totals": out["death_totals"]}
+
+    # Parse and re-key demo_totals
     # gender cases and deaths
     for k, v in GENDER_KEYS.items():
         demo_totals["case_totals"]["gender"][k] = cases_data[v]
-        if k in deaths_data.keys(): # the deaths table does not currently include MTF or FTM
+        if 'Deaths_' + v in deaths_data.keys():  # the deaths table does not currently include MTF or FTM
             demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
     # race cases and deaths
     for k, v in RACE_KEYS.items():
         demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
         demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
-    # get age cases and deaths
-    # get age groups. Our data model calls for a list, but these may be out of age order.
-    demo_totals["case_totals"]["age_group"] = { k:v for k, v in cases_data.items() if 'Age' in k }
-    demo_totals["death_totals"]["age_group"] = { k:v for k, v in deaths_data.items() if 'Age' in k }
-
-    # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
-    # will be decoded as Python's `None`
-    counts_lt_10 = []
-    for cat, cat_dict in demo_totals.items():  # cases, deaths
-        for group, table in cat_dict.items():  # dictionaries for age, race/eth
-            for key, val in table.items():
-                if val == '<10':
-                    counts_lt_10.append(f"{cat}.{group}.{key}")
-                elif val is None:  # proactively set None values to our default value of -1
-                    table[key] = - 1
-                else:  # this value should be a number. check that val can be cast to an int.
-                    try:
-                        int(val)
-                    except ValueError:
-                        raise ValueError(f'Non-integer value for {key}')
-
-
     # re-key and re-format age tables as a list
     cases_age_table = []
     deaths_age_table = []
-    for age_group in AGE_TABLE:
-        group = age_group["group"]
-        age_key = AGE_KEYS[group]
-        cases_count = demo_totals['case_totals']['age_group'][age_key]
-        deaths_count = demo_totals['death_totals']['age_group']['Deaths_'+age_key]
-        cases_age_table.append( {"group":group, "raw_count":cases_count} )
-        deaths_age_table.append( {"group":group, "raw_count":deaths_count} )
+    for out_key, data_key in AGE_KEYS.items():
+        cases_age_table.append( {'group': out_key, 'raw_count':cases_data.get(data_key) } )
+        deaths_age_table.append( {'group': out_key, 'raw_count':deaths_data.get("Deaths_"+data_key) } )
 
     demo_totals['case_totals']['age_group'] = cases_age_table
     demo_totals['death_totals']['age_group'] = deaths_age_table
