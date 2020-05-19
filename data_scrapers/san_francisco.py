@@ -41,10 +41,6 @@ class SanFranciscoApi(SocrataApi):
         self.resource_ids = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k',
                              'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
 
-
-    def request(self, resource_id, **kwargs):
-        return super().request(f'{self.resource_url}{resource_id}', **kwargs)
-
     def get_notes(self) -> str:
         """
         Get 'description' field of metadata for all resources. Collect into one string,
@@ -52,8 +48,7 @@ class SanFranciscoApi(SocrataApi):
         """
         meta_from_source = ''
         for v in self.resource_ids.values():
-            url = f"{self.metadata_url}{v}.json"
-            data = super().request(url)
+            data = self.metadata(v)
             meta_from_source += data["description"] + '\n\n'
         return meta_from_source
 
@@ -63,8 +58,7 @@ class SanFranciscoApi(SocrataApi):
         """
         update_times = []
         for v in self.resource_ids.values():
-            url = f"{self.metadata_url}{v}.json"
-            data = super().request(url)
+            data = self.metadata(v)
             update_times.append(data["dataUpdatedAt"])
         return update_times
 
@@ -103,7 +97,7 @@ class SanFranciscoApi(SocrataApi):
         resource_id = self.resource_ids['cases_deaths_transmission']
         params = {'case_disposition': 'Confirmed',
                 '$select': 'date,sum(case_count) as cases', '$group': 'date', '$order': 'date'}
-        data = self.request(resource_id, params=params)
+        data = self.resource(resource_id, params=params)
         # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
         # calculate daily cumulative
         cases_series = []
@@ -122,7 +116,7 @@ class SanFranciscoApi(SocrataApi):
         resource_id = self.resource_ids['cases_deaths_transmission']
         params = {'case_disposition': 'Death',
                 '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
-        series = self.request(resource_id, params=params)
+        series = self.resource(resource_id, params=params)
         death_series = []
         # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
         # calculate daily cumulative
@@ -142,7 +136,7 @@ class SanFranciscoApi(SocrataApi):
         resource_id = self.resource_ids['tests']
         test_series = []
         params = {'$order': 'result_date'}
-        series = self.request(resource_id, params=params)
+        series = self.resource(resource_id, params=params)
 
         # parse source series into out series, calculating cumulative values
         # Counter is from the built-in `collections` module.
@@ -167,7 +161,7 @@ class SanFranciscoApi(SocrataApi):
 
 
         params = {'$select': 'age_group, sum(confirmed_cases)', '$order': 'age_group', '$group': 'age_group'}
-        data = self.request(resource_id, params=params)
+        data = self.resource(resource_id, params=params)
 
         # structure age_table per our README
         age_table : List[Dict[str,Any]] = [
@@ -197,9 +191,9 @@ class SanFranciscoApi(SocrataApi):
         resource_id = self.resource_ids['age_gender']
         GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
         params = {'$select': 'gender, sum(confirmed_cases)', '$group': 'gender'}
-        data = self.request(resource_id, params=params)
+        data = self.resource(resource_id, params=params)
         # re-key
-        return {GENDER_KEYS[entry["gender"]]: entry["sum_confirmed_cases"]
+        return {GENDER_KEYS[entry["gender"]]: int(entry["sum_confirmed_cases"])
                 for entry in data}
 
     def get_transmission_table(self) -> Dict:
@@ -209,7 +203,7 @@ class SanFranciscoApi(SocrataApi):
         TRANSMISSION_KEYS = {"Community": "community",
                             "From Contact": "from_contact", "Unknown": "unknown"}
         params = { '$select': 'transmission_category, sum(case_count)', '$group': 'transmission_category'}
-        data = self.request(resource_id, params=params)
+        data = self.resource(resource_id, params=params)
         # re-key
         transmission_data = { TRANSMISSION_KEYS[ entry["transmission_category"] ]: int(entry["sum_case_count"]) for entry in data}
         return transmission_data
@@ -228,7 +222,7 @@ class SanFranciscoApi(SocrataApi):
         # Note: Native_Amer not currently reported
         RACE_ETH_KEYS = {'Hispanic or Latino': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
                         'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multiple Race': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
-        data = self.request(resource_id)
+        data = self.resource(resource_id)
         # re-key and aggregate to flatten race x ethnicity
         # initalize all categories to 0 for aggregating
         race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}

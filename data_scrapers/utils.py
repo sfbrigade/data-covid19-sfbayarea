@@ -23,3 +23,9 @@ class SocrataApi:
         response = self.session.get(url, **kwargs)
         response.raise_for_status()
         return response.json()
+
+    def resource(self, resource_id, **kwargs) -> Dict:
+        return self.request(f'{self.resource_url}{resource_id}', **kwargs)
+
+    def metadata(self, resource_id, **kwargs) -> Dict:
+        return self.request(f'{self.metadata_url}{resource_id}.json', **kwargs)
