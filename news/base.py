@@ -1,5 +1,6 @@
 import requests
-from typing import List
+from typing import Dict, List
+from .feed import NewsFeed, NewsItem
 
 
 class NewsScraper:
@@ -18,10 +19,13 @@ class NewsScraper:
     scraping should start, then implement `parse_page()`, which returns a list
     of news items given some HTML.
     """
-
+    FEED_INFO: Dict = {}
     START_URL = ''
 
-    def scrape(self) -> List[dict]:
+    def create_feed(self) -> NewsFeed:
+        return NewsFeed(**self.FEED_INFO)
+
+    def scrape(self) -> NewsFeed:
         """
         Create and return a news feed.
 
@@ -37,11 +41,13 @@ class NewsScraper:
           'text': 'Expansion of coronavirus testing for all essential workers in SF',
           'date': '2020-04-23T04:11:56Z'}]
         """
+        feed = self.create_feed()
         # TODO: we may want to iterate through multiple pages in the future
         response = requests.get(self.START_URL)
         response.raise_for_status()
         news = self.parse_page(response.text, self.START_URL)
-        return news
+        feed.items.extend(news)
+        return feed
 
-    def parse_page(self, html: str, url: str) -> List[dict]:
+    def parse_page(self, html: str, url: str) -> List[NewsItem]:
         raise NotImplementedError()
