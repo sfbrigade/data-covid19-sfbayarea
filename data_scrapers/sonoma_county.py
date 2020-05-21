@@ -112,7 +112,7 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
         if type not in transmission_type_conversion:
             raise FutureWarning('The transmission type {0} was not found in transmission_type_conversion'.format(type))
         type = transmission_type_conversion[type]
-        transmissions[type] = int(number)
+        transmissions[type] = parse_int(number)
     return transmissions
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
@@ -121,7 +121,7 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
     for row in rows:
         result, number, _pct = get_cells(row)
         lower_res = result.lower()
-        tests[lower_res] = int(number.replace(',', ''))
+        tests[lower_res] = parse_int(number)
     return tests;
 
 def generic_transform(tag: element.Tag) -> Dict[str, int]:
@@ -134,7 +134,7 @@ def generic_transform(tag: element.Tag) -> Dict[str, int]:
     rows = get_rows(tag)
     for row in rows:
         cat, cases, _pct = get_cells(row)
-        categories[cat] = int(cases)
+        categories[cat] = parse_int(cases)
     return categories
 
 def get_unknown_race(race_eth_tag: element.Tag) -> int:
@@ -147,7 +147,7 @@ def get_unknown_race(race_eth_tag: element.Tag) -> int:
     matches = re.search('(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
     if not matches:
         raise FutureWarning('The format of the note with unknown race data has changed')
-    return(int(matches.groups()[0]))
+    return(parse_int(matches.groups()[0]))
 
 def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     """
@@ -164,7 +164,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         if group_name not in race_transform:
             raise FutureWarning('The racial group {0} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
-        race_cases[internal_name] = int(cases)
+        race_cases[internal_name] = parse_int(cases)
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
     return race_cases
 
@@ -179,9 +179,9 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
     for row in rows:
         hospitalized, number, _pct = get_cells(row)
         if hospitalized.lower() == 'yes':
-            hospitalizations['hospitalized'] = int(number)
+            hospitalizations['hospitalized'] = parse_int(number)
         else:
-            hospitalizations['not_hospitalized'] = int(number)
+            hospitalizations['not_hospitalized'] = parse_int(number)
     return hospitalizations
 
 def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
@@ -194,7 +194,7 @@ def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, fl
     rows = get_rows(hospital_tag)
     for row in rows:
         gender, no, yes = get_cells(row)
-        yes_int = int(yes.replace('%', ''))
+        yes_int = parse_int(yes.replace('%', ''))
         hospitalized[gender] = (yes_int / 100)
     return hospitalized
 
