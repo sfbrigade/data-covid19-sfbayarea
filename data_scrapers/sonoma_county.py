@@ -60,8 +60,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     rows = get_rows(cases_tag)
     for row in rows:
         row_cells = row.find_all(['th', 'td'])
-        # print(type(row_cells))
-        date = row_cells[0].text.replace('/', '-')
+        date = dateutil.parser.parse(row_cells[0]).date().isoformat()
 
         # instead of 0, this dashboard reports the string '-'
         active_cases, new_infected, dead, recoveries = [0 if el.text == '–' else int(el.text) for el in row_cells[1:]]
@@ -72,13 +71,16 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         new_deaths = dead - cumul_deaths
         deaths.append({ 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead })
 
-        new_recovered = recoveries - cumul_recovered
-        recovered.append({ 'date': date, 'recovered': new_recovered, 'cumul_recovered': recoveries })
+        # new_recovered = recoveries - cumul_recovered
+        # recovered.append({ 'date': date, 'recovered': new_recovered, 'cumul_recovered': recoveries })
+        #
+        # new_active = active_cases - cumul_active
+        # active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
-        new_active = active_cases - cumul_active
-        active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
+        cases.reverse()
+        deaths.reverse()
 
-    return { 'cases': cases, 'deaths': deaths, 'recovered': recovered, 'active': active }
+    return { 'cases': cases, 'deaths': deaths }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     """
