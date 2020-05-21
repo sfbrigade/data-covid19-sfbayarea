@@ -156,7 +156,7 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
     rows = get_rows(hospital_tag)
     for row in rows:
         hospitalized, number, _pct = get_cells(row)
-        if hospitalized == 'Yes':
+        if hospitalized.lower() == 'yes':
             hospitalizations['hospitalized'] = int(number)
         else:
             hospitalizations['not_hospitalized'] = int(number)
@@ -180,7 +180,7 @@ def get_county() -> Dict:
     """Main method for populating county data .json"""
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
     page = requests.get(url)
-    sonoma_soup = BeautifulSoup(page.content, 'html.parser')
+    sonoma_soup = BeautifulSoup(page.content, 'html5lib')
     tables = sonoma_soup.find_all('table')[4:] # we don't need the first three tables
 
     try:
@@ -205,10 +205,10 @@ def get_county() -> Dict:
         'tests_totals': {
             'tests': transform_tests(total_tests),
         },
-        'hospitalizations': {
-            'hospitalized_cases': transform_total_hospitalizations(hospitalized),
-            'gender': transform_gender_hospitalizations(hospitalized_by_gender)
-        }
+        # 'hospitalizations': {
+        #     'hospitalized_cases': transform_total_hospitalizations(hospitalized),
+        #     'gender': transform_gender_hospitalizations(hospitalized_by_gender)
+        # }
     }
     return model
 
