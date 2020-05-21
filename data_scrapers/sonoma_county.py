@@ -6,6 +6,16 @@ import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 
+def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
+    """
+    Takes in a header and a BeautifulSoup object and returns the table under
+    that header
+    """
+    header = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
+    tables = header.find_parent().find_all('table')
+    # this lets us get the second cases table
+    return tables[-1]
+
 def get_rows(tag: element.Tag) -> List[element.ResultSet]:
     """
     Gets all tr elements in a tag but the first, which is the header
@@ -18,6 +28,13 @@ def get_cells(row: element.ResultSet) -> List[str]:
     """
     return [el.text for el in row.find_all(['th', 'td'])]
 
+def parse_int(text: str) -> int:
+    text = text.strip()
+    if text == '-':
+        return 0
+    else:
+        return int(text.replace(',', ''))
+
 def generate_update_time(soup: BeautifulSoup) -> str:
     """
     Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
@@ -28,8 +45,7 @@ def generate_update_time(soup: BeautifulSoup) -> str:
     except ValueError:
         raise ValueError(f'Article {index} date is not in ISO 8601'
                          f'format: "{date_string}"')
-    print(date)
-    return date
+    return date.isoformat()
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
@@ -60,10 +76,10 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     rows = get_rows(cases_tag)
     for row in rows:
         row_cells = row.find_all(['th', 'td'])
-        date = dateutil.parser.parse(row_cells[0]).date().isoformat()
+        date = dateutil.parser.parse(row_cells[0].text).date().isoformat()
 
         # instead of 0, this dashboard reports the string '-'
-        active_cases, new_infected, dead, recoveries = [0 if el.text == '–' else int(el.text) for el in row_cells[1:]]
+        active_cases, new_infected, dead, recoveries = [parse_int(el.text) for el in row_cells[1:]]
 
         cumul_cases += new_infected
         cases.append({ 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases })
@@ -77,9 +93,8 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         # new_active = active_cases - cumul_active
         # active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
-        cases.reverse()
-        deaths.reverse()
-
+    cases.reverse()
+    deaths.reverse()
     return { 'cases': cases, 'deaths': deaths }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
@@ -183,18 +198,23 @@ def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, fl
         hospitalized[gender] = (yes_int / 100)
     return hospitalized
 
+def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
+    """
+    Takes in a BeautifulSoup object and returns an array of the tables we need
+    """
+    headers = ['Cases by Date', 'Test Results', 'Cases by Source', 'Cases by Age Group', 'Cases by Gender', 'Cases by Race']
+    return [get_table(header, soup) for header in headers]
+
 def get_county() -> Dict:
-    """Main method for populating county data .json"""
+    """
+    Main method for populating county data .json
+    """
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
     page = requests.get(url)
     sonoma_soup = BeautifulSoup(page.content, 'html5lib')
     tables = sonoma_soup.find_all('table')[4:] # we don't need the first three tables
 
-    try:
-        # we have a lot more data here than we are using
-        hist_cases, cases_by_source, cases_by_race, total_tests, cases_by_region, region_guide, hospitalized, underlying_cond, symptoms, cases_by_gender, underlying_cond_by_gender, hospitalized_by_gender, symptoms_female, symptoms_male, symptoms_desc, cases_by_age, symptoms_by_age, underlying_cond_by_age = tables
-    except ValueError:
-        raise FutureWarning('The number of values on the page has changed -- please adjust the scraper')
+    hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_gender, cases_by_race = get_table_tags(sonoma_soup)
 
     model = {
         'name': 'Sonoma County',
