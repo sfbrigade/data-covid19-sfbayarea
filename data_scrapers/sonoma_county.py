@@ -5,6 +5,7 @@ import re
 import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
+from format_error import FormatError
 
 def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
     """
@@ -110,7 +111,7 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     for row in rows:
         type, number, _pct = get_cells(row)
         if type not in transmission_type_conversion:
-            raise FutureWarning('The transmission type {0} was not found in transmission_type_conversion'.format(type))
+            raise FormatError('The transmission type {0} was not found in transmission_type_conversion'.format(type))
         type = transmission_type_conversion[type]
         transmissions[type] = parse_int(number)
     return transmissions
@@ -145,8 +146,8 @@ def get_unknown_race(race_eth_tag: element.Tag) -> int:
     parent = race_eth_tag.parent
     note = parent.find('p').text
     matches = re.search('(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
-    if not matches:
-        raise FutureWarning('The format of the note with unknown race data has changed')
+    if matches:
+        raise FormatError('The format of the note with unknown race data has changed')
     return(parse_int(matches.groups()[0]))
 
 def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
@@ -162,7 +163,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     for row in rows:
         group_name, cases, _pct = get_cells(row)
         if group_name not in race_transform:
-            raise FutureWarning('The racial group {0} is new in the data -- please adjust the scraper accordingly')
+            raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
         race_cases[internal_name] = parse_int(cases)
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
