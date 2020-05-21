@@ -2,7 +2,7 @@
 import requests
 import json
 import re
-from datetime import datetime
+import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 
@@ -22,9 +22,14 @@ def generate_update_time(soup: BeautifulSoup) -> str:
     """
     Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
     """
-    update_time_text = soup.find('time').text.strip()
-    update_datetime = datetime.strptime(update_time_text, '%B %d, %Y %I:%M %p')
-    return update_datetime.isoformat()
+    update_time_text = soup.find('time', {'class': 'updated'}).text.strip()
+    try:
+        date = dateutil.parser.parse(update_time_text)
+    except ValueError:
+        raise ValueError(f'Article {index} date is not in ISO 8601'
+                         f'format: "{date_string}"')
+    print(date)
+    return date
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
