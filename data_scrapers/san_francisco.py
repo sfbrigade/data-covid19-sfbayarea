@@ -202,8 +202,8 @@ def get_race_eth_table(session: SocrataApi) -> Dict:
     resource_id = session.resource_ids["race_eth"]
     # Dict of source_label:target_label for re-keying.
     # Note: Native_Amer not currently reported
-    RACE_ETH_KEYS = {'Hispanic or Latino': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
-                    'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multiple Race': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
+    RACE_ETH_KEYS = {'Hispanic or Latino/a, all races': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
+                    'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multi-racial': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
     data = session.resource(resource_id)
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
@@ -211,19 +211,9 @@ def get_race_eth_table(session: SocrataApi) -> Dict:
 
     for item in data:  # iterate through all race x ethnicity objects
         cases = int(item["confirmed_cases"])
-        race = item.get('race','Native American') # if race not  reported, assign "Native American"
-        ethnicity = item.get('ethnicity', 'Unknown') # all datapoints appear to report an ethnicity, but if not, default to 'Unknown'. This doesn't currently affect our final numbers.
-
-        # assign 'Hispanic or Latino' individuals
-        if ethnicity == "Hispanic or Latino":
-            race_eth_data["Latinx_or_Hispanic"] += cases
-
-        # for individuals who are not Hispanic or Latino, assign them their race.
-        # This means that counts for all race categories, including Other and Unknown race, exclude individuals who also
-        # identified as Hispanic or Latino.
-        if ethnicity != "Hispanic or Latino":
-                re_key = RACE_ETH_KEYS[race] # look up this item's re-key
-                race_eth_data[re_key] += cases
+        race_eth = item["race_ethnicity"]
+        re_key = RACE_ETH_KEYS[race_eth] # look up this item's re-key
+        race_eth_data[re_key] += cases
 
     return race_eth_data
 
