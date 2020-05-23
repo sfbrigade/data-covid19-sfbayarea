@@ -157,7 +157,17 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     'race_eth': {'Asian': -1, 'Latinx_or_Hispanic': -1, 'Other': -1, 'White':-1, 'Unknown': -1}
     NB: These are the only races reported seperatley by Sonoma county at this time
     """
-    race_cases = {}
+    race_cases = {
+        'African_Amer': 0,
+        'Asian': 0,
+        'Latinx_or_Hispanic': 0,
+        'Native_Amer':0,
+        'Multiple_Race':0,
+        'Other': 0,
+        'Pacific_Islander': 0,
+        'White': 0,
+        'Unknown': 0
+    }
     race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
     rows = get_rows(race_eth_tag)
     for row in rows:
