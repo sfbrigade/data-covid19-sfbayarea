@@ -5,15 +5,15 @@ import re
 import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
-from format_error import FormatError
+from format_error import FormatError # type: ignore
 
 def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
     """
     Takes in a header and a BeautifulSoup object and returns the table under
     that header
     """
-    header = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
-    tables = header.find_parent().find_all('table')
+    header_tag = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
+    tables = header_tag.find_parent().find_all('table')
     # this lets us get the second cases table
     return tables[-1]
 
@@ -44,8 +44,8 @@ def generate_update_time(soup: BeautifulSoup) -> str:
     try:
         date = dateutil.parser.parse(update_time_text)
     except ValueError:
-        raise ValueError(f'Article {index} date is not in ISO 8601'
-                         f'format: "{date_string}"')
+        raise ValueError(f'Date is not in ISO 8601'
+                         f'format: "{update_time_text}"')
     return date.isoformat()
 
 def get_source_meta(soup: BeautifulSoup) -> str:
@@ -57,7 +57,7 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     return definitions_text.replace('\n', '/').strip()
 
 # apologies for this horror of a output type
-def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
+def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int, object]]]]:
     """
     Takes in a BeautifulSoup tag for the cases table and returns all cases
     (historic and active), deaths, and recoveries in the form:
@@ -70,10 +70,10 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     cumul_cases = 0
     deaths = []
     cumul_deaths = 0
-    recovered = []
-    cumul_recovered = 0
-    active = []
-    cumul_active = 0
+    # recovered = []
+    # cumul_recovered = 0
+    # active = []
+    # cumul_active = 0
     rows = get_rows(cases_tag)
     for row in rows:
         row_cells = row.find_all(['th', 'td'])
@@ -154,7 +154,9 @@ def gender_transform(tag: element.Tag) -> Dict[str, int]:
         categories[gender_string_conversions[gender]] = parse_int(cases)
     return categories
 
-def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
+# not sure why I need object in here: I've checked the output value types and
+# they are strings and ints, but mypy is convinced there is an object in there
+def age_transform(tag: element.Tag) -> List[Dict[str, Union[str, int, object]]]:
     """
     Transform function for the cases by age group table.
     Takes in a BeautifulSoup tag for a table and returns a list of
