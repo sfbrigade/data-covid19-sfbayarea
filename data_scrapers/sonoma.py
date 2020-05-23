@@ -173,8 +173,8 @@ def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
             'Under Investigation': 'Unknown'
         }
 
-        if cases not in age_string_transform:
-            raise FormatError('A new race group has been added to the cases by race table')
+        if group not in age_string_transform:
+            raise FormatError('A new age group has been added to the cases by race table')
 
         element = {'group': age_string_transform[group], 'raw_cases': raw_cases}
         categories.append(element)
@@ -264,6 +264,7 @@ def get_county() -> Dict:
     """
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
     page = requests.get(url)
+    page.raise_for_status()
     sonoma_soup = BeautifulSoup(page.content, 'html5lib')
     tables = sonoma_soup.find_all('table')[4:] # we don't need the first three tables
 
