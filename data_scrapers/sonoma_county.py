@@ -146,10 +146,12 @@ def gender_transform(tag: element.Tag) -> Dict[str, int]:
     """
     categories = {}
     rows = get_rows(tag)
-    string_conversions = {'Males': 'male', 'Females': 'female'}
+    gender_string_conversions = {'Males': 'male', 'Females': 'female'}
     for row in rows:
-        cat, cases, _pct = get_cells(row)
-        categories[string_conversions[cat]] = parse_int(cases)
+        gender, cases, _pct = get_cells(row)
+        if gender not in gender_string_conversions:
+            raise FormatError('An unrecognized gender has been added to the gender table')
+        categories[gender_string_conversions[gender]] = parse_int(cases)
     return categories
 
 def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
@@ -170,6 +172,9 @@ def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
             '65 and Above': '65_and_older',
             'Under Investigation': 'Unknown'
         }
+
+        if cases not in age_string_transform:
+            raise FormatError('A new race group has been added to the cases by race table')
 
         element = {'group': age_string_transform[group], 'raw_cases': raw_cases}
         categories.append(element)
