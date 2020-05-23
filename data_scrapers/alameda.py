@@ -32,7 +32,7 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Alameda County"
     out["source_url"] = landing_page
-    # out["meta_from_source"] = get_notes()
+    out["meta_from_source"] = get_notes()
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(cases_meta)
@@ -186,7 +186,7 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
     # gender cases and deaths
     for k, v in GENDER_KEYS.items():
         demo_totals["case_totals"]["gender"][k] = cases_data[v]
-        if 'Deaths_' + v in deaths_data.keys():  # the deaths table does not currently include MTF or FTM
+        if f'Deaths_{v}' in deaths_data:  # the deaths table does not currently include MTF or FTM
             demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
     # race cases and deaths
     for k, v in RACE_KEYS.items():

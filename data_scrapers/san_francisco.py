@@ -104,7 +104,7 @@ def get_cases_series(session:SocrataApi) -> List[Dict]:
     return cases_series
 
 
-def get_deaths_series(session) -> List[Dict]:
+def get_deaths_series(session: SocrataApi) -> List[Dict]:
     """Get  deaths timeseries, sum over transmision cat by date"""
     resource_id = session.resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Death',
@@ -124,7 +124,7 @@ def get_deaths_series(session) -> List[Dict]:
 
 # Daily count of tests with count of positive tests
 # Note that SF county does not include pending tests, and does not directly report negative tests or cumulative tests.
-def get_tests_series(session) -> List[Dict]:
+def get_tests_series(session:SocrataApi) -> List[Dict]:
     """Get tests by day, order by date ascending"""
     resource_id = session.resource_ids['tests']
     test_series = []
@@ -191,7 +191,7 @@ def get_transmission_table(session) -> Dict:
     return transmission_data
 
 # Confirmed cases by race and ethnicity
-def get_race_eth_table(session) -> Dict:
+def get_race_eth_table(session: SocrataApi) -> Dict:
     """
     Fetch race x ethnicity data. Individuals are assigned to one race/eth category.
     Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'.
