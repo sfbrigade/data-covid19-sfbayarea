@@ -155,8 +155,10 @@ def get_demographics(out: Dict) -> Tuple[Dict, List]:
 
     # join cases and deaths tables in a temporary dictionary, to use for checking for values <10
     demo_data = {"case_totals": cases_data, "death_totals": deaths_data}
+
     # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
     # will be decoded as Python's `None`
+    # TODO: As of 5/23/20, there are no string values "<10" in the source data. The dashboard disclaimers list categories with counts < 10 that have been supressed. Consider eliminating the code dealing with "<10".
     counts_lt_10 = []
     for cat, data in demo_data.items():
         for key, val in data.items():
