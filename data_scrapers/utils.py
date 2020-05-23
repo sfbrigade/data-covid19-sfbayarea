@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 import requests
 from urllib.parse import urljoin
 from cachecontrol import CacheControl # type: ignore
