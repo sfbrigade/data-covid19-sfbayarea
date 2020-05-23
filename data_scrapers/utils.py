@@ -17,7 +17,7 @@ class SocrataApi:
     Class for starting a session for requests via Socrata APIs.
     Initialize with a base_url and an optional dictionary of resource_ids = { key:id_string }
     """
-    def __init__(self, base_url, resource_ids = None):
+    def __init__(self, base_url: str, resource_ids=: Dict[str, str] = None):
         self.session = requests.Session()
         self.cached_sess = CacheControl(self.session)
         self.base_url = base_url
@@ -25,7 +25,7 @@ class SocrataApi:
         self.metadata_url = urljoin(self.base_url, '/api/views/metadata/v1/')
         self.resource_ids = resource_ids
 
-    def request(self, url, **kwargs):
+    def request(self, url:str, **kwargs: Any) -> Dict:
         response = self.cached_sess.get(url, **kwargs)
         response.raise_for_status()
         return response.json()
@@ -33,5 +33,5 @@ class SocrataApi:
     def resource(self, resource_id, **kwargs) -> Dict:
         return self.request(f'{self.resource_url}{resource_id}', **kwargs)
 
-    def metadata(self, resource_id, **kwargs) -> Dict:
+    def metadata(self, resource_id: str, **kwargs: Any) -> Dict:
         return self.request(f'{self.metadata_url}{resource_id}.json', **kwargs)
