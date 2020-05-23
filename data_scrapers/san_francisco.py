@@ -14,11 +14,11 @@ def get_county() -> Dict:
     # create a SocrataApi instance
     RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k',
                      'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
-    session = SocrataApi('https://data.sfgov.org/', RESOURCE_IDS)
+    session = SocrataApi('https://data.sfgov.org/')
 
     # fetch metadata
-    meta_from_source = get_notes(session)
-    update_times = get_update_times(session)
+    meta_from_source = get_notes(session, RESOURCE_IDS)
+    update_times = get_update_times(session, RESOURCE_IDS)
 
     # populate headers
     out["name"] = "San Francisco County"
@@ -28,34 +28,34 @@ def get_county() -> Dict:
     out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. BayPD is not currently reporting deaths by demographic groups. These will be made available when the data is accessible."
 
     # get timeseries and demographic totals
-    out["series"] = get_timeseries(session)
-    demo_totals = get_demographics(session)
+    out["series"] = get_timeseries(session, RESOURCE_IDS)
+    demo_totals = get_demographics(session, RESOURCE_IDS)
     out.update(demo_totals)
 
     return out
 
-def get_notes(session: SocrataApi) -> str:
+def get_notes(session: SocrataApi, resource_ids: Dict[str, str]) -> str:
     """
     Get 'description' field of metadata for all resources. Collect into one string,
     separated by 2 newlines.
     """
     meta_from_source = ''
-    for v in session.resource_ids.values():
+    for v in resource_ids.values():
         data = session.metadata(v)
         meta_from_source += data["description"] + '\n\n'
     return meta_from_source
 
-def get_update_times(session: SocrataApi) -> List:
+def get_update_times(session: SocrataApi, resource_ids: Dict[str, str]) -> List:
     """
     Return a list of update times for all resources.
     """
     update_times = []
-    for v in session.resource_ids.values():
+    for v in resource_ids.values():
         data = session.metadata(v)
         update_times.append(data["dataUpdatedAt"])
     return update_times
 
-def get_demographics(session: SocrataApi) -> Dict:
+def get_demographics(session: SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """
     Fetch cases by age, gender, race_eth. Fetch cases by transmission category
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}.
@@ -64,13 +64,13 @@ def get_demographics(session: SocrataApi) -> Dict:
     """
     # copy dictionary structure of global 'out' dictionary to local variable
     demo_totals: Dict[str,Dict] = { "case_totals": dict(), "death_totals": dict() }
-    demo_totals["case_totals"]["gender"] = get_gender_table(session)
-    demo_totals["case_totals"]["age_group"] = get_age_table(session)
-    demo_totals["case_totals"]["transmission_cat"] = get_transmission_table(session)
-    demo_totals["case_totals"]["race_eth"] = get_race_eth_table(session)
+    demo_totals["case_totals"]["gender"] = get_gender_table(session, resource_ids)
+    demo_totals["case_totals"]["age_group"] = get_age_table(session, resource_ids)
+    demo_totals["case_totals"]["transmission_cat"] = get_transmission_table(session, resource_ids)
+    demo_totals["case_totals"]["race_eth"] = get_race_eth_table(session, resource_ids)
     return demo_totals
 
-def get_timeseries(session: SocrataApi) -> Dict[str,List[Dict]]:
+def get_timeseries(session: SocrataApi, resource_ids: Dict[str, str]) -> Dict[str,List[Dict]]:
     """
     Returns the dictionary value for "series": {"cases":[], "deaths":[], "tests":[]}.
     To create a DataFrame from this dictionary, run
@@ -78,16 +78,16 @@ def get_timeseries(session: SocrataApi) -> Dict[str,List[Dict]]:
     """
     out_series: Dict[str, List[Dict]] = {"cases": [], "deaths": [
     ], "tests": []}  # dictionary structure for time_series
-    out_series["cases"] = get_cases_series(session)
-    out_series["deaths"] = get_deaths_series(session)
-    out_series["tests"] = get_tests_series(session)
+    out_series["cases"] = get_cases_series(session, resource_ids)
+    out_series["deaths"] = get_deaths_series(session, resource_ids)
+    out_series["tests"] = get_tests_series(session, resource_ids)
     return out_series
 
 # Confirmed Cases and Deaths by Date and Transmission
 # Note that cumulative totals are not directly reported, we are summing over the daily reported numbers
-def get_cases_series(session:SocrataApi) -> List[Dict]:
+def get_cases_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases timeseries json, sum over transmision cat by date"""
-    resource_id = session.resource_ids['cases_deaths_transmission']
+    resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Confirmed',
             '$select': 'date,sum(case_count) as cases', '$group': 'date', '$order': 'date'}
     data = session.resource(resource_id, params=params)
@@ -104,9 +104,9 @@ def get_cases_series(session:SocrataApi) -> List[Dict]:
     return cases_series
 
 
-def get_deaths_series(session: SocrataApi) -> List[Dict]:
+def get_deaths_series(session: SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get  deaths timeseries, sum over transmision cat by date"""
-    resource_id = session.resource_ids['cases_deaths_transmission']
+    resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Death',
             '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
     series = session.resource(resource_id, params=params)
@@ -124,9 +124,9 @@ def get_deaths_series(session: SocrataApi) -> List[Dict]:
 
 # Daily count of tests with count of positive tests
 # Note that SF county does not include pending tests, and does not directly report negative tests or cumulative tests.
-def get_tests_series(session:SocrataApi) -> List[Dict]:
+def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get tests by day, order by date ascending"""
-    resource_id = session.resource_ids['tests']
+    resource_id = resource_ids['tests']
     test_series = []
     params = {'$order': 'result_date'}
     series = session.resource(resource_id, params=params)
@@ -146,9 +146,9 @@ def get_tests_series(session:SocrataApi) -> List[Dict]:
         test_series.append(out_entry)
     return test_series
 
-def get_age_table(session) -> List[Dict]:
+def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
-    resource_id = session.resource_ids['age_gender']
+    resource_id = resource_ids['age_gender']
     # Dict of target_label:source_label for lookups
     AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
                 "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
@@ -166,11 +166,11 @@ def get_age_table(session) -> List[Dict]:
 
     return age_table
 
-def get_gender_table(session) -> Dict:
+def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by gender"""
     # Dict of source_label:target_label for re-keying.
     # Note: non cis genders not currently reported
-    resource_id = session.resource_ids['age_gender']
+    resource_id = resource_ids['age_gender']
     GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
     params = {'$select': 'gender, sum(confirmed_cases)', '$group': 'gender'}
     data = session.resource(resource_id, params=params)
@@ -178,9 +178,9 @@ def get_gender_table(session) -> Dict:
     return {GENDER_KEYS[entry["gender"]]: int(entry["sum_confirmed_cases"])
             for entry in data}
 
-def get_transmission_table(session) -> Dict:
+def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by transmission category"""
-    resource_id = session.resource_ids['cases_deaths_transmission']
+    resource_id = resource_ids['cases_deaths_transmission']
     # Dict of source_label:target_label for re-keying
     TRANSMISSION_KEYS = {"Community": "community",
                         "From Contact": "from_contact", "Unknown": "unknown"}
@@ -191,7 +191,7 @@ def get_transmission_table(session) -> Dict:
     return transmission_data
 
 # Confirmed cases by race and ethnicity
-def get_race_eth_table(session: SocrataApi) -> Dict:
+def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """
     Fetch race x ethnicity data. Individuals are assigned to one race/eth category.
     Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'.
@@ -199,7 +199,7 @@ def get_race_eth_table(session: SocrataApi) -> Dict:
     Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race label.
     TO-DO: update this code when the Native American cases are assigned a race label.
     """
-    resource_id = session.resource_ids["race_eth"]
+    resource_id = resource_ids["race_eth"]
     # Dict of source_label:target_label for re-keying.
     # Note: Native_Amer not currently reported
     RACE_ETH_KEYS = {'Hispanic or Latino/a, all races': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
