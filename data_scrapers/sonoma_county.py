@@ -163,7 +163,15 @@ def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
     for row in rows:
         group, cases, _pct = get_cells(row)
         raw_cases = parse_int(cases)
-        element = {'group': group, 'raw_cases': raw_cases}
+        age_string_transform = {
+            '0-17': '0_to_17',
+            '18-49': '18_to_49',
+            '50-64': '50_to_64',
+            '65 and Above': '65_and_older',
+            'Under Investigation': 'Unknown'
+        }
+
+        element = {'group': age_string_transform[group], 'raw_cases': raw_cases}
         categories.append(element)
     return categories
 
