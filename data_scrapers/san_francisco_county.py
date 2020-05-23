@@ -3,14 +3,14 @@ import requests
 import json
 from typing import Dict
 
-# API endpoints 
+# API endpoints
 age_gender_url = 'https://data.sfgov.org/resource/sunc-2t3k.json'
 race_ethnicity_url = 'https://data.sfgov.org/resource/vqqm-nsqg.json'
 transmission_url = 'https://data.sfgov.org/resource/tvq9-ec9w.json'
 hospitalizations_url = 'https://data.sfgov.org/resource/nxjg-bhem.json'
 tests_url = 'https://data.sfgov.org/resource/nfpa-mg4g.json'
 
-def get_json(url, query=''):
+def get_json(url: str, query: str = '') -> Dict:
     """
     Fetches data from url with optional query in JSON format
     and parses it into a dict
