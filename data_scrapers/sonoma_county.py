@@ -125,17 +125,46 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
         tests[lower_res] = parse_int(number)
     return tests;
 
-def generic_transform(tag: element.Tag) -> Dict[str, int]:
+# def generic_transform(tag: element.Tag) -> Dict[str, int]:
+#     """
+#     Transform function for tables which don't require any special processing.
+#     Takes in a BeautifulSoup tag for a table and returns a dictionary
+#     in which the keys are strings and the values integers
+#     """
+#     categories = {}
+#     rows = get_rows(tag)
+#     for row in rows:
+#         cat, cases, _pct = get_cells(row)
+#         categories[cat] = parse_int(cases)
+#     return categories
+
+def gender_transform(tag: element.Tag) -> Dict[str, int]:
     """
-    Transform function for tables which don't require any special processing.
+    Transform function for the cases by gender table.
     Takes in a BeautifulSoup tag for a table and returns a dictionary
     in which the keys are strings and the values integers
     """
     categories = {}
     rows = get_rows(tag)
+    string_conversions = {'Males': 'male', 'Females': 'female'}
     for row in rows:
         cat, cases, _pct = get_cells(row)
-        categories[cat] = parse_int(cases)
+        categories[string_conversions[cat]] = parse_int(cases)
+    return categories
+
+def age_transform(tag: element.Tag) -> List[Dict[str, int]]:
+    """
+    Transform function for the cases by age group table.
+    Takes in a BeautifulSoup tag for a table and returns a list of
+    dictionaries in which the keys are strings and the values integers
+    """
+    categories = []
+    rows = get_rows(tag)
+    for row in rows:
+        group, cases, _pct = get_cells(row)
+        raw_cases = parse_int(cases)
+        element = {'group': group, 'raw_cases': raw_cases}
+        categories.append(element)
     return categories
 
 def get_unknown_race(race_eth_tag: element.Tag) -> int:
@@ -236,9 +265,9 @@ def get_county() -> Dict:
         'series': transform_cases(hist_cases),
         'case_totals': {
             'transmission_cat': transform_transmission(cases_by_source),
-            'age_group': generic_transform(cases_by_age),
+            'age_group': age_transform(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
-            'gender': generic_transform(cases_by_gender)
+            'gender': gender_transform(cases_by_gender)
         },
         'tests_totals': {
             'tests': transform_tests(total_tests),
