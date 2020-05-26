@@ -6,6 +6,7 @@ import json
 import numpy as np
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from urllib.parse import unquote_plus
 
 # GOING TO WORK ON: then scrape the metadata, and then figure out how to download the CSVs (seleniuim)
 # throw error when the button isn't correctly pressed
@@ -29,81 +30,35 @@ def get_county_data():
 
 	#print(model)
 	#print(get_metadata(url))
-	print(download_csvs(url))
+	print(extract_csvs(url))
 
-def download_csvs(url):
+def extract_csvs(url):
 	# div class = "dw-chart-notes"
-	driver = webdriver.Chrome('/Users/angelakwon/Downloads/chromedriver')
+	driver = webdriver.Chrome('/Users/angelakwon/Downloads/chromedriver') 
+	# can I leave this blank, will virtual env take care of it?
 	driver.implicitly_wait(30)
 	driver.get(url)
 
-	iframe_list = driver.find_elements_by_tag_name('iframe')
-	driver.switch_to.frame(iframe_list[3])
-	driver.implicitly_wait(30)
-	for elt in driver.find_elements_by_tag_name('a'):
-		if not elt.is_displayed():
-			elt.sendkeys(Keys.RETURN) # got the element to be clicked on, but... not downloading anything?
-	#print(driver.find_elements_by_css_selector('.dw-chart-footer .dw-data-link')) 
-	#.class1 .class2
-	#print(driver.find_elements_by_css_selector('div.footer > a')) 
+	chart_id = 'tyXjV'
+	frame = driver.find_element_by_css_selector(f'iframe[src^="//datawrapper.dwcdn.net/{chart_id}/"]')
+	driver.switch_to.frame(frame)
+	# Grab the raw data out of the link's href attribute
+	csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+	# Switch back to the parent frame to "reset" the context
+	driver.switch_to.parent_frame()
 
-	#link = driver.find_element_by_tag_name('a')
-	#print(driver.find_elements_by_tag_name('a')) # there are two
-	#print(driver.find_elements_by_css_selector('#datawrapper-chart-Eq6Es a')) # I think this selection is wrong
-
-	#datawrapper-chart-Eq6Es a
-
-	#print(driver.find_elements_by_class_name('dw-data-link'))
-	#driver.maximize_window()
-	#print("Element is visible? " + str(driver.find_element_by_tag_name('a').is_displayed()))
-
-	#print("Element is visible? " + str(driver.find_element_by_class_name('dw-data-link').is_displayed()))
-
-	#WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a')))
-	#ActionChains(driver).move_to_element(link).click(link).perform()
-	# both of these produce the same kind of error
-
-
-
-	# so the reason I was getting a null error was because... 
-	# you can't select an iframe  using the name? not sure.
-
-	# 1. try to switch to the iframe using the name or id. 
-	# The name is datawrapper-chart-Eq6Es
-	#return driver.switch_to.frame('datawrapper-chart-Eq6Es')
-	# returns None
-
-	# 2. Try to switch to the iframe using the frame index
-	#return driver.switch_to.frame(3)
-	# returns None
-	# maybe it's lowkey nested, so let's just get the first frame.
-	#return driver.switch_to.frame(1)
-
-	# 3. Try XPATH - recommended in a good number of SO posts.
-	#csv = driver.find_element_by_xpath("/////////////iframe[1]")
-	# seems too deep to be found by xpath?
-	#return csv
-
-
-	# Then search for the element by class name/tag name.
-	#driver.find_element(By.TAG_NAME, 'a').click()
-
-	# all csvs have the a tag, and class=dw-data-link
-	#print(driver.find_element_by_class_name("dw-data-link"))
-
-	# x path is probably not the best way, but let's give it a try
-	# the click button is within the  within an iframe. 
-	# I need to switch to the iframe, and then click, 
-
+	# Deal with the data
+	if csv_data.startswith('data:'):
+    	media, data = csv_data[5:].split(',', 1)
+    # Will likely always have this kind of data type
+    if media != 'application/octet-stream;charset=utf-8':
+        raise ValueError(f'Cannot handle media type "{media}"')
+    csv_string = unquote_plus(data)
+    print(csv_string)
 
 	# Then leave the iframe
 	driver.switch_to.default_content()
-	return 'Done downloading'
-
-	#print(driver.find_element(By.TAG_NAME, 'button').click())
-
-	# Clicking on it should be simple
-	# print(soup.find_all("a", class_ = "dw-data-link"))
+	#return 'Done downloading'
 
 
 def get_metadata(url):
