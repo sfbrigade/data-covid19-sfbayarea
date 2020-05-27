@@ -2,11 +2,22 @@ from bs4 import BeautifulSoup  # type: ignore
 import dateutil.parser
 import dateutil.tz
 from selenium import webdriver  # type: ignore
+# from ..shared.webdriver import get_firefox
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
 from .feed import NewsItem
 from .utils import first_text_in_element, get_base_url
+
+from os import getenv
+from selenium import webdriver  # type: ignore
+
+
+def get_firefox() -> webdriver.Firefox:
+    options = webdriver.FirefoxOptions()
+    options.headless = not getenv('FIREFOX_VISIBLE')
+    return webdriver.Firefox(options=options)
+
 
 
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
@@ -43,7 +54,7 @@ class AlamedaNews(NewsScraper):
     START_URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
 
     def load_html(self, url: str) -> str:
-        driver = webdriver.Firefox()
+        driver = get_firefox()  # webdriver.Firefox()
         try:
             # This page does a kind of nutty thing: it loads some javascript
             # that sets a cookie, then reloads the page, which then gives us
