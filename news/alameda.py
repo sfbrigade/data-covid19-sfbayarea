@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup  # type: ignore
 import dateutil.parser
 import dateutil.tz
-from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
@@ -41,24 +40,6 @@ class AlamedaNews(NewsScraper):
     )
 
     START_URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
-
-    def load_html(self, url: str) -> str:
-        driver = webdriver.Firefox()
-        try:
-            # This page does a kind of nutty thing: it loads some javascript
-            # that sets a cookie, then reloads the page, which then gives us
-            # the actual content. Soooooo, we have to look for something that
-            # looks like page content before continuing on (or fail if it never
-            # shows up). This is also why we are using Selenium. :(
-            driver.get(self.START_URL)
-            driver.implicitly_wait(10)
-            content = driver.find_element_by_class_name('content')
-            if not content:
-                raise ValueError(f'Page did not load properly: {self.START_URL}')
-
-            return driver.page_source
-        finally:
-            driver.quit()
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
