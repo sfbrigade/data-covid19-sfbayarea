@@ -1,5 +1,6 @@
-from bs4 import BeautifulSoup  # type: ignore
+from bs4 import BeautifulSoup, element  # type: ignore
 import re
+from typing import Optional
 from urllib.parse import urljoin
 
 
@@ -29,3 +30,46 @@ def get_base_url(soup: BeautifulSoup, url: str) -> str:
         return urljoin(url, base['href'].strip())
     else:
         return url
+
+
+def first_text_in_element(parent: element.Tag) -> Optional[str]:
+    """
+    Get the first piece of non-whitespace text in an element (including deeply
+    nested text).
+
+    Parameters
+    ----------
+    parent
+        The BeautifulSoup element to search within.
+
+    Returns
+    -------
+    str or None
+
+    Examples
+    --------
+    >>> soup = BeautifulSoup('''
+    >>>    <html>
+    >>>        <body>
+    >>>            <p>
+    >>>                <br>
+    >>>                Hello
+    >>>                <span>Extra Stuff</span>
+    >>>            </p>
+    >>>        </body>
+    >>>    </html>
+    >>>    ''')
+    >>> first_text_in_element(soup.body)
+    'Hello'
+    """
+    for child in parent.contents:
+        if isinstance(child, str):
+            clean = child.strip()
+            if clean:
+                return clean
+        elif isinstance(child, element.Tag):
+            descendent_text = first_text_in_element(child)
+            if descendent_text:
+                return descendent_text
+
+    return None
