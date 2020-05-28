@@ -80,7 +80,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     # cumul_recovered = 0
     # active = []
     # cumul_active = 0
-    rows = get_rows(cases_tag)
+    rows = reversed(get_rows(cases_tag))
     for row in rows:
         row_cells = row.find_all(['th', 'td'])
         date = dateutil.parser.parse(row_cells[0].text).date().isoformat()
@@ -92,6 +92,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         cases.append({ 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases })
 
         new_deaths = dead - cumul_deaths
+        cumul_deaths = dead
         deaths.append({ 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead })
 
         # new_recovered = recoveries - cumul_recovered
@@ -100,8 +101,6 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         # new_active = active_cases - cumul_active
         # active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
-    cases.reverse()
-    deaths.reverse()
     return { 'cases': cases, 'deaths': deaths }
 
 def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
@@ -144,7 +143,7 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
 #         categories[cat] = parse_int(cases)
 #     return categories
 
-def gender_transform(tag: element.Tag) -> Dict[str, int]:
+def transform_gender(tag: element.Tag) -> Dict[str, int]:
     """
     Transform function for the cases by gender table.
     Takes in a BeautifulSoup tag for a table and returns a dictionary
@@ -289,7 +288,7 @@ def get_county() -> Dict:
             'transmission_cat': transform_transmission(cases_by_source),
             'age_group': age_transform(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
-            'gender': gender_transform(cases_by_gender)
+            'gender': transform_gender(cases_by_gender)
         },
         'tests_totals': {
             'tests': transform_tests(total_tests),
