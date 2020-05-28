@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup, element  # type: ignore
-from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
+from ..webdriver import get_firefox
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
@@ -39,7 +39,7 @@ class AlamedaNews(NewsScraper):
     URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
 
     def load_html(self, url: str) -> str:
-        with webdriver.Firefox() as driver:
+        with get_firefox() as driver:
             # This page does a kind of nutty thing: it loads some javascript
             # that sets a cookie, then reloads the page, which then gives us
             # the actual content. Soooooo, we have to look for something that
