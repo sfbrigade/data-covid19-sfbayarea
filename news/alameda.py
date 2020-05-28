@@ -43,8 +43,7 @@ class AlamedaNews(NewsScraper):
     START_URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
 
     def load_html(self, url: str) -> str:
-        driver = webdriver.Firefox()
-        try:
+        with webdriver.Firefox() as driver:
             # This page does a kind of nutty thing: it loads some javascript
             # that sets a cookie, then reloads the page, which then gives us
             # the actual content. Soooooo, we have to look for something that
@@ -57,8 +56,6 @@ class AlamedaNews(NewsScraper):
                 raise ValueError(f'Page did not load properly: {self.START_URL}')
 
             return driver.page_source
-        finally:
-            driver.quit()
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
