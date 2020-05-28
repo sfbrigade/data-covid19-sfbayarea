@@ -162,15 +162,13 @@ def transform_gender(tag: element.Tag) -> Dict[str, int]:
         categories[gender_string_conversions[gender]] = parse_int(cases)
     return categories
 
-# not sure why I need object in here: I've checked the output value types and
-# they are strings and ints, but mypy is convinced there is an object in there
-def age_transform(tag: element.Tag) -> List[Dict[str, Union[str, int, object]]]:
+def transform_age(tag: element.Tag) -> List[Dict[str, Union[str, int]]]:
     """
     Transform function for the cases by age group table.
     Takes in a BeautifulSoup tag for a table and returns a list of
     dictionaries in which the keys are strings and the values integers
     """
-    categories = []
+    categories: List[Dict[str, Union[str, int]]] = []
     rows = get_rows(tag)
     for row in rows:
         group, cases, _pct = get_cells(row)
@@ -186,7 +184,7 @@ def age_transform(tag: element.Tag) -> List[Dict[str, Union[str, int, object]]]:
         if group not in age_string_transform:
             raise FormatError('A new age group has been added to the cases by race table')
 
-        element = {'group': age_string_transform[group], 'raw_cases': raw_cases}
+        element: Dict[str, Union[str, int]] = {'group': age_string_transform[group], 'raw_cases': raw_cases}
         categories.append(element)
     return categories
 
@@ -292,7 +290,7 @@ def get_county() -> Dict:
         'series': transform_cases(hist_cases),
         'case_totals': {
             'transmission_cat': transform_transmission(cases_by_source),
-            'age_group': age_transform(cases_by_age),
+            'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
         },
