@@ -238,6 +238,9 @@ def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int
     rows = get_rows(hospital_tag)
     for row in rows:
         hospitalized, number, _pct = get_cells(row)
+        lowercase_hospitalized = hospitalized.lower()
+        if lowercase_hospitalized != 'yes' and lowercase_hospitalized != 'no':
+            raise FormatError('The format of the hospitalization table has changed')
         if hospitalized.lower() == 'yes':
             hospitalizations['hospitalized'] = parse_int(number)
         else:
