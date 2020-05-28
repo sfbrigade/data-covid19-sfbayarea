@@ -7,13 +7,19 @@ from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 from format_error import FormatError # type: ignore
 
+def get_section_by_title(header: str, soup: BeautifulSoup) -> element.Tag:
+    """
+    Takes in a header string and returns the parent element of that header
+    """
+    header_tag = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
+    return header_tag.find_parent()
+
 def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
     """
     Takes in a header and a BeautifulSoup object and returns the table under
     that header
     """
-    header_tag = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
-    tables = header_tag.find_parent().find_all('table')
+    tables = get_section_by_title(header, soup).find_all('table')
     # this lets us get the second cases table
     return tables[-1]
 
@@ -50,10 +56,10 @@ def generate_update_time(soup: BeautifulSoup) -> str:
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
-    Finds the 'Definitions' header on the page and gets all of the text in it
+    Finds the 'Definitions' header on the page and gets all of the text' in it
     """
-    definitions_header = soup.find('h3', string='Definitions')
-    definitions_text = definitions_header.find_parent().text
+    definitions_section = get_section_by_title('Definitions', soup)
+    definitions_text = definitions_section.text
     return definitions_text.replace('\n', '/').strip()
 
 # apologies for this horror of a output type
