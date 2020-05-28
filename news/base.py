@@ -43,11 +43,15 @@ class NewsScraper:
         """
         feed = self.create_feed()
         # TODO: we may want to iterate through multiple pages in the future
-        response = requests.get(self.START_URL)
-        response.raise_for_status()
-        news = self.parse_page(response.text, self.START_URL)
+        html = self.load_html(self.START_URL)
+        news = self.parse_page(html, self.START_URL)
         feed.items.extend(news)
         return feed
+
+    def load_html(self, url: str) -> str:
+        response = requests.get(self.START_URL)
+        response.raise_for_status()
+        return response.text
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         raise NotImplementedError()

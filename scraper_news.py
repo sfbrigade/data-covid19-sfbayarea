@@ -13,7 +13,7 @@ COUNTY_NAMES = tuple(news.scrapers.keys())
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-@click.option('--format', default='json_simple',
+@click.option('--format', default=('json_simple',),
               type=click.Choice(('json_feed', 'json_simple', 'rss')),
               multiple=True)
 @click.option('--output', help='write output file(s) to this directory')
