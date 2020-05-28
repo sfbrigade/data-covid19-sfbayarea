@@ -4,7 +4,11 @@ from bs4 import BeautifulSoup # type: ignore
 import json
 from typing import List, Dict, Tuple
 from datetime import datetime, timezone
+<<<<<<< HEAD:covid19_sfbayarea/data/alameda.py
 from ..webdriver import get_firefox
+=======
+from selenium import webdriver  # type: ignore
+>>>>>>> Reorganize data_scrapers and news into one package:data_scrapers/alameda.py
 from .utils import get_data_model
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
