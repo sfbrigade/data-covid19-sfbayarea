@@ -3,11 +3,12 @@ import json
 from typing import Dict, Any
 import requests
 from urllib.parse import urljoin
-from cachecontrol import CacheControl # type: ignore
+from cachecontrol import CacheControl  # type: ignore
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
-    template_path = Path(__file__).parent.parent / 'data_models/data_model.json'
+    root = Path(__file__).parent.parent.parent
+    template_path = root / 'data_models/data_model.json'
     with template_path.open() as template:
         out = json.load(template)
     return out

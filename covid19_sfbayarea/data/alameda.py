@@ -5,7 +5,7 @@ import json
 from typing import List, Dict, Tuple
 from datetime import datetime, timezone
 from selenium import webdriver  # type: ignore
-from data_scrapers.utils import get_data_model
+from .utils import get_data_model
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
