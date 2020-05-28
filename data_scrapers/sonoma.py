@@ -12,6 +12,9 @@ def get_section_by_title(header: str, soup: BeautifulSoup) -> element.Tag:
     Takes in a header string and returns the parent element of that header
     """
     header_tag = soup.find(lambda tag: tag.name == 'h3' and header in tag.get_text())
+    if not header_tag:
+        raise FormatError('The header "{0}" no longer corresponds to a section'.format(header))
+
     return header_tag.find_parent()
 
 def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
