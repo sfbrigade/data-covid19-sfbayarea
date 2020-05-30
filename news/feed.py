@@ -67,11 +67,13 @@ class NewsItem:
         return result
 
     def format_rss(self) -> ElementTree.Element:
+        tags = (E('category', tag) for tag in (self.tags or []))
         return E.item(
             E('guid', self.id),
             E('title', self.title),
             E('link', self.url),
-            E('pubDate', format_datetime_2822(self.date_published))
+            E('pubDate', format_datetime_2822(self.date_published)),
+            *tags
         )
 
 
