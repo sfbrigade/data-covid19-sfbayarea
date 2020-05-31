@@ -38,6 +38,22 @@ def get_cells(row: element.ResultSet) -> List[str]:
     """
     return [el.text for el in row.find_all(['th', 'td'])]
 
+def row_list_to_dict(row_list: List[str], headers: List[str]) -> Dict[str, str]:
+    output = {}
+    for i in range(len(row_list)):
+        val = row_list[i]
+        header = headers[i]
+        output[header] = val
+    return output
+
+def parse_table(tag: element.Tag) -> List[Dict[str, str]]:
+    rows = tag.find_all('tr')
+    header = rows[0]
+    body = rows[1:]
+    header_cells = get_cells(header)
+    body_cells = [get_cells(row) for row in body]
+    return [row_list_to_dict(row, header_cells) for row in body_cells]
+
 def parse_int(text: str) -> int:
     text = text.strip()
     if text == '-':
