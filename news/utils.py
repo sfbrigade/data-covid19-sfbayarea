@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, element  # type: ignore
+import dateutil.tz
 import re
 from typing import Optional
 from urllib.parse import urljoin
@@ -6,6 +7,7 @@ from urllib.parse import urljoin
 
 HEADING_PATTERN = re.compile(r'h\d')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
+PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
 
 
 def get_base_url(soup: BeautifulSoup, url: str) -> str:

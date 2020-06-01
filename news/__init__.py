@@ -2,6 +2,7 @@ from typing import Dict, Type
 from .alameda import AlamedaNews
 from .base import NewsScraper
 from .san_francisco import SanFranciscoNews
+from .santa_clara import SantaClaraNews
 
 
 scrapers: Dict[str, Type[NewsScraper]] = {
@@ -11,7 +12,7 @@ scrapers: Dict[str, Type[NewsScraper]] = {
     # 'napa': None,
     'san_francisco': SanFranciscoNews,
     # 'san_mateo': None,
-    # 'santa_clara': None,
+    'santa_clara': SantaClaraNews,
     # 'solano': None,
     # 'sonoma': None,
 }

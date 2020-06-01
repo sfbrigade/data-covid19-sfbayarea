@@ -1,15 +1,11 @@
 from bs4 import BeautifulSoup  # type: ignore
 import dateutil.parser
-import dateutil.tz
 from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
 from .feed import NewsItem
-from .utils import first_text_in_element, get_base_url
-
-
-PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
+from .utils import first_text_in_element, get_base_url, PACIFIC_TIME
 
 
 class AlamedaNews(NewsScraper):
