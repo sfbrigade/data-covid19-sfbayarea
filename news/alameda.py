@@ -1,11 +1,11 @@
-from bs4 import BeautifulSoup  # type: ignore
-import dateutil.parser
+from bs4 import BeautifulSoup, element  # type: ignore
 from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
+from .errors import FormatError
 from .feed import NewsItem
-from .utils import first_text_in_element, get_base_url, PACIFIC_TIME
+from .utils import first_text_in_element, get_base_url, parse_datetime
 
 
 class AlamedaNews(NewsScraper):
@@ -36,7 +36,7 @@ class AlamedaNews(NewsScraper):
         home_page_url='http://www.acphd.org/2019-ncov/press-releases.aspx'
     )
 
-    START_URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
+    URL = 'http://www.acphd.org/2019-ncov/press-releases.aspx'
 
     def load_html(self, url: str) -> str:
         with webdriver.Firefox() as driver:
@@ -45,55 +45,48 @@ class AlamedaNews(NewsScraper):
             # the actual content. Soooooo, we have to look for something that
             # looks like page content before continuing on (or fail if it never
             # shows up). This is also why we are using Selenium. :(
-            driver.get(self.START_URL)
+            driver.get(self.URL)
             driver.implicitly_wait(10)
             content = driver.find_element_by_class_name('content')
             if not content:
-                raise ValueError(f'Page did not load properly: {self.START_URL}')
+                raise ValueError(f'Page did not load properly: {self.URL}')
 
             return driver.page_source
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
-        news = []
         article_rows = soup.select_one('.board').find_all('tr')
-        for index, row in enumerate(article_rows):
-            date_cell, info_cell = row.find_all('td')
+        return [self.parse_news_item(row, base_url)
+                for row in article_rows]
 
-            date_string = date_cell.get_text(strip=True)
-            try:
-                date = dateutil.parser.parse(date_string)
-                if date.tzinfo is None:
-                    date = date.replace(tzinfo=PACIFIC_TIME)
-            except ValueError:
-                raise ValueError(f'Article {index} date could not be parsed: '
-                                 f'"{date_string}"')
+    def parse_news_item(self, row: element.Tag, base_url: str) -> NewsItem:
+        date_cell, info_cell = row.find_all('td')
 
-            # Some info cells just have the title as a link, while others have
-            # the title as text followed by links for each language.
-            english_link = info_cell.find('a', string='English')
-            if english_link:
-                url = english_link['href']
-                # These titles are sometimes followed by a colon. If so, drop
-                # it. (Whitespace will already have been stripped.)
-                title = first_text_in_element(info_cell)
-                if title:
-                    title = title.strip(':')
-            else:
-                title_link = info_cell.find('a')
-                url = title_link['href']
-                title = title_link.get_text(strip=True)
+        date_string = date_cell.get_text(strip=True)
+        date = parse_datetime(date_string)
 
-            if url:
-                url = urljoin(base_url, url)
-            else:
-                raise ValueError(f'Not URL found for article {index}')
+        # Some info cells just have the title as a link, while others have
+        # the title as text followed by links for each language.
+        english_link = info_cell.find('a', string='English')
+        if english_link:
+            url = english_link['href']
+            # These titles are sometimes followed by a colon. If so, drop
+            # it. (Whitespace will already have been stripped.)
+            title = first_text_in_element(info_cell)
+            if title:
+                title = title.strip(':')
+        else:
+            title_link = info_cell.find('a')
+            url = title_link['href']
+            title = title_link.get_text(strip=True)
 
-            if not title:
-                raise ValueError(f'No title content found for article {index}')
+        if url:
+            url = urljoin(base_url, url)
+        else:
+            raise FormatError('No URL found')
 
-            news.append(NewsItem(id=url, url=url, title=title,
-                                 date_published=date))
+        if not title:
+            raise FormatError('No title content found')
 
-        return news
+        return NewsItem(id=url, url=url, title=title, date_published=date)

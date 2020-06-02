@@ -1,11 +1,11 @@
 from bs4 import BeautifulSoup, element  # type: ignore
-import dateutil.parser
 from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
+from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, PACIFIC_TIME
+from .utils import get_base_url, parse_datetime
 
 
 class SantaClaraNews(NewsScraper):
@@ -34,15 +34,15 @@ class SantaClaraNews(NewsScraper):
         home_page_url='https://www.sccgov.org/sites/phd/news/Pages/newsroom.aspx'
     )
 
-    START_URL = 'https://www.sccgov.org/sites/phd/news/Pages/newsroom.aspx'
+    URL = 'https://www.sccgov.org/sites/phd/news/Pages/newsroom.aspx'
 
     def load_html(self, url: str) -> str:
         with webdriver.Firefox() as driver:
-            driver.get(self.START_URL)
+            driver.get(self.URL)
             driver.implicitly_wait(10)
             content = driver.find_element_by_class_name('sccgov-alerts-archive-item')
             if not content:
-                raise ValueError(f'Page did not load properly: {self.START_URL}')
+                raise ValueError(f'Page did not load properly: {self.URL}')
 
             return driver.page_source
 
@@ -59,23 +59,17 @@ class SantaClaraNews(NewsScraper):
 
         url = title_link['href']
         if not url:
-            raise ValueError(f'No URL found for article {index}')
+            raise FormatError(f'No URL found for article {index}')
         else:
             url = urljoin(base_url, url)
 
         title = title_link.get_text(strip=True)
         if not title:
-            raise ValueError(f'No title content found for article {index}')
+            raise FormatError(f'No title content found for article {index}')
 
         date_tag = article.select_one('.sccgov-alerts-archive-date')
         date_string = date_tag.get_text(strip=True)
-        try:
-            date = dateutil.parser.parse(date_string)
-            if date.tzinfo is None:
-                date = date.replace(tzinfo=PACIFIC_TIME)
-        except ValueError:
-            raise ValueError(f'Article {index} date is not in a known format: '
-                             f'"{date_string}"')
+        date = parse_datetime(date_string)
 
         category_tag = article.select_one('.sccgov-alerts-archive-category')
         category = category_tag.get_text(strip=True)
