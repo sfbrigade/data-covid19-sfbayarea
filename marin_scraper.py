@@ -1,5 +1,3 @@
-# is there a way to get historical data
-# is there a way to have a script click on the "download csv" files?
 #!/usr/bin/env python3
 import csv
 import json
@@ -7,23 +5,22 @@ import numpy as np
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import unquote_plus
+from datetime import datetime
 
 
 # do a final check 
 def get_county_data():
-	url = 'https://coronavirus.marinhhs.org/surveillance'
-	#case_csv = '/Users/angelakwon/Downloads/data-Eq6Es.csv'
 	"""Main method for populating county data"""
+
+	url = 'https://coronavirus.marinhhs.org/surveillance'
 	with open('/Users/angelakwon/Desktop/data-covid19-sfbayarea/data-model.json') as template:
-		# TO-DO: Need to change the location here to work for anyone..look at other scrapers
+		# TO-DO: Need to change this to github location
 		model = json.load(template)
 
 	csvs = {"cases": "Eq6Es", "deaths": "Eq6Es", "tests": None, "age": "VOeBm", "gender": "FEciW", "race_eth": "aBeEd", "transmission": None}
-	# There are two separate race_eth csvs, but I think I picked the more comprehensive one. 
-	# The other one has id: 6RXFj
-	# TO-DO: Do they have 
 	# NOTE: they used to have a pos/neg test csv, but it seems to be gone now. 
 	# also, their graph doesn't show pos/neg.
+	# population totals and transmission data missing.
 
 	#model['name'] = 
 	#model['update_time'] = 
@@ -31,22 +28,24 @@ def get_county_data():
 	#model['meta_from_source'] = 
 	# make sure to get the comments below the data
 	#model['meta_from_baypd']
-	model["series"]["cases"] = get_case_series(csvs["cases"], url) 
+	#model["series"]["cases"] = get_case_series(csvs["cases"], url) 
 	#model["series"]["deaths"] =  get_death_series(csvs["deaths"], url)
 	#model["series"]["tests"] = get_test_series(case_csv)
-
-	#print(model)
-	#print(get_metadata(url))
-	print(model["series"]["cases"])
+	#model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(csvs["age"], url)
+	#model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(csvs["gender"], url)
+	model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(csvs["race_eth"], url)
+	print(model["case_totals"]["race_eth"], model["death_totals"]["race_eth"])
+	
 
 def extract_csvs(chart_id, url):
-	# div class = "dw-chart-notes"
-	driver = webdriver.Chrome('/Users/angelakwon/Downloads/chromedriver') 
-	# can I leave this blank, will virtual env take care of it?
+	driver = webdriver.Chrome('/Users/angelakwon/Downloads/chromedriver') # can I leave this blank, will virtual env take care of it?
+	
 	driver.implicitly_wait(30)
 	driver.get(url)
 
-	frame = driver.find_element_by_css_selector(f'iframe[src^="//datawrapper.dwcdn.net/{chart_id}/"]')
+	#frame = driver.find_element_by_css_selector(f'iframe[src^="//datawrapper.dwcdn.net/{chart_id}/"]')
+	# the link changed - now it attaches a random number after the chart id so I needed to change the attribute.
+	frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
 	driver.switch_to.frame(frame)
 	# Grab the raw data out of the link's href attribute
 	csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
@@ -75,10 +74,10 @@ def get_metadata(url):
 	driver.implicitly_wait(30)
 	driver.get(url)
 	soup = BeautifulSoup(driver.page_source, 'html5lib')
-	soup.find_all('p') 
+	soup.find_all('p') .getText()
 	# THEN use the getText function
 	
-	driver.quit() # does this close the tab?
+	driver.quit() 
 
 def get_case_series(chart_id, url):
 	csv_ = extract_csvs(chart_id, url)
@@ -90,13 +89,15 @@ def get_case_series(chart_id, url):
 	
 	case_history = []
 
-	# TO-DO: Double check this in morning, then transfer over logic to deaths
 	for row in csv_strs[1:]:
 	# 	# TO-DO: throw an exception if there are more than the expected number of headers, or when order has changed
 	 	daily = {}
-	 	daily["date"] = row.split(',')[0] # TO-DO: need to format the date properly
+	 	#daily["date"] = row.split(',')[0] 
+	 	date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
+	 	daily["date"] = date_time_obj.isoformat()
+	 	# TO-DO: need to format the date properly
 	 	case_history.append(int(row.split(',')[1]))
-	 	daily["cumul_cases"] = row.split(',')[1]
+	 	daily["cumul_cases"] = int(row.split(',')[1])
 	 	series.append(daily)
 		
 	case_history_diff = np.diff(case_history) 
@@ -108,58 +109,102 @@ def get_case_series(chart_id, url):
 def get_death_series(chart_id,  url):
 	csv_ = extract_csvs(chart_id, url)
 	series = []
-	with open(csv_, mode = 'r') as case_csv: 
-		csv_reader = csv.DictReader(case_csv)
-		csv_headers = list(next(csv_reader).keys()) # TO-DO: Make it work without hard coding the keys
-		case_history = []
-		for row in csv_reader:
-			# TO-DO: throw an exception if there are more than the expected number of headers, or when order has changed
-			daily = {}
-			daily["date"] = row["Date"] # TO-DO: need to format the date properly
-			case_history.append(int(row["Total Deaths"]))
-			daily["cumul_deaths"] = row["Total Deaths"]
-			series.append(daily)
+
+	csv_strs = csv_.splitlines()
+	keys = csv_strs[0].split(',')
+	
+	death_history = []
+
+	for row in csv_strs[1:]:
+	# 	# TO-DO: throw an exception if there are more than the expected number of headers, or when order has changed
+	 	daily = {}
+	 	date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
+	 	daily["date"] = date_time_obj.isoformat()
+	 	death_history.append(int(row.split(',')[4]))
+	 	daily["cumul_deaths"] = int(row.split(',')[4])
+	 	series.append(daily)
 		
-	case_history_diff = np.diff(case_history) 
-	case_history_diff = np.insert(case_history_diff, 0, 0) # there will be no calculated difference for the first day, so adding it in manually
-	for val, case_num in enumerate(case_history_diff):
-		series[val]["deaths"] = case_num # should I change up the order of the keys?
+	death_history_diff = np.diff(death_history) 
+	death_history_diff = np.insert(death_history_diff, 0, 0) # there will be no calculated difference for the first day, so adding it in manually
+	for val, death_num in enumerate(death_history_diff):
+		series[val]["deaths"] = death_num
 	return series
 
-#def get_test_series():
-	# "date": "yyyy-mm-dd",
- #                "tests": -1,
- #                "positive": -1,
- #                "negative": -1,
- #                "pending": -1,
- #                "cumul_tests": -1,
- #                "cumul_pos": -1,
- #                "cumul_neg": -1,
- #                "cumul_pend": -1
- 	#save the first row as values
- 	#need to keep track of pos and negative, but no values for pending
+
+def get_breakdown_age(chart_id, url):
+	""" Gets breakdown of cases and deaths by age """
+	csv_ = extract_csvs(chart_id, url)
+	c_brkdown = []
+	d_brkdown = []
+
+	csv_strs = csv_.splitlines()
+	keys = csv_strs[0].split(',') # don't know if this is actually needed
+
+	
+	for row in csv_strs[1:]:
+		c_age = {}
+		d_age = {}
+		c_age["group"] = row.split(',')[0]
+		c_age["raw_count"] = int(row.split(',')[2])
+		d_age["group"] = row.split(',')[0]
+		d_age["raw_count"] = int(row.split(',')[4])
+		c_brkdown.append(c_age)
+		d_brkdown.append(d_age)
+
+	return c_brkdown, d_brkdown
+
+def get_breakdown_gender(chart_id, url):
+	""" Gets breakdown of cases and deaths by gender """
+	csv_ = extract_csvs(chart_id, url)
+
+	csv_strs = csv_.splitlines()
+	keys = csv_strs[0].split(',') # don't know if this is actually needed
+
+	c_gender = {}
+	d_gender = {}
+	
+	for row in csv_strs[1:]:
+		split = row.split(',')
+		gender = split[0].lower()
+		c_gender[gender] = int(split[2])
+		d_gender[gender] = int(split[4])			
+		# check to see what other scrapers have done with missing data model values
+
+	return c_gender, d_gender
 
 
-#def get_case_totals_gender():
+def get_breakdown_race_eth(chart_id, url):
+	csv_ = extract_csvs(chart_id, url)
 
-#def get_case_totals_age():
+	csv_strs = csv_.splitlines()
+	key_mapping = {"black/african american":"African_Amer", "hispanic/latino": "Latinx_or_Hispanic",
+            "american indian/alaska native": "Native_Amer", "native hawaiian/pacific islander": "Pacific_Islander", "white": "White", "asian": "Asian", "multi or other race": "Multi or Other Race"}
+            # "Multiple_Race", "Other" are not separate in this data set - they are one value under "Multi or Other Race"
 
-#def get_case_totals_race_eth():
+	c_race_eth = {}
+	d_race_eth = {}
+	
+	for row in csv_strs[1:]:
+		split = row.split(',')
+		race_eth = split[0].lower()
+		if race_eth not in key_mapping:
+			print("New race_eth group")
+		else:
+			c_race_eth[key_mapping[race_eth]] = int(split[2])
+			d_race_eth[key_mapping[race_eth]] = int(split[6])
+		# check to see what other scrapers have done with missing data model values
 
-#def get_case_totals_category():
+	return c_race_eth, d_race_eth
 
-
-#def get_death_totals_gender():
-
-#def get_death_totals_age():
-
-#def get_death_totals_race_eth():
+#def get_breakdown_transmission():
 
 #def get_death_totals_underlying():
 
-#def get_death_totals_transmission(): # not sure if this information exists
 
-# population totals
+#def get_test_series():
+
 
 get_county_data()
+
+
 # figure out a way to run the scraper through the command line 
