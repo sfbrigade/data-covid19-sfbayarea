@@ -19,12 +19,13 @@ COUNTY_NAMES = tuple(news.scrapers.keys())
 @click.option('--output', help='write output file(s) to this directory')
 def main(counties: Tuple[str], format: str, output: str) -> None:
     if len(counties) == 0:
+        # FIXME: this should be COUNTY_NAMES, but we need to fix how the
+        # stop-covid19-sfbayarea project uses this first.
         counties = ('san_francisco',)
 
     # Do the work!
     for county in counties:
-        scraper = news.scrapers[county]()
-        feed = scraper.scrape()
+        feed = news.scrapers[county].get_news()
 
         for format_name in format:
             if format_name == 'json_simple':

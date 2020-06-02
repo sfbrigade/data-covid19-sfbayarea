@@ -43,7 +43,7 @@ class NewsItem:
     summary: Optional[str] = None
     date_modified: Optional[datetime] = None
     author: Optional[Dict[str, str]] = None
-    tags: Optional[List[str]] = None
+    tags: List[str] = field(default_factory=list)
 
     def format_json_simple(self) -> Dict:
         return {
@@ -88,6 +88,10 @@ class NewsFeed:
     author: Optional[Dict[str, str]] = None
     expired: bool = False
     items: List[NewsItem] = field(default_factory=list, init=False)
+
+    def append(self, *items: NewsItem) -> None:
+        self.items.extend(items)
+        self.items.sort(reverse=True, key=lambda item: item.date_published)
 
     def format_json_simple(self) -> Dict:
         """
@@ -135,6 +139,7 @@ class NewsFeed:
     def format_rss(self, pretty: bool = True) -> str:
         """
         Output this news feed in RSS 2.0 format.
+        https://www.rssboard.org/rss-specification
 
         Parameters
         ----------

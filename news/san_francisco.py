@@ -1,8 +1,9 @@
-from bs4 import BeautifulSoup  # type: ignore
+from bs4 import BeautifulSoup, element  # type: ignore
 import dateutil.parser
 from typing import List
 from urllib.parse import urljoin
 from .base import NewsScraper
+from .errors import FormatError
 from .feed import NewsItem
 from .utils import get_base_url, HEADING_PATTERN
 
@@ -33,34 +34,29 @@ class SanFranciscoNews(NewsScraper):
         home_page_url='https://sf.gov/news/topics/794'
     )
 
-    START_URL = 'https://sf.gov/news/topics/794'
+    URL = 'https://sf.gov/news/topics/794'
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
-        news = []
         articles = soup.main.find_all('article')
-        for index, article in enumerate(articles):
-            title_link = article.find(HEADING_PATTERN).find('a')
+        return [self.parse_news_item(article, base_url)
+                for article in articles]
 
-            url = title_link['href']
-            if not url:
-                raise ValueError(f'Not URL found for article {index}')
-            else:
-                url = urljoin(base_url, url)
+    def parse_news_item(self, item: element.Tag, base_url: str) -> NewsItem:
+        title_link = item.find(HEADING_PATTERN).find('a')
 
-            title = title_link.get_text(strip=True)
-            if not title:
-                raise ValueError(f'No title content found for article {index}')
+        url = title_link['href']
+        if not url:
+            raise FormatError('No URL found')
+        else:
+            url = urljoin(base_url, url)
 
-            date_string = article.find('time')['datetime']
-            try:
-                date = dateutil.parser.parse(date_string)
-            except ValueError:
-                raise ValueError(f'Article {index} date is not in ISO 8601'
-                                 f'format: "{date_string}"')
+        title = title_link.get_text(strip=True)
+        if not title:
+            raise FormatError('No title content found')
 
-            news.append(NewsItem(id=url, url=url, title=title,
-                                 date_published=date))
+        date_string = item.find('time')['datetime']
+        date = dateutil.parser.parse(date_string)
 
-        return news
+        return NewsItem(id=url, url=url, title=title, date_published=date)
