@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import click
 import json
-import data_scrapers
+from covid19_sfbayarea import data as data_scrapers
 from typing import Tuple
 from pathlib import Path
 

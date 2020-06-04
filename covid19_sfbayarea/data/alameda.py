@@ -4,8 +4,8 @@ from bs4 import BeautifulSoup # type: ignore
 import json
 from typing import List, Dict, Tuple
 from datetime import datetime, timezone
-from selenium import webdriver  # type: ignore
-from data_scrapers.utils import get_data_model
+from ..webdriver import get_firefox
+from .utils import get_data_model
 
 # Note that we are using numbers for all of Alameda County, including Berkeley
 # Running this scraper requires a Firefox webdriver. The macos Firefox driver, geckodriver, is stored in ./env/bin
@@ -107,7 +107,7 @@ def get_timeseries() -> Dict:
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboards."""
     notes = []
-    driver = webdriver.Firefox()
+    driver = get_firefox()
     driver.implicitly_wait(30)
     for url in dashboards:
         has_notes = False

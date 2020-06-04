@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup, element  # type: ignore
-from selenium import webdriver  # type: ignore
 from typing import List
 from urllib.parse import urljoin
+from ..webdriver import get_firefox
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
@@ -37,7 +37,7 @@ class SantaClaraNews(NewsScraper):
     URL = 'https://www.sccgov.org/sites/phd/news/Pages/newsroom.aspx'
 
     def load_html(self, url: str) -> str:
-        with webdriver.Firefox() as driver:
+        with get_firefox() as driver:
             driver.get(self.URL)
             driver.implicitly_wait(10)
             content = driver.find_element_by_class_name('sccgov-alerts-archive-item')
