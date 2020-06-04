@@ -8,11 +8,12 @@ from ..webdriver import get_firefox
 from .utils import get_data_model
 
 # URLs and API endpoints:
+# data_url has cases, deaths, tests, and race_eth
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0/query"
+# data2_url has age and gender
+data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
-# Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0&source=sd
-# The table view of the map item is helpful to reference
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -24,7 +25,11 @@ def get_county() -> Dict:
     out["name"] = "Solano County"
     out["source_url"] = data_url
     out["meta_from_source"] = get_notes()
-    out["meta_from_baypd"] = "Solano County reports daily cumulative cases, deaths, and residents tested. The county also separately reports new daily confirmed cases. Solano reports cumulative tests, but does not report test results."
+    out["meta_from_baypd"] = ["Solano County reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
+    "Solano reports cumulative tests, but does not report test results.",
+    "Deaths by race/eth not currently reported.",
+    "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
+    "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."]
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(metadata_url)
@@ -41,7 +46,8 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     out["series"] = get_timeseries()
-    # out.update(demo_totals)
+    out.update(get_race_eth())
+    # out.update(get_gender_age())
     return out
 
 
@@ -51,6 +57,9 @@ def get_timeseries() -> Dict:
     Note that Solano county reports daily cumumlative cases, deaths, and tests; and also separately reports daily new confirmed cases.
     Solano reports cumulative tests, but does not report test results.
     """
+
+    # Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0&source=sd
+    # The table view of the map item is a helpful reference.
 
     # dictionary holding the timeseries for cases and deaths
     series: Dict[str, List] = {"cases": [], "deaths": [], "tests": [] }
@@ -62,7 +71,6 @@ def get_timeseries() -> Dict:
         'total_deaths': 'cumul_deaths',
         'residents_tested': 'cumul_tests'
     }
-    '?&outFields=date_reported%2Ccumulative_number_of_cases_on_t%2Ctotal_deaths%2Cresidents_tested%2Cnew_cases_confirmed_today&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=pjson&token='
 
     # query API for days where cumulative number of cases on the day > 0
     param_list = {'where': 'cumulative_number_of_cases_on_t>0', 'resultType': 'none', 'outFields': 'date_reported,cumulative_number_of_cases_on_t,total_deaths,residents_tested,new_cases_confirmed_today',
@@ -128,93 +136,104 @@ def get_notes() -> str:
     # return '\n\n'.join(notes)
 
 
-def get_demographics(out: Dict) -> Tuple[Dict, List]:
-    """Fetch cases and deaths by age, gender, race, ethnicity
-    Returns the dictionary value for {"cases_totals": {}, "death_totals":{}}, as well as a list of
-    strings describing datapoints that have a value of "<10".
-    To create a DataFrame from the dictionary, run 'pd.DataFrame(get_demographics()[0])'
-    Note that the DataFrame will convert the "<10" strings to NaN.
+def get_race_eth () -> Dict:
     """
-    # Dicts of target_label : source_label for re-keying.
-    # Note that the cases table includes MTF and FTM, but the deaths table does not.
-    GENDER_KEYS = {"female": "Female", "male": "Male",
-                   "unknown": "Unknown_Sex", "mtf": "MTF", "ftm": "FTM"}
-    RACE_KEYS = {"Latinx_or_Hispanic": "Hispanic_Latino", "Asian": "Asian", "African_Amer": "African_American_Black",
-                 "White": "White", "Pacific_Islander": "Pacific_Islander", "Native_Amer": "Native_American", "Multiple_Race": "Multirace",
-                 "Other": "Other_Race", "Unknown": "Unknown_Race"}
-    # list of ordered (target_label, source_label) tuples  for re-keying the age table
-    AGE_KEYS = {"18_and_under": "Age_LT18", "18_to_30": "Age_18_30", "31_to_40": "Age_31_40", "41_to_50": "Age_41_50",
-                "51_to_60": "Age_51_60", "61_to_70": "Age_61_70", "71_to_80": "Age_71_80", "81_and_older": "Age_81_Up", "Unknown": "Unknown_Age"}
+    Fetch cases by race and ethnicity
+    Deaths by race/eth not currently reported. Multiple race and other race individuals counted in the same category, which I'm choosing to map to multiple_race.
+    Returns the dictionary value for {"cases_totals": {}}, for use by get_county() in updating the main out dictionary
+    """
+    # Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0&source=sd
+    # The table view of the map item is a helpful reference.
 
-    # format query to get entry for Alameda County
-    param_list = {'where': "Geography='Alameda County'",
-                  'outFields': '*', 'outSR': '4326', 'f': 'json'}
-    # get cases data
-    response = requests.get(demographics_cases, params=param_list)
+    RACE_KEYS = {"Latinx_or_Hispanic": "all_cases_hispanic", "Asian": "all_cases_asian", "African_Amer": "all_cases_black",
+                 "White": "all_cases_white", "Pacific_Islander": "all_cases_pacificIslander", "Native_Amer": "all_cases_ai_an", "Multiple_Race": "all_cases_multi_o",
+                 "Unknown": "unknown_all"}
+
+    # format query to get entry for latest date
+    param_list = {'where': '0=0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount':1, 'f': 'json'}
+    response = requests.get(data_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
-    cases_data = parsed['features'][0]['attributes']
-    # get deaths data
-    response = requests.get(demographics_deaths, params=param_list)
+    latest_day = parsed['features'][0]['attributes']
+
+    # parse and re-key latest day, return the race/eth table
+    return {"case_totals": { "race_eth": { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() } } }
+
+def get_gender_age() -> Dict:
+    """
+    Fetch cases and deaths by race and ethnicity
+    Returns the dictionary value for {"cases_totals": {}, "death_totals":{} }, for use by get_county() in updating the main out dictionary
+    """
+    #TODO: Confirm which datapoints are the gender numbers with Solano County, and/or add caveat to metadata that the gender numbers are a guess
+    """
+    My best guess is that this table is a result of a botched join on a a gender table and an age table.
+    The numbers that I'm guessing match up with age groups do match the numbers reported on the dashboard.
+    The dashboard does not show gender, so I don't actually know if these are gender numbers.
+    The data are reported as 3 sets of entries per day:
+
+    [ {
+            date_reported: timestamp_for_the_day,
+            gender: male,
+            number_of_cases: cumul number of male cases???,
+            age_group: 0-18,
+            non-severe: cumul number of non-severe 0-18 cases???,
+            hospitalized: cumul number of hospitalized 0-18 case???,
+            deaths: cumul number of 0-18 deaths??? },
+
+      {
+          date_reported: timestamp_for_the_day,
+          gender: female,
+          number_of_cases: cumul number of female cases???,
+          age_group: 19-64,
+          non-severe: cumul number of non-severe 19-64 cases???,
+          hospitalized: cumul number of hospitalized 19-64 case???,
+          deaths: cumul number of 19-64 deaths??? },
+
+      {
+          date_reported: timestamp_for_the_day,
+          gender: unknown, or empty(!!!)
+          number_of_cases: cumul number of unknown cases???,
+          age_group: 65+,
+          non-severe: cumul number of non-severe 65+ cases???,
+          hospitalized: cumul number of hospitalized 65+ case???,
+          deaths: cumul number of 65+ deaths???
+          } ]
+
+    See the data at this map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0&source=sd
+    The table view of the map item is a helpful reference.
+    """
+
+
+    # format query to get entries for latest date
+    param_list = {'where': '0=0', 'outFields': '*',
+                  'orderByFields': 'date_reported DESC', 'resultRecordCount': 3, 'f': 'json'}
+    response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
-    deaths_data = parsed['features'][0]['attributes']
+    entries = [ attr["attributes"] for attr in parsed['features'] ] # surface data from nested attributes dict
+    # Dicts of source_label: target_label for re-keying.
+    GENDER_KEYS = {"female": "female", "male": "male",
+                   "unknown": "unknown"}
+    AGE_KEYS = {"0_18": "18_and_under",
+                "19_64": "19_to_64", "65+": "65_and_over"}
 
-    # join cases and deaths tables in a temporary dictionary, to use for checking for values <10
-    demo_data = {"case_totals": cases_data, "death_totals": deaths_data}
+    case_totals = { "gender": dict(), "age_group": [], "race_eth": dict() } # make a partial structure for case demographics
+    death_totals = {"age_group": []} # make a partial structure for deaths by age group
 
-    # Handle values equal to '<10', if any. Note that some data points are entered as `null`, which
-    # will be decoded as Python's `None`
-    # TODO: As of 5/23/20, there are no string values "<10" in the source data. The dashboard disclaimers list categories with counts < 10 that have been supressed. Consider eliminating the code dealing with "<10".
-    counts_lt_10 = []
-    for cat, data in demo_data.items():
-        for key, val in data.items():
-            if key in GENDER_KEYS.values():
-                demo = 'gender'
-            elif key in RACE_KEYS.values():
-                demo = 'race'
-            elif key in AGE_KEYS.values():
-                demo = 'age_group'
-            elif key == "Geography":
-                continue  # exclude the k,v pair "Geography":"Alameda County"
-            if val == '<10':
-                counts_lt_10.append(f"{cat}.{demo}.{key}")
-            elif val is None:  # proactively set None values to our default value of -1
-                data[key] = - 1
-            else:  # this value should be a number. check that val can be cast to an int.
-                try:
-                    int(val)
-                except ValueError:
-                    raise ValueError(f'Non-integer value for {key}')
+    # parse output
+    for entry in entries:
+        gender_key = GENDER_KEYS.get(entry["gender"], "unknown") # for entries where gender not reported, assume unknown
+        gender_cases = entry["number_of_cases"]
+        age_key = AGE_KEYS.get(entry["age_group"])
+        age_group_cases = entry["non_severe"] + entry["hospitalized"]
+        age_group_deaths = entry["deaths"]
+        case_totals["gender"][gender_key] = gender_cases
 
-    # copy dictionary structure of 'out' dictionary to local variable
-    demo_totals = {
-        "case_totals": out["case_totals"], "death_totals": out["death_totals"]}
+        # also parsing ages in theis for loop, hopefully they remain in sorted order
+        case_totals["age_group"].append( { "group": age_key, "raw_count": age_group_cases } )
+        death_totals["age_group"].append( { "group": age_key, "raw_count": age_group_deaths } )
 
-    # Parse and re-key demo_totals
-    # gender cases and deaths
-    for k, v in GENDER_KEYS.items():
-        demo_totals["case_totals"]["gender"][k] = cases_data[v]
-        # the deaths table does not currently include MTF or FTM
-        if f'Deaths_{v}' in deaths_data:
-            demo_totals["death_totals"]["gender"][k] = deaths_data['Deaths_' + v]
-    # race cases and deaths
-    for k, v in RACE_KEYS.items():
-        demo_totals["case_totals"]["race_eth"][k] = cases_data[v]
-        demo_totals["death_totals"]["race_eth"][k] = deaths_data['Deaths_' + v]
-    # re-key and re-format age tables as a list
-    cases_age_table = []
-    deaths_age_table = []
-    for out_key, data_key in AGE_KEYS.items():
-        cases_age_table.append(
-            {'group': out_key, 'raw_count': cases_data.get(data_key)})
-        deaths_age_table.append(
-            {'group': out_key, 'raw_count': deaths_data.get("Deaths_"+data_key)})
-
-    demo_totals['case_totals']['age_group'] = cases_age_table
-    demo_totals['death_totals']['age_group'] = deaths_age_table
-
-    return demo_totals, counts_lt_10
+    return { "case_totals": case_totals, "death_totals": death_totals } #return a partial structure for use by main dictionary
 
 
 if __name__ == '__main__':
