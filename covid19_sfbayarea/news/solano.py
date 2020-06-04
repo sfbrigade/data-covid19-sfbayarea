@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, parse_datetime
+from .utils import get_base_url, is_covid_related, parse_datetime
 
 
 SUMMARY_PREFIX_PATTERN = re.compile(r'^SOLANO COUNTY\s*[\-\u2013]\s*', re.I)
@@ -53,7 +53,7 @@ class SolanoNews(NewsScraper):
 
         parsed = (self.parse_news_item(header, base_url)
                   for header in headers)
-        return list(filter(self.is_covid_related, parsed))
+        return list(filter(is_covid_related, parsed))
 
     def parse_news_item(self, title_link: element.Tag, base_url: str) -> NewsItem:
         cell = title_link.find_parent('td')
@@ -81,12 +81,3 @@ class SolanoNews(NewsScraper):
 
         return NewsItem(id=url, url=url, title=title, date_published=date,
                         summary=summary)
-
-    def is_covid_related(self, item: NewsItem) -> bool:
-        comparable = ' '.join([
-            item.title,
-            item.summary or '',
-            item.url
-        ]).lower()
-        terms = ('covid', 'coronavirus', 'health')
-        return any(term in comparable for term in terms)
