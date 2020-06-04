@@ -24,13 +24,14 @@ def get_county() -> Dict:
     out["name"] = "Solano County"
     out["source_url"] = data_url
     out["meta_from_source"] = get_notes()
+    out["meta_from_baypd"] = "Solano County reports daily cumulative cases, deaths, and residents tested. The county also separately reports new daily confirmed cases. Solano reports cumulative tests, but does not report test results."
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(metadata_url)
     response.raise_for_status()
     metadata = response.json()
     timestamp = metadata["editingInfo"]["lastEditDate"]
-    # Raise an exception if a timezone is specified. If "dateFieldsTimeReference" is present, we need to edit this scrapr to handle it.
+    # Raise an exception if a timezone is specified. If "dateFieldsTimeReference" is present, we need to edit this scraper to handle it.
     # See: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6
     if "dateFieldsTimeReference" in metadata["editFieldsInfo"]:
         raise FutureWarning("A timezone may now be specified in the metadata.")
@@ -39,57 +40,69 @@ def get_county() -> Dict:
     out["update_time"] = update.isoformat()
 
     # get cases, deaths, and demographics data
-    # out["series"] = get_timeseries()
+    out["series"] = get_timeseries()
     # out.update(demo_totals)
     return out
 
 
 # Confirmed Cases and Deaths
 def get_timeseries() -> Dict:
-    """Fetch daily and cumulative cases and deaths by day
-    Returns the dictionary value for "series": {"cases":[], "deaths":[]}.
-    To create a DataFrame from this dictionary, run
-    'pd.DataFrame(get_timeseries())'
+    """Fetch cumulative cases and deaths by day
+    Note that Solano county reports daily cumumlative cases, deaths, and tests; and also separately reports daily new confirmed cases.
+    Solano reports cumulative tests, but does not report test results.
     """
 
     # dictionary holding the timeseries for cases and deaths
     series: Dict[str, List] = {"cases": [], "deaths": []}
     # Dictionary of 'source_label': 'target_label' for re-keying
     TIMESERIES_KEYS = {
-        'Date': 'date',
-        'AC_Cases': 'cases',
-        'AC_CumulCases': 'cumul_cases',
-        'AC_Deaths': 'deaths',
-        'AC_CumulDeaths': 'cumul_deaths'
+        'date_reported': 'date',
+        'new_cases_confirmed_today': 'cases',
+        'cumulative_number_of_cases_on_t': 'cumul_cases',
+        'total_deaths': 'cumul_deaths',
+        'residents_tested': 'cumul_tests'
     }
+    '?&outFields=date_reported%2Ccumulative_number_of_cases_on_t%2Ctotal_deaths%2Cresidents_tested%2Cnew_cases_confirmed_today&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=pjson&token='
 
-    # query API
-    param_list = {'where': '0=0', 'resultType': 'none', 'outFields': 'Date,AC_Cases,AC_CumulCases,AC_Deaths,AC_CumulDeaths',
-                  'outSR': '4326', 'orderByField': 'Date', 'f': 'json'}
-    response = requests.get(cases_deaths, params=param_list)
+    # query API for days where cumulative number of cases on the day > 0
+    param_list = {'where': 'cumulative_number_of_cases_on_t>0', 'resultType': 'none', 'outFields': 'date_reported,cumulative_number_of_cases_on_t,total_deaths,residents_tested,new_cases_confirmed_today',
+                  'orderByField': 'date_reported', 'f': 'json'}
+    response = requests.get(data_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
     features = [obj["attributes"] for obj in parsed['features']]
 
     # convert dates
     for obj in features:
-        month, day, year = obj['Date'].split('/')
-        if int(month) < 10:
-            month = '0' + month
-        if int(day) < 10:
-            day = '0' + day
-        obj['Date'] = "{}-{}-{}".format(year, month, day)
+        timestamp = obj['date_reported']
+        date = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
+        obj['date_reported'] = date.isoformat()
 
     re_keyed = [{TIMESERIES_KEYS[key]: value for key, value in entry.items()}
                 for entry in features]
 
-    # parse series into cases and deaths
-    death_keys = ["date", "deaths", "cumul_deaths"]
-    case_keys = ["date", "cases", "cumul_cases"]
-    series["cases"] = [{k: v for k, v in entry.items() if k in case_keys}
-                       for entry in re_keyed]
-    series["deaths"] = [{k: v for k, v in entry.items() if k in death_keys}
-                        for entry in re_keyed]
+    # Templates have all data points in the data model
+    # datapoints that are not reported have a value of -1
+    CASES_TEMPLATE = { "date": -1, "cases":-1, "cumul_cases":-1 }
+    DEATHS_TEMPLATE = {"date":-1, "deaths":-1, "cumul_deaths":-1 }
+    TESTS_TEMPLATE = { "date": -1, "tests": -1, "positive": -1, "negative": -1, "pending": -1, "cumul_tests": -1,"cumul_pos": -1, "cumul_neg": -1, "cumul_pend": -1 }
+
+    series["cases"] = []
+    series["deaths"] = []
+    series["tests"] = []
+
+    for entry in re_keyed:
+        # deep copy of templates
+        cases = { k:v for k,v in CASES_TEMPLATE.items() }
+        deaths = { k:v for k,v in DEATHS_TEMPLATE.items() }
+        tests = { k:v for k,v in TESTS_TEMPLATE.items() }
+        cases.update(entry)
+        deaths.update(entry)
+        tests.update(entry)
+        series["cases"].append(cases)
+        series["deaths"].append(deaths)
+        series["tests"].append(tests)
+
     return series
 
 
