@@ -53,7 +53,7 @@ def get_timeseries() -> Dict:
     """
 
     # dictionary holding the timeseries for cases and deaths
-    series: Dict[str, List] = {"cases": [], "deaths": []}
+    series: Dict[str, List] = {"cases": [], "deaths": [], "tests": [] }
     # Dictionary of 'source_label': 'target_label' for re-keying
     TIMESERIES_KEYS = {
         'date_reported': 'date',
@@ -87,18 +87,15 @@ def get_timeseries() -> Dict:
     DEATHS_TEMPLATE = {"date":-1, "deaths":-1, "cumul_deaths":-1 }
     TESTS_TEMPLATE = { "date": -1, "tests": -1, "positive": -1, "negative": -1, "pending": -1, "cumul_tests": -1,"cumul_pos": -1, "cumul_neg": -1, "cumul_pend": -1 }
 
-    series["cases"] = []
-    series["deaths"] = []
-    series["tests"] = []
-
     for entry in re_keyed:
         # deep copy of templates
         cases = { k:v for k,v in CASES_TEMPLATE.items() }
         deaths = { k:v for k,v in DEATHS_TEMPLATE.items() }
         tests = { k:v for k,v in TESTS_TEMPLATE.items() }
-        cases.update(entry)
-        deaths.update(entry)
-        tests.update(entry)
+        cases.update( { k:v for k,v in entry.items() if k in cases } )
+        deaths.update( { k:v for k,v in entry.items() if k in deaths } )
+        tests.update( { k:v for k,v in entry.items() if k in tests } )
+
         series["cases"].append(cases)
         series["deaths"].append(deaths)
         series["tests"].append(tests)
