@@ -76,7 +76,7 @@ def get_timeseries() -> Dict:
     for obj in features:
         timestamp = obj['date_reported']
         date = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
-        obj['date_reported'] = date.isoformat()
+        obj['date_reported'] = date.strftime("%Y-%m-%d")
 
     re_keyed = [{TIMESERIES_KEYS[key]: value for key, value in entry.items()}
                 for entry in features]
