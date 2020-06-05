@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import requests
+import re
 from bs4 import BeautifulSoup  # type: ignore
 import json
 from typing import List, Dict, Tuple
@@ -13,7 +14,7 @@ data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/C
 # data2_url has age and gender
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
-dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
+dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -25,11 +26,11 @@ def get_county() -> Dict:
     out["name"] = "Solano County"
     out["source_url"] = data_url
     out["meta_from_source"] = get_notes()
-    out["meta_from_baypd"] = ["Solano County reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
+    out["meta_from_baypd"] = '\n'.join(["Solano County reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
     "Solano reports cumulative tests, but does not report test results.",
     "Deaths by race/eth not currently reported.",
     "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
-    "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."]
+    "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."])
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(metadata_url)
@@ -45,14 +46,15 @@ def get_county() -> Dict:
     out["update_time"] = update.isoformat()
 
     # get cases, deaths, and demographics data
-    out["series"] = get_timeseries()
-    out.update(get_race_eth())
-    # out.update(get_gender_age())
+    get_timeseries(out)
+    get_gender_age(out)
+    get_race_eth(out)
+
     return out
 
 
 # Confirmed Cases and Deaths
-def get_timeseries() -> Dict:
+def get_timeseries(out: Dict):
     """Fetch cumulative cases and deaths by day
     Note that Solano county reports daily cumumlative cases, deaths, and tests; and also separately reports daily new confirmed cases.
     Solano reports cumulative tests, but does not report test results.
@@ -108,35 +110,33 @@ def get_timeseries() -> Dict:
         series["deaths"].append(deaths)
         series["tests"].append(tests)
 
-    return series
+    out["series"].update(series)
 
 
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboard."""
-    #TODO: scrape disclaimer notes form dashboard
-    # Right now it only says "Data update weekdays at 4:30pm"
+    # As of 6/5/20, the only disclaimer is "Data update weekdays at 4:30pm"
     pass
-    # notes = []
-    # driver = get_firefox()
-    # driver.implicitly_wait(30)
-    # for url in dashboards:
-    #     has_notes = False
-    #     driver.get(url)
-    #     soup = BeautifulSoup(driver.page_source, 'html5lib')
-    #     for p_tag in soup.find_all('p'):
-    #         if 'Notes' in p_tag.get_text():
-    #             notes.append(p_tag.get_text().strip())
-    #             has_notes = True
-    #     if not has_notes:
-    #         raise(FutureWarning(
-    #             "This dashboard url has changed. None of the <p> elements contain the text \'Notes\': " + url))
-    #     # loads empty page to allow loading of next page
-    #     driver.get('about:blank')
-    # driver.quit()
-    # return '\n\n'.join(notes)
+    notes = []
+    match = re.compile('[Dd]isclaimers?')
+    driver = get_firefox()
+    driver.implicitly_wait(30)
+    driver.get(dashboard_url)
+    soup = BeautifulSoup(driver.page_source, 'html5lib')
+    has_notes = False
+    text = soup.get_text().splitlines()
+    for text_item in text:
+        if match.search(text_item):
+            notes.append(text_item)
+            has_notes = True
+    if not has_notes:
+        raise(FutureWarning(
+            "This dashboard url has changed. None of the <div> elements contains'[Dd]isclaimers?$' " + dashboard_url))
+    driver.quit()
+    return '\n\n'.join(notes)
 
 
-def get_race_eth () -> Dict:
+def get_race_eth (out: Dict):
     """
     Fetch cases by race and ethnicity
     Deaths by race/eth not currently reported. Multiple race and other race individuals counted in the same category, which I'm choosing to map to multiple_race.
@@ -156,12 +156,12 @@ def get_race_eth () -> Dict:
     parsed = response.json()
     latest_day = parsed['features'][0]['attributes']
 
-    # parse and re-key latest day, return the race/eth table
-    return {"case_totals": { "race_eth": { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() } } }
+    race_eth_table = { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() }
+    out["case_totals"]["race_eth"].update(race_eth_table)
 
-def get_gender_age() -> Dict:
+def get_gender_age(out: Dict):
     """
-    Fetch cases and deaths by race and ethnicity
+    Fetch cases by gender and age group, deaths by age group
     Returns the dictionary value for {"cases_totals": {}, "death_totals":{} }, for use by get_county() in updating the main out dictionary
     """
     #TODO: Confirm which datapoints are the gender numbers with Solano County, and/or add caveat to metadata that the gender numbers are a guess
@@ -216,9 +216,9 @@ def get_gender_age() -> Dict:
                    "unknown": "unknown"}
     AGE_KEYS = {"0_18": "18_and_under",
                 "19_64": "19_to_64", "65+": "65_and_over"}
-
-    case_totals = { "gender": dict(), "age_group": [], "race_eth": dict() } # make a partial structure for case demographics
-    death_totals = {"age_group": []} # make a partial structure for deaths by age group
+    gender_table_cases = dict()
+    age_table_cases = []
+    age_table_deaths = []
 
     # parse output
     for entry in entries:
@@ -227,14 +227,18 @@ def get_gender_age() -> Dict:
         age_key = AGE_KEYS.get(entry["age_group"])
         age_group_cases = entry["non_severe"] + entry["hospitalized"]
         age_group_deaths = entry["deaths"]
-        case_totals["gender"][gender_key] = gender_cases
+        gender_table_cases[gender_key] = gender_cases
+        # also parsing ages in this for loop. It's possible that the entries could be stored out of order in the future, but it looks like
+        # they are have always been correctly sorted.
+        age_table_cases.append( { "group": age_key, "raw_count": age_group_cases } )
+        age_table_deaths.append( { "group": age_key, "raw_count": age_group_deaths } )
 
-        # also parsing ages in theis for loop, hopefully they remain in sorted order
-        case_totals["age_group"].append( { "group": age_key, "raw_count": age_group_cases } )
-        death_totals["age_group"].append( { "group": age_key, "raw_count": age_group_deaths } )
+    if age_table_cases[0]["group"] is not "18_and_under":
+        raise FutureWarning("Age groups may not be in sorted order.")
 
-    return { "case_totals": case_totals, "death_totals": death_totals } #return a partial structure for use by main dictionary
-
+    out["case_totals"]["gender"].update(gender_table_cases)
+    out["case_totals"]["age_group"] = age_table_cases
+    out["death_totals"]["age_group"] = age_table_deaths
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
