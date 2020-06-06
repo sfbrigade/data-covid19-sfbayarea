@@ -98,17 +98,32 @@ def get_timeseries(out: Dict):
     TESTS_TEMPLATE = { "date": -1, "tests": -1, "positive": -1, "negative": -1, "pending": -1, "cumul_tests": -1,"cumul_pos": -1, "cumul_neg": -1, "cumul_pend": -1 }
 
     for entry in re_keyed:
-        # deep copy of templates
-        cases = { k:v for k,v in CASES_TEMPLATE.items() }
-        deaths = { k:v for k,v in DEATHS_TEMPLATE.items() }
-        tests = { k:v for k,v in TESTS_TEMPLATE.items() }
-        cases.update( { k:v for k,v in entry.items() if k in cases } )
-        deaths.update( { k:v for k,v in entry.items() if k in deaths } )
-        tests.update( { k:v for k,v in entry.items() if k in tests } )
+        #FIXME:
+        # Sonoma county has entries for each day, but some days have "null" for cumulative deaths and cumulative tests.
+        # This means that cumulative counts go something like: 1, null ,null, null, 2, 3 -- on consecutive days.
+        # My best guess is that for deaths and tests they are entering "null" for the cumulative counts on days where the cumulative counts haven't changed from the previous day.
+        # The solution below is just to filter out the cumulative count "null" values (Python None), which results in gaps in the timeseries.
+        # We may want to revisit this and clean up our json to interpolate the values on null-count days until the day the value changes. But that means we're injecting numbers
+        # into the data, and I don't know if we want to do that. But we will be interpolating anyways, in our visualizations, so maybe that's ok.
 
-        series["cases"].append(cases)
-        series["deaths"].append(deaths)
-        series["tests"].append(tests)
+        # grab cumulative values, to check if they are None
+        cumul_cases = entry["cumul_cases"]
+        cumul_deaths = entry["cumul_deaths"]
+        cumul_tests = entry["cumul_tests"]
+
+        # grab cases and replace None with -1
+        if entry["cases"] is None:
+            entry["cases"] = -1
+
+        if cumul_cases is not None:
+            cases_entry = { k: entry[k] for k in CASES_TEMPLATE if k in entry }
+            series["cases"].append(cases_entry)
+        if cumul_deaths is not None:
+            deaths_entry = {k: entry[k] for k in DEATHS_TEMPLATE if k in entry}
+            series["deaths"].append(deaths_entry)
+        if cumul_tests is not None:
+            tests_entry = {k: entry[k] for k in TESTS_TEMPLATE if k in entry}
+            series["tests"].append(tests_entry)
 
     out["series"].update(series)
 
@@ -116,7 +131,6 @@ def get_timeseries(out: Dict):
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboard."""
     # As of 6/5/20, the only disclaimer is "Data update weekdays at 4:30pm"
-    pass
     notes = []
     match = re.compile('[Dd]isclaimers?')
     driver = get_firefox()
@@ -127,7 +141,7 @@ def get_notes() -> str:
     text = soup.get_text().splitlines()
     for text_item in text:
         if match.search(text_item):
-            notes.append(text_item)
+            notes.append(text_item.strip())
             has_notes = True
     if not has_notes:
         raise(FutureWarning(
@@ -204,28 +218,55 @@ def get_gender_age(out: Dict):
     """
 
 
-    # format query to get entries for latest date
+    # format query to get the latest 6 entries. With 3 entries per day, this ideally returns entries for the latest completed day, allowing
+    # up to 2 entries for a partial day if we grab data before the day has completed updating.
     param_list = {'where': '0=0', 'outFields': '*',
-                  'orderByFields': 'date_reported DESC', 'resultRecordCount': 3, 'f': 'json'}
+                  'orderByFields': 'date_reported DESC', 'resultRecordCount': 5, 'f': 'json'}
     response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
     entries = [ attr["attributes"] for attr in parsed['features'] ] # surface data from nested attributes dict
+
+
+    # filter entries to surface the 3 entries for the most recent day with all 3 age groups and at least 2 Male/Female genders
+    # to find them, compare to a complete day's set of included values
+    complete_day = { 'male', 'female', '0_18', '19_64', '65+' }
+
+    # days is a dict to collect the set of values
+    # initialize days with an empty set of values for each day
+    days = { entry["date_reported"]: set() for entry in entries }
+    keys_to_check = ["gender", "age_group"]
+    # collect the values for keys to check in each day's set of values
+    for entry in entries:
+        day = entry["date_reported"]
+        for k in keys_to_check:
+            days[day].add( entry[k] )
+
+    # compare each day's sets of keys to a complete day
+    # make a list of all complete days
+    complete_days = [ k for k,v in days.items() if complete_day.issubset(v) ]
+
+    if len(complete_days) != 1:
+        raise FutureWarning(f"The source data structure has changed. Problem with entries with these timestamps: {','.join(complete_days)}" )
+
+    complete_entries = [ entry for entry in entries if entry["date_reported"] in complete_days ]
+
     # Dicts of source_label: target_label for re-keying.
     GENDER_KEYS = {"female": "female", "male": "male",
                    "unknown": "unknown"}
-    AGE_KEYS = {"0_18": "18_and_under",
-                "19_64": "19_to_64", "65+": "65_and_over"}
+    AGE_KEYS = {"0_18": "0_to_18",
+                "19_64": "19_to_64", "65+": "65_and_older"}
     gender_table_cases = dict()
     age_table_cases = []
     age_table_deaths = []
 
     # parse output
-    for entry in entries:
+    for entry in complete_entries:
         gender_key = GENDER_KEYS.get(entry["gender"], "unknown") # for entries where gender not reported, assume unknown
-        gender_cases = entry["number_of_cases"]
+        gender_cases = entry["number_of_cases"] if entry["number_of_cases"] is not None else -1 # handle 'Other: null' in gender table
         age_key = AGE_KEYS.get(entry["age_group"])
-        age_group_cases = entry["non_severe"] + entry["hospitalized"]
+        age_group_cases = entry["non_severe"] if entry["non_severe"] is not None else -1
+        age_group_cases = age_group_cases + entry["hospitalized"] if entry["hospitalized"] is not None else age_group_cases
         age_group_deaths = entry["deaths"]
         gender_table_cases[gender_key] = gender_cases
         # also parsing ages in this for loop. It's possible that the entries could be stored out of order in the future, but it looks like
@@ -233,7 +274,7 @@ def get_gender_age(out: Dict):
         age_table_cases.append( { "group": age_key, "raw_count": age_group_cases } )
         age_table_deaths.append( { "group": age_key, "raw_count": age_group_deaths } )
 
-    if age_table_cases[0]["group"] is not "18_and_under":
+    if age_table_cases[0]["group"] is not "0_to_18":
         raise FutureWarning("Age groups may not be in sorted order.")
 
     out["case_totals"]["gender"].update(gender_table_cases)
