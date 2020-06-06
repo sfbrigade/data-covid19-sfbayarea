@@ -3,7 +3,7 @@ import requests
 import re
 from bs4 import BeautifulSoup  # type: ignore
 import json
-from typing import List, Dict, Tuple
+from typing import List, Dict
 from datetime import datetime, timezone
 from ..webdriver import get_firefox
 from .utils import get_data_model
@@ -275,7 +275,7 @@ def get_gender_age(out: Dict) -> None:
         age_table_cases.append( { "group": age_key, "raw_count": age_group_cases } )
         age_table_deaths.append( { "group": age_key, "raw_count": age_group_deaths } )
 
-    if age_table_cases[0]["group"] is not "0_to_18":
+    if age_table_cases[0]["group"] != "0_to_18":
         raise FutureWarning("Age groups may not be in sorted order.")
 
     out["case_totals"]["gender"].update(gender_table_cases)
