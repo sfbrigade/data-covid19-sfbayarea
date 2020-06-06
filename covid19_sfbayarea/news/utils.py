@@ -6,11 +6,26 @@ import re
 import requests
 from typing import Optional
 from urllib.parse import urljoin
+from .feed import NewsItem
 
 
 HEADING_PATTERN = re.compile(r'h\d')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
+
+# Sometimes we can't find a news feed that is specific to COVID-19, so the news
+# items we scrape need to be filtered. These key terms are used to test whether
+# a news item should be included.
+COVID_KEY_TERMS = frozenset((
+    'covid',
+    'coronavirus',
+    'health',
+    'reopening',
+    'stay at home',
+    'stay-at-home',
+    'shelter in place',
+    'shelter-in-place'
+))
 
 # Matches a <meta> tag in HTML used to specify the character encoding:
 # <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
@@ -153,3 +168,13 @@ def find_with_text(soup: BeautifulSoup, text: str, tag_name: str = None) -> Opti
         return False
 
     return soup.find(match_element)
+
+
+def is_covid_related(item: NewsItem) -> bool:
+    comparable = ' '.join([
+        item.title,
+        item.summary or '',
+        item.url,
+        *item.tags
+    ]).lower()
+    return any(term in comparable for term in COVID_KEY_TERMS)
