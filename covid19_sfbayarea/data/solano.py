@@ -54,8 +54,9 @@ def get_county() -> Dict:
 
 
 # Confirmed Cases and Deaths
-def get_timeseries(out: Dict):
+def get_timeseries(out: Dict) -> None:
     """Fetch cumulative cases and deaths by day
+    Update out dictionary with results.
     Note that Solano county reports daily cumumlative cases, deaths, and tests; and also separately reports daily new confirmed cases.
     Solano reports cumulative tests, but does not report test results.
     """
@@ -150,11 +151,11 @@ def get_notes() -> str:
     return '\n\n'.join(notes)
 
 
-def get_race_eth (out: Dict):
+def get_race_eth (out: Dict)-> None :
     """
     Fetch cases by race and ethnicity
     Deaths by race/eth not currently reported. Multiple race and other race individuals counted in the same category, which I'm choosing to map to multiple_race.
-    Returns the dictionary value for {"cases_totals": {}}, for use by get_county() in updating the main out dictionary
+    Updates out dictionary with {"cases_totals": {}}
     """
     # Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0&source=sd
     # The table view of the map item is a helpful reference.
@@ -164,7 +165,7 @@ def get_race_eth (out: Dict):
                  "Unknown": "unknown_all"}
 
     # format query to get entry for latest date
-    param_list = {'where': '0=0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount':1, 'f': 'json'}
+    param_list = {'where': '0=0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
     response = requests.get(data_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
@@ -173,10 +174,10 @@ def get_race_eth (out: Dict):
     race_eth_table = { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() }
     out["case_totals"]["race_eth"].update(race_eth_table)
 
-def get_gender_age(out: Dict):
+def get_gender_age(out: Dict) -> None:
     """
     Fetch cases by gender and age group, deaths by age group
-    Returns the dictionary value for {"cases_totals": {}, "death_totals":{} }, for use by get_county() in updating the main out dictionary
+    Updates out with {"cases_totals": {}, "death_totals":{} }
     """
     #TODO: Confirm which datapoints are the gender numbers with Solano County, and/or add caveat to metadata that the gender numbers are a guess
     """
@@ -221,7 +222,7 @@ def get_gender_age(out: Dict):
     # format query to get the latest 6 entries. With 3 entries per day, this ideally returns entries for the latest completed day, allowing
     # up to 2 entries for a partial day if we grab data before the day has completed updating.
     param_list = {'where': '0=0', 'outFields': '*',
-                  'orderByFields': 'date_reported DESC', 'resultRecordCount': 5, 'f': 'json'}
+                  'orderByFields': 'date_reported DESC', 'resultRecordCount': '5', 'f': 'json'}
     response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
@@ -234,7 +235,7 @@ def get_gender_age(out: Dict):
 
     # days is a dict to collect the set of values
     # initialize days with an empty set of values for each day
-    days = { entry["date_reported"]: set() for entry in entries }
+    days : Dict[str, set] = { entry["date_reported"]: set() for entry in entries }
     keys_to_check = ["gender", "age_group"]
     # collect the values for keys to check in each day's set of values
     for entry in entries:
