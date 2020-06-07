@@ -247,7 +247,6 @@ def get_county() -> Dict:
     page = requests.get(url)
     page.raise_for_status()
     sonoma_soup = BeautifulSoup(page.content, 'html5lib')
-    tables = sonoma_soup.find_all('table')[4:] # we don't need the first three tables
 
     hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_gender, cases_by_race = get_table_tags(sonoma_soup)
 
