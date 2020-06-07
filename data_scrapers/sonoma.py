@@ -75,7 +75,7 @@ def generate_update_time(soup: BeautifulSoup) -> str:
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
-    Finds the 'Definitions' header on the page and gets all of the text' in it
+    Finds the 'Definitions' header on the page and gets all of the text in it.
     """
     definitions_section = get_section_by_title('Definitions', soup)
     definitions_text = definitions_section.text
