@@ -82,11 +82,11 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     return definitions_text.replace('\n', '/').strip()
 
 # apologies for this horror of a output type
-def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int, object]]]]:
+def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
     """
     Takes in a BeautifulSoup tag for the cases table and returns all cases
     (historic and active), deaths, and recoveries in the form:
-    { 'cases': [], 'deaths': [], 'recovered': [], 'active': [] }
+    { 'cases': [], 'deaths': [] }
     Where each list contains dictionaries (representing each day's data)
     of form (example for cases):
     { 'date': '', 'cases': -1, 'cumul_cases': -1 }
@@ -103,16 +103,16 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
     for row in rows:
         row_cells = row.find_all(['th', 'td'])
         date = dateutil.parser.parse(row_cells[0].text).date().isoformat()
-
-        # instead of 0, this dashboard reports the string '-'
         active_cases, new_infected, dead, recoveries = [parse_int(el.text) for el in row_cells[1:]]
 
         cumul_cases += new_infected
-        cases.append({ 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases })
+        case_dict: Dict[str, Union[str, int]] = { 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases }
+        cases.append(case_dict)
 
         new_deaths = dead - cumul_deaths
         cumul_deaths = dead
-        deaths.append({ 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead })
+        death_dict: Dict[str, Union[str, int]] = { 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead }
+        deaths.append(death_dict)
 
         # new_recovered = recoveries - cumul_recovered
         # recovered.append({ 'date': date, 'recovered': new_recovered, 'cumul_recovered': recoveries })
@@ -245,38 +245,38 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
     return race_cases
 
-def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
-    """
-    Takes in a BeautifulSoup tag of the cases by hospitalization table and
-    returns a dictionary with the numbers of hospitalized and non-hospitalized
-    cases
-    """
-    hospitalizations = {}
-    rows = get_rows(hospital_tag)
-    for row in rows:
-        hospitalized, number, _pct = get_cells(row)
-        lowercase_hospitalized = hospitalized.lower()
-        if lowercase_hospitalized != 'yes' and lowercase_hospitalized != 'no':
-            raise FormatError('The format of the hospitalization table has changed')
-        if hospitalized.lower() == 'yes':
-            hospitalizations['hospitalized'] = parse_int(number)
-        else:
-            hospitalizations['not_hospitalized'] = parse_int(number)
-    return hospitalizations
-
-def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
-    """
-    Takes in a BeautifulSoup tag representing the percent of cases hospitalized
-    by gender and returns a dictionary of those percentages in float form
-    e.g. 9% is 0.09
-    """
-    hospitalized = {}
-    rows = get_rows(hospital_tag)
-    for row in rows:
-        gender, no, yes = get_cells(row)
-        yes_int = parse_int(yes.replace('%', ''))
-        hospitalized[gender] = (yes_int / 100)
-    return hospitalized
+# def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
+#     """
+#     Takes in a BeautifulSoup tag of the cases by hospitalization table and
+#     returns a dictionary with the numbers of hospitalized and non-hospitalized
+#     cases
+#     """
+#     hospitalizations = {}
+#     rows = get_rows(hospital_tag)
+#     for row in rows:
+#         hospitalized, number, _pct = get_cells(row)
+#         lowercase_hospitalized = hospitalized.lower()
+#         if lowercase_hospitalized != 'yes' and lowercase_hospitalized != 'no':
+#             raise FormatError('The format of the hospitalization table has changed')
+#         if hospitalized.lower() == 'yes':
+#             hospitalizations['hospitalized'] = parse_int(number)
+#         else:
+#             hospitalizations['not_hospitalized'] = parse_int(number)
+#     return hospitalizations
+#
+# def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
+#     """
+#     Takes in a BeautifulSoup tag representing the percent of cases hospitalized
+#     by gender and returns a dictionary of those percentages in float form
+#     e.g. 9% is 0.09
+#     """
+#     hospitalized = {}
+#     rows = get_rows(hospital_tag)
+#     for row in rows:
+#         gender, no, yes = get_cells(row)
+#         yes_int = parse_int(yes.replace('%', ''))
+#         hospitalized[gender] = (yes_int / 100)
+#     return hospitalized
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """
