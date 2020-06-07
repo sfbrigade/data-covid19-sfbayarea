@@ -75,7 +75,7 @@ def generate_update_time(soup: BeautifulSoup) -> str:
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
-    Finds the 'Definitions' header on the page and gets all of the text' in it
+    Finds the 'Definitions' header on the page and gets all of the text in it.
     """
     definitions_section = get_section_by_title('Definitions', soup)
     definitions_text = definitions_section.text
@@ -211,7 +211,7 @@ def get_unknown_race(race_eth_tag: element.Tag) -> int:
     """
     parent = race_eth_tag.parent
     note = parent.find('p').text
-    matches = re.search('(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
+    matches = re.search(r'(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
     if not matches:
         raise FormatError('The format of the note with unknown race data has changed')
     return(parse_int(matches.groups()[0]))
