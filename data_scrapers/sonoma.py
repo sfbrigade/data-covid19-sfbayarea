@@ -149,19 +149,6 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
         tests[lower_res] = parse_int(number)
     return tests;
 
-# def generic_transform(tag: element.Tag) -> Dict[str, int]:
-#     """
-#     Transform function for tables which don't require any special processing.
-#     Takes in a BeautifulSoup tag for a table and returns a dictionary
-#     in which the keys are strings and the values integers
-#     """
-#     categories = {}
-#     rows = get_rows(tag)
-#     for row in rows:
-#         cat, cases, _pct = get_cells(row)
-#         categories[cat] = parse_int(cases)
-#     return categories
-
 def transform_gender(tag: element.Tag) -> Dict[str, int]:
     """
     Transform function for the cases by gender table.
@@ -245,39 +232,6 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
     return race_cases
 
-# def transform_total_hospitalizations(hospital_tag: element.Tag) -> Dict[str, int]:
-#     """
-#     Takes in a BeautifulSoup tag of the cases by hospitalization table and
-#     returns a dictionary with the numbers of hospitalized and non-hospitalized
-#     cases
-#     """
-#     hospitalizations = {}
-#     rows = get_rows(hospital_tag)
-#     for row in rows:
-#         hospitalized, number, _pct = get_cells(row)
-#         lowercase_hospitalized = hospitalized.lower()
-#         if lowercase_hospitalized != 'yes' and lowercase_hospitalized != 'no':
-#             raise FormatError('The format of the hospitalization table has changed')
-#         if hospitalized.lower() == 'yes':
-#             hospitalizations['hospitalized'] = parse_int(number)
-#         else:
-#             hospitalizations['not_hospitalized'] = parse_int(number)
-#     return hospitalizations
-#
-# def transform_gender_hospitalizations(hospital_tag: element.Tag) -> Dict[str, float]:
-#     """
-#     Takes in a BeautifulSoup tag representing the percent of cases hospitalized
-#     by gender and returns a dictionary of those percentages in float form
-#     e.g. 9% is 0.09
-#     """
-#     hospitalized = {}
-#     rows = get_rows(hospital_tag)
-#     for row in rows:
-#         gender, no, yes = get_cells(row)
-#         yes_int = parse_int(yes.replace('%', ''))
-#         hospitalized[gender] = (yes_int / 100)
-#     return hospitalized
-
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """
     Takes in a BeautifulSoup object and returns an array of the tables we need
@@ -313,10 +267,6 @@ def get_county() -> Dict:
         'tests_totals': {
             'tests': transform_tests(total_tests),
         },
-        # 'hospitalizations': {
-        #     'hospitalized_cases': transform_total_hospitalizations(hospitalized),
-        #     'gender': transform_gender_hospitalizations(hospitalized_by_gender)
-        # }
     }
     return model
 
