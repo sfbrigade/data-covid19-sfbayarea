@@ -1,8 +1,9 @@
 from typing import Dict, Any
 import data_scrapers.alameda_county as alameda_county
+import data_scrapers.sonoma_county as sonoma_county
 
 scrapers: Dict[str, Any] = {
-    'alameda': alameda_county
+    'alameda': alameda_county,
     # 'contra_costa': None,
     # 'marin': None,
     # 'napa': None,
@@ -10,5 +11,5 @@ scrapers: Dict[str, Any] = {
     # 'san_mateo': None,
     # 'santa_clara': None,
     # 'solano': None,
-    # 'sonoma': None,
+    'sonoma': sonoma_county,
 }
