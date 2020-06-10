@@ -9,24 +9,21 @@ from urllib.parse import unquote_plus
 from datetime import datetime
 import re
 
-#from .utils import get_data_model
+from .utils import get_data_model
 
 def get_county_data() -> Dict:
 	"""Main method for populating county data"""
 
 	url = 'https://coronavirus.marinhhs.org/surveillance'
-	with open('/Users/angelakwon/Desktop/data-covid19-sfbayarea/data-model.json') as template:
-		model = json.load(template)
-	#model = get_data_model()
+	model = get_data_model()
 
 	chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "tests": '2Hgir', "age": "VOeBm", "gender": "FEciW", "race_eth": "aBeEd"} 
 	# population totals and transmission data missing.
-
-	model['name'] = "Alameda"
+	model['name'] = "Marin County"
 	model['update_time'] = datetime.today().isoformat()
 	# No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
 	model['source_url'] = url
-	#model['meta_from_source'] = get_metadata(url, chart_ids)
+	model['meta_from_source'] = get_metadata(url, chart_ids)
 	model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
 	model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
 	model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
@@ -34,8 +31,6 @@ def get_county_data() -> Dict:
 	model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
 	model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
 	
-	#model["series"]["tests"] = get_test_series(case_csv)
-
 	print(model)
 
 def extract_csvs(chart_id: str, url: str) -> str:
@@ -83,20 +78,22 @@ def get_metadata(url: str, chart_ids: str) -> Tuple:
 		if not target:
 			raise ValueError('Cannot handle this header.')
 		for sib in target.find_next_siblings()[:1]: # I only want the first paragraph tag
-			metadata += sib.text
+			# Is it more efficient to use something like (soup object).select('h1 + p') to grab the first paragraph that follows?
+			metadata += [sib.text]
 
-
-	# Metadata for each csv file I pull. There's probably a better way to organize this.
+	# Metadata for each chart visualizing the data of the csv file I'll pull. There's probably a better way to organize this.
 	for chart_id in chart_ids.values():
 		frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
 		driver.switch_to.frame(frame)
+		# The metadata for the charts is located in elements with the class `dw-chart-notes' 
 		for c in driver.find_elements_by_class_name('dw-chart-notes'):
-			chart_metadata.append(soup.find('div').getText())
+			chart_metadata.append(c.text)
 
 		# Switch back to the parent frame to "reset" the context
 		driver.switch_to.parent_frame()
-	
+
 	driver.quit() 
+
 	# Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
 	return metadata, list(set(chart_metadata)) 
 
@@ -175,14 +172,13 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple:
 	if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
 		raise ValueError('The headers have changed')
 
-	ages = ['0-18', '19-34', '35-49', '50-64', '65'] 
+	ages = ['0-18', '19-34', '35-49', '50-64', '65+'] 
 	for row in csv_strs[1:]:
 		c_age = {}
 		d_age = {}
 		# Extracting the age group and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
 		# Each new row has data for a different age group.
 		c_age["group"] = row.split(',')[0]
-		print(type(c_age["group"]))
 		if c_age["group"] not in ages:
 			raise ValueError('The age groups have changed.')
 		c_age["raw_count"] = int(row.split(',')[2])
@@ -202,7 +198,7 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple:
 	if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
 		raise ValueError('The headers have changed.')
 
-	genders = ['Male', 'Female']
+	genders = ['male', 'female']
 	c_gender = {}
 	d_gender = {}
 	
@@ -266,29 +262,42 @@ def get_test_series(chart_id: str, url: str) -> Tuple:
 		daily["date"] = date_time_obj.isoformat()
 		series.append(daily)
 
-	
+	# The slicing makes this if statement hard to look at... there must be a better way?
+	if csv_strs[1:2][0].split(',')[:1][0] != 'Positive Tests' and csv_strs[2:][0].split(',')[:1][0] != 'Negative Tests':
+		raise ValueError('The kinds of tests have changed.')
+
 	# Grab the positive test result numbers, which is in the second row. 
 	# [1:] is included to make sure that 'Positive Tests' is not captured.
 	p_entries = csv_strs[1:2][0].split(',')[1:]
-
-	# initialize values
-	cumul_pos = int(p_entries[0])
-	series[0]["positive"] = int(p_entries[0])
-	series[0]["cumul_pos"] = cumul_pos
-	index = 1
-
-	while index < len(series):
-		# dictionary gets weird
-		day = series[index]
-		curr = int(p_entries[index])
-		day["positive"] = int(curr)
-		cumul_pos += curr
-		day["cumul_pos"] = cumul_pos 
-		index += 1
-
-	# Grab the negative test result numbers, which is in the third row.
-	# "negative", "cumul_neg"
+	n_entries = csv_strs[2:][0].split(',')[1:]
+	
+	get_test_series_helper(series, p_entries, ['positive', 'cumul_pos'])
+	get_test_series_helper(series, n_entries, ['negative', 'cumul_neg'])
 	
 	return series   
+
+def get_test_series_helper(series: list, entries: list, keys: list) -> List:
+	"""This method helps get the pos/neg test count and the cumulative pos/neg test count."""
+	
+	# initialize values cumulative number, the positive/negative and cumul_pos/neg values for the first day, and the index needed for the while loop.
+	
+	# there's probably a more efficient way to do all of this, but I just wasn't sure.
+	cumul = int(entries[0])
+	series[0][keys[0]] = int(entries[0])
+	series[0][keys[1]] = cumul
+	index = 1	
+
+	while index < len(series):
+		# get a particular day
+		day = series[index]
+		curr = int(entries[index])
+		# get pos/neg test count
+		day[keys[0]] = int(curr)
+		# add that day's pos/neg test count to get cumulative number of positive tests
+		cumul += curr
+		day[keys[1]] = cumul 
+		index += 1
+	return series
+
 
 get_county_data()
