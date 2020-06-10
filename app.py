@@ -1,9 +1,11 @@
 from flask import Flask
 from scraper import pipeline
+from typing import Dict
+
 app = Flask(__name__)
 
 @app.route('/scrape')
-def scrape():
+def scrape() -> Dict[str, Dict]:
     bay_area_counties = [
         'Solano County, California, United States',
         'Alameda County, California, United States',

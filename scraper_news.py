@@ -1,77 +1,50 @@
 #!/usr/bin/env python3
-from bs4 import BeautifulSoup
+import click
 import json
-import re
-import requests
-from urllib.parse import urljoin
+from covid19_sfbayarea import news
+from pathlib import Path
+from typing import Tuple
 
 
-HEADING_PATTERN = re.compile(r'h\d')
-ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
+COUNTY_NAMES = tuple(news.scrapers.keys())
 
 
-def get_base_url(soup, url):
-    base = soup.find('base')
-    if base and base['href']:
-        return urljoin(url, base['href'].strip())
-    else:
-        return url
+@click.command(help='Create a news feed for one or more counties. Supported '
+                    f'counties: {", ".join(COUNTY_NAMES)}.')
+@click.argument('counties', metavar='[COUNTY]...', nargs=-1,
+                type=click.Choice(COUNTY_NAMES, case_sensitive=False))
+@click.option('--format', default=('json_simple',),
+              type=click.Choice(('json_feed', 'json_simple', 'rss')),
+              multiple=True)
+@click.option('--output', help='write output file(s) to this directory')
+def main(counties: Tuple[str], format: str, output: str) -> None:
+    if len(counties) == 0:
+        # FIXME: this should be COUNTY_NAMES, but we need to fix how the
+        # stop-covid19-sfbayarea project uses this first.
+        counties = ('san_francisco',)
 
+    # Do the work!
+    for county in counties:
+        feed = news.scrapers[county].get_news()
 
-class NewsScraper:
-    START_URL = None
-
-    def scrape(self):
-        # TODO: we may want to iterate through multiple pages in the future
-        response = requests.get(self.START_URL)
-        response.raise_for_status()
-        news = self.parse_page(response.text, self.START_URL)
-        return news
-
-    def parse_page(self, html, url):
-        raise NotImplementedError()
-
-
-class SanFranciscoNews(NewsScraper):
-    START_URL = 'https://sf.gov/news/topics/794'
-
-    def parse_page(self, html, url):
-        soup = BeautifulSoup(html, 'html5lib')
-        base_url = get_base_url(soup, url)
-        news = []
-        articles = soup.main.find_all('article')
-        for index, article in enumerate(articles):
-            title_link = article.find(HEADING_PATTERN).find('a')
-
-            url = title_link['href']
-            if not url:
-                raise ValueError(f'Not URL found for article {index}')
+        for format_name in format:
+            if format_name == 'json_simple':
+                data = json.dumps(feed.format_json_simple(), indent=2)
+                extension = '.simple.json'
+            elif format_name == 'json_feed':
+                data = json.dumps(feed.format_json_feed(), indent=2)
+                extension = '.json'
             else:
-                url = urljoin(base_url, url)
+                data = feed.format_rss()
+                extension = '.rss'
 
-            title = title_link.get_text(strip=True)
-            if not title:
-                raise ValueError(f'No title content found for article {index}')
-
-            date = article.find('time')['datetime']
-            if not ISO_DATETIME_PATTERN.match(date):
-                raise ValueError(f'Article {index} date is not in ISO 8601'
-                                 f'format: "{date}"')
-
-            news.append({
-                'url': url,
-                'text': title,
-                'date': date
-            })
-
-        return news
-
-
-def main():
-    scraper = SanFranciscoNews()
-    news = scraper.scrape()
-    news_data = {'newsItems': news}
-    print(json.dumps(news_data, indent=2))
+            if output:
+                parent = Path(output)
+                parent.mkdir(exist_ok=True)
+                with parent.joinpath(f'{county}{extension}').open('w+') as f:
+                    f.write(data)
+            else:
+                print(data)
 
 
 if __name__ == '__main__':
