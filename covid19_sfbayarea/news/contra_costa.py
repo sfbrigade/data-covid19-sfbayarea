@@ -64,7 +64,7 @@ class ContraCostaNews(NewsScraper):
         home_page_url='https://www.coronavirus.cchealth.org/health-services-updates'
     )
 
-    START_URL = 'https://www.coronavirus.cchealth.org/health-services-updates'
+    URL = 'https://www.coronavirus.cchealth.org/health-services-updates'
 
     def is_news_heading(self, element: element.Tag) -> bool:
         return (HEADING_PATTERN.match(element.name) and
