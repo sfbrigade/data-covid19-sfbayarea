@@ -76,8 +76,10 @@ def get_timeseries(out: Dict) -> None:
     }
 
     # query API for days where cumulative number of cases on the day > 0
-    param_list = {'where': 'cumulative_number_of_cases_on_t>0', 'resultType': 'none', 'outFields': 'date_reported,cumulative_number_of_cases_on_t,total_deaths,residents_tested,new_cases_confirmed_today',
-                  'orderByField': 'date_reported', 'f': 'json'}
+    param_list = {  'where': 'cumulative_number_of_cases_on_t>0',
+                    'resultType': 'none',
+                    'outFields': 'date_reported,cumulative_number_of_cases_on_t,total_deaths,residents_tested,new_cases_confirmed_today',
+                    'orderByFields': 'date_reported asc', 'f': 'json'}
     response = requests.get(data_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
