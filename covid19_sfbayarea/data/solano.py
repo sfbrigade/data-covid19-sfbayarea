@@ -8,12 +8,14 @@ from datetime import datetime, timezone
 import dateutil.tz
 from ..webdriver import get_firefox
 from .utils import get_data_model
+from collections import defaultdict
 
 # URLs and API endpoints:
 # data_url has cases, deaths, tests, and race_eth
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0/query"
-# data2_url has age and gender
+# data2_url used to be a join on gender and age. As of 6/15/20, Age Groups were removed from this table. It looks like Gender has been updated through 6/12.
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
+# age_group_url has cumulative cases and deaths by age group. This endpoint was added to this script on 6/15/20
 age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/AgeGroupsTable/FeatureServer/0/query'
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
@@ -50,7 +52,7 @@ def get_county() -> Dict:
     # get cases, deaths, and demographics data
     get_timeseries(out)
     get_age_table(out)
-    #get_gender_age(out)
+    get_gender_table(out)
     get_race_eth(out)
 
     return out
@@ -118,9 +120,9 @@ def get_timeseries(out: Dict) -> None:
         cumul_deaths = entry["cumul_deaths"]
         cumul_tests = entry["cumul_tests"]
 
-        # grab cases and replace None with -1
+        # grab cases and replace None with 0
         if entry["cases"] is None:
-            entry["cases"] = -1
+            entry["cases"] = 0
 
         if cumul_cases is not None:
             cases_entry = { k: entry[k] for k in CASES_TEMPLATE if k in entry }
@@ -139,7 +141,7 @@ def get_notes() -> str:
     """Scrape notes and disclaimers from dashboard."""
     # As of 6/5/20, the only disclaimer is "Data update weekdays at 4:30pm"
     notes = []
-    match = re.compile('[Dd]isclaimers?')
+    match = re.compile('disclaimers?', re.IGNORECASE)
     driver = get_firefox()
     driver.implicitly_wait(30)
     driver.get(dashboard_url)
@@ -152,7 +154,7 @@ def get_notes() -> str:
             has_notes = True
     if not has_notes:
         raise(FutureWarning(
-            "This dashboard url has changed. None of the <div> elements contains'[Dd]isclaimers?$' " + dashboard_url))
+            "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url))
     driver.quit()
     return '\n\n'.join(notes)
 
@@ -198,16 +200,16 @@ def get_age_table(out: Dict) -> None:
             f"The source data structure has changed. Query did not return four age groups. Results: {entries}")
 
     # Dict of source_label: target_label for re-keying.
-    AGE_KEYS = {"0_18": "0_to_18",
-                "19_64": "19_to_64", "65+": "65_and_older"}
+    AGE_KEYS = {"0-17 yrs": "0_to_17",
+                "18-49 yrs": "18_to_49", "50-64 yrs": "50_to_64", "65+ yrs": "65_and_older" }
     age_table_cases = []
     age_table_deaths = []
 
     # parse output
     for entry in entries:
         age_key = AGE_KEYS.get(entry["Age_Group"])
-        age_group_cases = entry["All_cases_Number"]
-        age_group_deaths = entry["Died_Number"]
+        age_group_cases = entry["All_cases_Number"] or 0 # explicitly set 0 for null values
+        age_group_deaths = entry["Died_Number"] or 0
         age_table_cases.append(
             {"group": age_key, "raw_count": age_group_cases})
         age_table_deaths.append(
@@ -217,69 +219,36 @@ def get_age_table(out: Dict) -> None:
     out["death_totals"]["age_group"] = age_table_deaths
 
 
-def get_gender_age(out: Dict) -> None:
+def get_gender_table(out: Dict) -> None:
     """
-    Fetch cases by gender and age group, deaths by age group
-    Updates out with {"cases_totals": {}, "death_totals":{} }
+    Fetch cases by gender
+    Updates out with {"cases_totals": {} }
     """
     #TODO: Confirm which datapoints are the gender numbers with Solano County, and/or add caveat to metadata that the gender numbers are a guess
     """
-    My best guess is that this table is a result of a botched join on a a gender table and an age table.
-    The numbers that I'm guessing match up with age groups do match the numbers reported on the dashboard.
-    The dashboard does not show gender, so I don't actually know if these are gender numbers.
-    The data are reported as 3 sets of entries per day:
-
-    [ {
-            date_reported: timestamp_for_the_day,
-            gender: male,
-            number_of_cases: cumul number of male cases???,
-            age_group: 0-18,
-            non-severe: cumul number of non-severe 0-18 cases???,
-            hospitalized: cumul number of hospitalized 0-18 case???,
-            deaths: cumul number of 0-18 deaths??? },
-
-      {
-          date_reported: timestamp_for_the_day,
-          gender: female,
-          number_of_cases: cumul number of female cases???,
-          age_group: 19-64,
-          non-severe: cumul number of non-severe 19-64 cases???,
-          hospitalized: cumul number of hospitalized 19-64 case???,
-          deaths: cumul number of 19-64 deaths??? },
-
-      {
-          date_reported: timestamp_for_the_day,
-          gender: unknown, or empty(!!!)
-          number_of_cases: cumul number of unknown cases???,
-          age_group: 65+,
-          non-severe: cumul number of non-severe 65+ cases???,
-          hospitalized: cumul number of hospitalized 65+ case???,
-          deaths: cumul number of 65+ deaths???
-          } ]
-
+    This data used to have Age Group numbers. The Age_Group columns are still being shown in this source.
     See the data at this map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0&source=sd
     The table view of the map item is a helpful reference.
     """
 
-
-    # format query to get the latest 6 entries. With 3 entries per day, this ideally returns entries for the latest completed day, allowing
-    # up to 2 entries for a partial day if we grab data before the day has completed updating.
+    # format query to get the latest 3 entries. This will get the latest Male and Female entries, plus one additional entry to check if there was
+    # an Unknown gender engry for the day
     param_list = {'where': '0=0', 'outFields': '*',
-                  'orderByFields': 'date_reported DESC', 'resultRecordCount': '5', 'f': 'json'}
+                  'orderByFields': 'date_reported DESC', 'resultRecordCount': '3', 'f': 'json'}
     response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
     entries = [ attr["attributes"] for attr in parsed['features'] ] # surface data from nested attributes dict
 
 
-    # filter entries to surface the 3 entries for the most recent day with all 3 age groups and at least 2 Male/Female genders
+    # filter entries to surface the 3 entries for the most recent day with at least 2 Male/Female genders
     # to find them, compare to a complete day's set of included values
-    complete_day = { 'male', 'female', '0_18', '19_64', '65+' }
+    complete_day = { 'male', 'female'}
 
     # days is a dict to collect the set of values
     # initialize days with an empty set of values for each day
-    days : Dict[str, set] = { entry["date_reported"]: set() for entry in entries }
-    keys_to_check = ["gender", "age_group"]
+    days = defaultdict(set)
+    keys_to_check = ["gender"]
     # collect the values for keys to check in each day's set of values
     for entry in entries:
         day = entry["date_reported"]
@@ -291,39 +260,24 @@ def get_gender_age(out: Dict) -> None:
     complete_days = [ k for k,v in days.items() if complete_day.issubset(v) ]
 
     if len(complete_days) != 1:
-        raise FutureWarning(f"The source data structure has changed. Problem with entries with these timestamps: {','.join(complete_days)}" )
+        raise FutureWarning(f"The source data structure has changed. Issues with gender data for these dates: {','.join(complete_days)}" )
 
-    complete_entries = [ entry for entry in entries if entry["date_reported"] in complete_days ]
+    # include all entries with date equal to the complete day
+    gender_cols = [ entry for entry in entries if entry["date_reported"] in complete_days ]
 
     # Dicts of source_label: target_label for re-keying.
     GENDER_KEYS = {"female": "female", "male": "male",
                    "unknown": "unknown"}
-    AGE_KEYS = {"0_18": "0_to_18",
-                "19_64": "19_to_64", "65+": "65_and_older"}
     gender_table_cases = dict()
-    age_table_cases = []
-    age_table_deaths = []
 
     # parse output
-    for entry in complete_entries:
+    for entry in gender_cols:
         gender_key = GENDER_KEYS.get(entry["gender"], "unknown") # for entries where gender not reported, assume unknown
-        gender_cases = entry["number_of_cases"] if entry["number_of_cases"] is not None else -1 # handle 'Other: null' in gender table
-        age_key = AGE_KEYS.get(entry["age_group"])
-        age_group_cases = entry["non_severe"] if entry["non_severe"] is not None else -1
-        age_group_cases = age_group_cases + entry["hospitalized"] if entry["hospitalized"] is not None else age_group_cases
-        age_group_deaths = entry["deaths"]
+        gender_cases = entry["number_of_cases"] or 0 # explicitly set 0 for null values
         gender_table_cases[gender_key] = gender_cases
-        # also parsing ages in this for loop. It's possible that the entries could be stored out of order in the future, but it looks like
-        # they are have always been correctly sorted.
-        age_table_cases.append( { "group": age_key, "raw_count": age_group_cases } )
-        age_table_deaths.append( { "group": age_key, "raw_count": age_group_deaths } )
-
-    if age_table_cases[0]["group"] != "0_to_18":
-        raise FutureWarning("Age groups may not be in sorted order.")
 
     out["case_totals"]["gender"].update(gender_table_cases)
-    out["case_totals"]["age_group"] = age_table_cases
-    out["death_totals"]["age_group"] = age_table_deaths
+
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
     print(json.dumps(get_county(), indent=4))
