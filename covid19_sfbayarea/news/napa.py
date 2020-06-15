@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, parse_datetime
+from .utils import get_base_url, is_covid_related, parse_datetime
 
 
 SUMMARY_PREFIX_PATTERN = re.compile(r'''
@@ -57,7 +57,7 @@ class NapaNews(NewsScraper):
 
         parsed = (self.parse_news_item(article, base_url)
                   for article in articles)
-        return list(filter(self.is_covid_related, parsed))
+        return list(filter(is_covid_related, parsed))
 
     def parse_news_item(self, item_element: element.Tag, base_url: str) -> NewsItem:
         title_element = item_element.find('h3')
@@ -97,21 +97,3 @@ class NapaNews(NewsScraper):
 
         return NewsItem(id=url, url=url, title=title, date_published=date,
                         summary=summary)
-
-    def is_covid_related(self, item: NewsItem) -> bool:
-        comparable = ' '.join([
-            item.title,
-            item.summary or '',
-            item.url
-        ]).lower()
-        terms = (
-            'covid',
-            'coronavirus',
-            'health',
-            'reopening',
-            'stay at home',
-            'stay-at-home',
-            'shelter in place',
-            'shelter-in-place'
-        )
-        return any(term in comparable for term in terms)

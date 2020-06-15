@@ -7,8 +7,8 @@ from .napa import NapaNews
 from .san_francisco import SanFranciscoNews
 from .san_mateo import SanMateoNews
 from .santa_clara import SantaClaraNews
-# from .solano import SolanoNews
-# from .sonoma import SonomaNews
+from .solano import SolanoNews
+from .sonoma import SonomaNews
 
 
 scrapers: Dict[str, Type[NewsScraper]] = {
@@ -19,6 +19,6 @@ scrapers: Dict[str, Type[NewsScraper]] = {
     'san_francisco': SanFranciscoNews,
     'san_mateo': SanMateoNews,
     'santa_clara': SantaClaraNews,
-    # 'solano': SolanoNews,
-    # 'sonoma': SonomaNews,
+    'solano': SolanoNews,
+    'sonoma': SonomaNews,
 }
