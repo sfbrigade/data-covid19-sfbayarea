@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup  # type: ignore
 import json
 from typing import List, Dict
 from datetime import datetime, timezone
+import dateutil.tz
 from ..webdriver import get_firefox
 from .utils import get_data_model
 
@@ -13,6 +14,7 @@ from .utils import get_data_model
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0/query"
 # data2_url has age and gender
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
+age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/AgeGroupsTable/FeatureServer/0/query'
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
 
@@ -86,9 +88,10 @@ def get_timeseries(out: Dict) -> None:
     features = [obj["attributes"] for obj in parsed['features']]
 
     # convert dates
+    PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
     for obj in features:
         timestamp = obj['date_reported']
-        date = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
+        date = datetime.fromtimestamp(timestamp/1000, tz=PACIFIC_TIME)
         obj['date_reported'] = date.strftime("%Y-%m-%d")
 
     re_keyed = [{TIMESERIES_KEYS[key]: value for key, value in entry.items()}
