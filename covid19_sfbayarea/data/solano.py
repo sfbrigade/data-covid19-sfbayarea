@@ -173,7 +173,8 @@ def get_race_eth (out: Dict)-> None :
                  "Unknown": "unknown_all"}
 
     # format query to get entry for latest date
-    param_list = {'where': '0=0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
+    # check for the 'all_cases_total', which is the first total cases column before the race/eth columns
+    param_list = {'where': 'all_cases_total>0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
     response = requests.get(data_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
