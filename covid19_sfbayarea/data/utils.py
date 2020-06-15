@@ -30,7 +30,12 @@ class SocrataApi:
             response = self.session.get(url, **kwargs)
             response.raise_for_status()
         except requests.exceptions.HTTPError as http_err:
-            print(f'{http_err} \n Result from server: {response.json()}')
+            if response.raise_for_status == 400:
+                raise BadRequest(f'{http_err} \n Result from server: {response.json()}')
+                return response.json()
+            else:
+                print(f'{http_err}') # log the error
+                return dict() # return empty dict
         else:
             return response.json()
 
