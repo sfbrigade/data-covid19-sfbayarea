@@ -49,7 +49,8 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     get_timeseries(out)
-    get_gender_age(out)
+    get_age_table(out)
+    #get_gender_age(out)
     get_race_eth(out)
 
     return out
@@ -179,6 +180,43 @@ def get_race_eth (out: Dict)-> None :
     race_eth_table = { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() }
     out["case_totals"]["race_eth"].update(race_eth_table)
 
+def get_age_table(out: Dict) -> None:
+    """
+    Fetch cases and deaths by age group
+    Updates out with {"cases_totals": {}, "death_totals":{} }
+    """
+    param_list = {'where': '0=0', 'outFields': 'Age_Group, All_cases_Number, Died_Number',
+                  'orderByFields': 'Age_Group ASC', 'f': 'json'}
+    response = requests.get(age_group_url, params=param_list)
+    response.raise_for_status()
+    parsed = response.json()
+    # surface data from nested attributes dict
+    entries = [attr["attributes"] for attr in parsed['features']]
+
+    if len(entries) != 4: # check that we have 4 entries, one for each expected age group
+        raise FutureWarning(
+            f"The source data structure has changed. Query did not return four age groups. Results: {entries}")
+
+    # Dict of source_label: target_label for re-keying.
+    AGE_KEYS = {"0_18": "0_to_18",
+                "19_64": "19_to_64", "65+": "65_and_older"}
+    age_table_cases = []
+    age_table_deaths = []
+
+    # parse output
+    for entry in entries:
+        age_key = AGE_KEYS.get(entry["Age_Group"])
+        age_group_cases = entry["All_cases_Number"]
+        age_group_deaths = entry["Died_Number"]
+        age_table_cases.append(
+            {"group": age_key, "raw_count": age_group_cases})
+        age_table_deaths.append(
+            {"group": age_key, "raw_count": age_group_deaths})
+
+    out["case_totals"]["age_group"] = age_table_cases
+    out["death_totals"]["age_group"] = age_table_deaths
+
+
 def get_gender_age(out: Dict) -> None:
     """
     Fetch cases by gender and age group, deaths by age group
@@ -286,7 +324,6 @@ def get_gender_age(out: Dict) -> None:
     out["case_totals"]["gender"].update(gender_table_cases)
     out["case_totals"]["age_group"] = age_table_cases
     out["death_totals"]["age_group"] = age_table_deaths
-
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
     print(json.dumps(get_county(), indent=4))
