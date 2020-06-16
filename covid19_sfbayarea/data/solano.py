@@ -20,6 +20,9 @@ age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/servi
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
 
+
+# TODO: replace future warnings with custom exceptions in data/errors.py as needed
+
 def get_county() -> Dict:
     """Main method for populating county data .json"""
 
@@ -140,23 +143,22 @@ def get_timeseries(out: Dict) -> None:
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboard."""
     # As of 6/5/20, the only disclaimer is "Data update weekdays at 4:30pm"
-    notes = []
-    match = re.compile('disclaimers?', re.IGNORECASE)
-    driver = get_firefox()
-    driver.implicitly_wait(30)
-    driver.get(dashboard_url)
-    soup = BeautifulSoup(driver.page_source, 'html5lib')
-    has_notes = False
-    text = soup.get_text().splitlines()
-    for text_item in text:
-        if match.search(text_item):
-            notes.append(text_item.strip())
-            has_notes = True
-    if not has_notes:
-        raise(FutureWarning(
-            "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url))
-    driver.quit()
-    return '\n\n'.join(notes)
+    with get_firefox() as driver:
+        notes = []
+        match = re.compile('disclaimers?', re.IGNORECASE)
+        driver.implicitly_wait(30)
+        driver.get(dashboard_url)
+        soup = BeautifulSoup(driver.page_source, 'html5lib')
+        has_notes = False
+        text = soup.get_text().splitlines()
+        for text_item in text:
+            if match.search(text_item):
+                notes.append(text_item.strip())
+                has_notes = True
+        if not has_notes:
+            raise(FutureWarning(
+                "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url))
+        return '\n\n'.join(notes)
 
 
 def get_race_eth (out: Dict)-> None :
