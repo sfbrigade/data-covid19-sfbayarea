@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import click
 import json
-import news
+from covid19_sfbayarea import news
 from pathlib import Path
 from typing import Tuple
 
@@ -13,18 +13,19 @@ COUNTY_NAMES = tuple(news.scrapers.keys())
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-@click.option('--format', default='json_simple',
+@click.option('--format', default=('json_simple',),
               type=click.Choice(('json_feed', 'json_simple', 'rss')),
               multiple=True)
 @click.option('--output', help='write output file(s) to this directory')
 def main(counties: Tuple[str], format: str, output: str) -> None:
     if len(counties) == 0:
+        # FIXME: this should be COUNTY_NAMES, but we need to fix how the
+        # stop-covid19-sfbayarea project uses this first.
         counties = ('san_francisco',)
 
     # Do the work!
     for county in counties:
-        scraper = news.scrapers[county]()
-        feed = scraper.scrape()
+        feed = news.scrapers[county].get_news()
 
         for format_name in format:
             if format_name == 'json_simple':
