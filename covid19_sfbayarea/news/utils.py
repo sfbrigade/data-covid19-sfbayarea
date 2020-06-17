@@ -114,6 +114,10 @@ def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) 
     the `timezone` argument to set the timezone to use if none was specified in
     the parsed string.
     """
+    # Handle dumb typos that might be in the dates on the page :(
+    if date_string.endswith('/202'):
+        date_string += '0'
+
     date = dateutil.parser.parse(date_string)
     if date.tzinfo is None:
         date = date.replace(tzinfo=timezone)
