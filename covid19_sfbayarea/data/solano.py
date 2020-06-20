@@ -37,7 +37,7 @@ def get_county() -> Dict:
         "Solano reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
         "In the cases timeseries, cumulative cases on any given day may not equal the sum of new daily cases to date.",
         "This may be because source data for daily cases refers to cases that were laboratory-confirmed by 1:30 pm that day, with weekend case onfirmations possibly occurring on Mondays.",
-        "Solano reports cumulative tests, but does not report test results.",
+        "Solano reports total number of residents tested on each date. This may exclude counts of tests for individuals being retested. Solano does not report test results.",
         "Deaths by race/eth not currently reported.",
         "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
         "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."])
