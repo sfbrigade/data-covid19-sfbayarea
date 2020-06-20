@@ -9,6 +9,7 @@ import dateutil.tz
 from ..webdriver import get_firefox
 from .utils import get_data_model
 from collections import defaultdict
+from ..errors import FormatError
 
 # URLs and API endpoints:
 # data_url has cases, deaths, tests, and race_eth
@@ -19,9 +20,6 @@ data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/
 age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/AgeGroupsTable/FeatureServer/0/query'
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
-
-
-# TODO: replace future warnings with custom exceptions in data/errors.py as needed
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -50,7 +48,7 @@ def get_county() -> Dict:
     # Raise an exception if a timezone is specified. If "dateFieldsTimeReference" is present, we need to edit this scraper to handle it.
     # See: https://developers.arcgis.com/rest/services-reference/layer-feature-service-.htm#GUID-20D36DF4-F13A-4B01-AA05-D642FA455EB6
     if "dateFieldsTimeReference" in metadata["editFieldsInfo"]:
-        raise FutureWarning("A timezone may now be specified in the metadata.")
+        raise FormatError("A timezone may now be specified in the metadata.")
     # convert timestamp to datetime object
     update = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
     out["update_time"] = update.isoformat()
@@ -159,7 +157,7 @@ def get_notes() -> str:
                 notes.append(text_item.strip())
                 has_notes = True
         if not has_notes:
-            raise FutureWarning(
+            raise FormatError(
                 "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url)
         return '\n\n'.join(notes)
 
@@ -202,7 +200,7 @@ def get_age_table(out: Dict) -> None:
     entries = [attr["attributes"] for attr in parsed['features']]
 
     if len(entries) != 4: # check that we have 4 entries, one for each expected age group
-        raise FutureWarning(
+        raise FormatError(
             f"The source data structure has changed. Query did not return four age groups. Results: {entries}")
 
     # Dict of source_label: target_label for re-keying.
@@ -266,7 +264,7 @@ def get_gender_table(out: Dict) -> None:
     complete_days = [ k for k,v in days.items() if complete_day.issubset(v) ]
 
     if len(complete_days) != 1:
-        raise FutureWarning(f"The source data structure has changed. Issues with gender data for these dates: {','.join(complete_days)}" )
+        raise FormatError(f"The source data structure has changed. Issues with gender data for these dates: {','.join(complete_days)}" )
 
     # include all entries with date equal to the complete day
     gender_cols = [ entry for entry in entries if entry["date_reported"] in complete_days ]
