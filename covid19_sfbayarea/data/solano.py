@@ -213,7 +213,7 @@ def get_age_table(out: Dict) -> None:
 
     # parse output
     for entry in entries:
-        age_key = AGE_KEYS.get(entry["Age_Group"])
+        age_key = AGE_KEYS[entry["Age_Group"]]
         age_group_cases = entry["All_cases_Number"] or 0 # explicitly set 0 for null values
         age_group_deaths = entry["Died_Number"] or 0
         age_table_cases.append(
