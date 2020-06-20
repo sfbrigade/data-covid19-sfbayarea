@@ -175,18 +175,19 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     resource_id = resource_ids['gender']
     GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
     params = {'$select': 'gender, cumulative_confirmed_cases',
-              '$order': 'speciment_collection_date DESC',
+              '$order': 'specimen_collection_date DESC',
               '$limit': 3}
     data = session.resource(resource_id, params=params)
 
+    # check that the table is complete
+    for k in GENDER_KEYS:
+        if k not in [ entry['gender'] for entry in data]:
+            raise FormatError(
+                f"Did not get expected Gender categories. Data received: {data}")
+
     # re-key
     gender_table = {GENDER_KEYS[entry["gender"]]: int(
-        entry["sum_confirmed_cases"]) for entry in data}
-
-    # check that the table is complete
-    if gender_table.keys() != GENDER_KEYS.keys():
-        raise FormatError(
-            f"Did not get expected Gender categories. Expected: {GENDER_KEYS.keys()} Received: {gender_table.keys()}")
+        entry["cumulative_confirmed_cases"]) for entry in data}
 
     return gender_table
 
