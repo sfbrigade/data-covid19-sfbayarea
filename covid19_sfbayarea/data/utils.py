@@ -4,7 +4,7 @@ from typing import Dict, Any
 import requests
 from urllib.parse import urljoin
 from cachecontrol import CacheControl  # type: ignore
-from ..errors import BadRequest
+from .errors import BadRequest
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
@@ -29,15 +29,14 @@ class SocrataApi:
         try:
             response = self.session.get(url, **kwargs)
             response.raise_for_status()
-        except requests.exceptions.HTTPError as http_err:
-            if response.raise_for_status == 400:
-                raise BadRequest(f'{http_err} \n Result from server: {response.json()}')
-                return response.json()
-            else:
-                print(f'{http_err}') # log the error
-                return dict() # return empty dict
-        else:
             return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                server_message = response.json()['message'] # see if the API returned message data
+            except Exception:
+                # if no JSON data, re-rasie the original error
+                raise http_err
+            raise BadRequest(server_message, response=response)
 
     def resource(self, resource_id: str, **kwargs: Any) -> Dict:
         return self.request(f'{self.resource_url}{resource_id}', **kwargs)

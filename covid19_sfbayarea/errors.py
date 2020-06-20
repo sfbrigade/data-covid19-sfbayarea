@@ -5,9 +5,3 @@ class FormatError(Exception):
     accessing has changed.
     """
     pass
-
-class BadRequest(Exception):
-    """
-    A custom error to raise when a request to an API returns 400 Bad Request.
-    """
-    pass
