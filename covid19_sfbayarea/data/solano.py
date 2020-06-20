@@ -33,11 +33,14 @@ def get_county() -> Dict:
     out["name"] = "Solano County"
     out["source_url"] = data_url
     out["meta_from_source"] = get_notes()
-    out["meta_from_baypd"] = '\n'.join(["Solano County reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
-    "Solano reports cumulative tests, but does not report test results.",
-    "Deaths by race/eth not currently reported.",
-    "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
-    "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."])
+    out["meta_from_baypd"] = '\n'.join([
+        "Solano reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
+        "In the cases timeseries, cumulative cases on any given day may not equal the sum of new daily cases to date.",
+        "This may be because source data for daily cases refers to cases that were laboratory-confirmed by 1:30 pm that day, with weekend case onfirmations possibly occurring on Mondays.",
+        "Solano reports cumulative tests, but does not report test results.",
+        "Deaths by race/eth not currently reported.",
+        "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
+        "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."])
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(metadata_url)
