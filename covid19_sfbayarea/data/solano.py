@@ -159,8 +159,8 @@ def get_notes() -> str:
                 notes.append(text_item.strip())
                 has_notes = True
         if not has_notes:
-            raise(FutureWarning(
-                "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url))
+            raise FutureWarning(
+                "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url)
         return '\n\n'.join(notes)
 
 
