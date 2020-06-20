@@ -8,7 +8,6 @@ from ..errors import FormatError
 def get_county() -> Dict:
     """ Main method for populating county data.json """
     # TODO: Add deaths data when it is available through the api.
-    # TODO: As of 6/15/20, the gender columns have been scrubbed from the demographics table. See get_gender_table()
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
@@ -167,8 +166,6 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
     return age_table
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
-    # TODO: As of 6/15/20, the gender columns have been scrubbed from the demographics table.
-    # Update this method to either scrape the dashboard, or correctly query the API.
     """Get cases by gender"""
 
    # Dict of source_label:target_label for re-keying.
