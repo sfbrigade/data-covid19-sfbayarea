@@ -11,7 +11,6 @@ import re
 
 from ..webdriver import get_firefox
 from .utils import get_data_model
-#Can you also please make sure to use 4-space (not tab) indentation, so this is consistent with the other files? 
 
 def get_county_data() -> Dict:
     """Main method for populating county data"""
@@ -58,6 +57,8 @@ def extract_csvs(chart_id: str, url: str) -> str:
         if media != 'application/octet-stream;charset=utf-8':
             raise ValueError(f'Cannot handle media type "{media}"')
         csv_string = unquote_plus(data)
+    else:
+        raise ValueError('Cannot handle this csv_data href')
 
     # Then leave the iframe
     driver.switch_to.default_content()
