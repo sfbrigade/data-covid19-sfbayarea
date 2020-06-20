@@ -3,6 +3,7 @@ import json
 from typing import Dict, List
 from collections import Counter
 from .utils import get_data_model, SocrataApi
+from ..errors import FormatError
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
@@ -11,8 +12,8 @@ def get_county() -> Dict:
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
-    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k',
-                     'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
+    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age': 'sunc-2t3k',
+                    'gender': 'nhy6-gqam', 'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
     session = SocrataApi('https://data.sfgov.org/')
 
     # fetch metadata
@@ -147,7 +148,7 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
 
 def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
-    resource_id = resource_ids['age_gender']
+    resource_id = resource_ids['age']
     # Dict of target_label:source_label for lookups
     AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
                 "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
@@ -170,22 +171,24 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     # Update this method to either scrape the dashboard, or correctly query the API.
     """Get cases by gender"""
 
-    # temporary table for gender
-    return {"Female": -1, "Male": -1, "Unknown": -1}
-
-    """
-    Uncomment this block if gender is added back to the API
-        # Dict of source_label:target_label for re-keying.
-    # Note: non cis genders not currently reported
-
-    resource_id = resource_ids['age_gender']
+   # Dict of source_label:target_label for re-keying.
+    resource_id = resource_ids['gender']
     GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
-    params = {'$select': 'gender, sum(confirmed_cases)', '$group': 'gender'}
+    params = {'$select': 'gender, cumulative_confirmed_cases',
+              '$order': 'speciment_collection_date DESC',
+              '$limit': 3}
     data = session.resource(resource_id, params=params)
+
     # re-key
-    return {GENDER_KEYS[entry["gender"]]: int(entry["sum_confirmed_cases"])
-            for entry in data}
-    """
+    gender_table = {GENDER_KEYS[entry["gender"]]: int(
+        entry["sum_confirmed_cases"]) for entry in data}
+
+    # check that the table is complete
+    if gender_table.keys() != GENDER_KEYS.keys():
+        raise FormatError(
+            f"Did not get expected Gender categories. Expected: {GENDER_KEYS.keys()} Received: {gender_table.keys()}")
+
+    return gender_table
 
 def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by transmission category"""
