@@ -11,7 +11,9 @@ from .feed import NewsItem
 
 HEADING_PATTERN = re.compile(r'h\d')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
+US_SHORT_DATE_PATTERN = re.compile(r'^\s*\d+/\d+/\d+\s*$')
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
+CURRENT_YEAR = datetime.utcnow().year
 
 # Sometimes we can't find a news feed that is specific to COVID-19, so the news
 # items we scrape need to be filtered. These key terms are used to test whether
@@ -115,12 +117,17 @@ def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) 
     the parsed string.
     """
     # Handle dumb typos that might be in the dates on the page :(
-    if date_string.endswith('/202'):
-        date_string += '0'
+    if US_SHORT_DATE_PATTERN.match(date_string):
+        if date_string.endswith('/202'):
+            date_string += '0'
 
     date = dateutil.parser.parse(date_string)
     if date.tzinfo is None:
         date = date.replace(tzinfo=timezone)
+
+    # Gut-check whether this date seems reasonable
+    if abs(CURRENT_YEAR - date.year) > 5:
+        raise ValueError(f'Unknown date format: "{date_string}"')
 
     return date
 
