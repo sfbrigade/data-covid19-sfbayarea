@@ -3,17 +3,16 @@ import json
 from typing import Dict, List
 from collections import Counter
 from .utils import get_data_model, SocrataApi
+from ..errors import FormatError
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
     # TODO: Add deaths data when it is available through the api.
-    # TODO: In get_race_eth_table(), update code when SF provides a race label for the Native American datapoint.
-
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
-    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k',
-                     'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
+    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age': 'sunc-2t3k',
+                    'gender': 'nhy6-gqam', 'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
     session = SocrataApi('https://data.sfgov.org/')
 
     # fetch metadata
@@ -25,7 +24,7 @@ def get_county() -> Dict:
     out["source_url"] = "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
     out["update_time"] = sorted(update_times)[0]  # get earliest update time
     out["meta_from_source"] = meta_from_source
-    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. BayPD is not currently reporting deaths by demographic groups. These will be made available when the data is accessible."
+    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. SF county does not directly cumulative tests; BayPD determines cumulative tests by summing over available data.\n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. BayPD is not currently reporting deaths by demographic groups, nor cases by gender. These will be made available when the data is accessible."
 
     # get timeseries and demographic totals
     out["series"] = get_timeseries(session, RESOURCE_IDS)
@@ -89,7 +88,7 @@ def get_cases_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get cases timeseries json, sum over transmision cat by date"""
     resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Confirmed',
-            '$select': 'date,sum(case_count) as cases', '$group': 'date', '$order': 'date'}
+            '$select': 'specimen_collection_date as date,sum(case_count) as cases', '$group': 'specimen_collection_date', '$order': 'specimen_collection_date'}
     data = session.resource(resource_id, params=params)
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
@@ -108,7 +107,7 @@ def get_deaths_series(session: SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get  deaths timeseries, sum over transmision cat by date"""
     resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Death',
-            '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
+            '$select': 'specimen_collection_date as date,sum(case_count) as deaths', '$group': 'specimen_collection_date', '$order': 'date'}
     series = session.resource(resource_id, params=params)
     death_series = []
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
@@ -128,16 +127,16 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get tests by day, order by date ascending"""
     resource_id = resource_ids['tests']
     test_series = []
-    params = {'$order': 'result_date'}
+    params = {'$order': 'specimen_collection_date'}
     series = session.resource(resource_id, params=params)
 
     # parse source series into out series, calculating cumulative values
     # Counter is from the built-in `collections` module.
     totals:Counter = Counter()
     for entry in series:
-        out_entry = dict(date=entry["result_date"][0:10],
-                        tests=int(entry["tests"]),
-                        positive=int(entry["pos"]))
+        out_entry = dict(date=entry["specimen_collection_date"][0:10],
+                        tests=int(float(entry["tests"])),
+                        positive=int(float(entry["pos"])))
         out_entry['negative'] = out_entry["tests"] - out_entry["positive"]
         totals.update(out_entry)
         out_entry.update(cumul_tests=totals['tests'],
@@ -148,17 +147,17 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
 
 def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
-    resource_id = resource_ids['age_gender']
+    resource_id = resource_ids['age']
     # Dict of target_label:source_label for lookups
     AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
                 "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
 
 
-    params = {'$select': 'age_group, sum(confirmed_cases)', '$order': 'age_group', '$group': 'age_group'}
+    params = {'$select': 'age_group, MAX(cumulative_confirmed_cases) as cumul_cases', '$group': 'age_group'}
     data = session.resource(resource_id, params=params)
 
     # flatten data into a dictionary of age_group:cases
-    data = { item["age_group"] : int(item["sum_confirmed_cases"]) for item in data }
+    data = { item["age_group"] : int(item["cumul_cases"]) for item in data }
     age_table = []
     # fill in values in age table
     for target_key, source_key in AGE_KEYS.items():
@@ -168,15 +167,25 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by gender"""
-    # Dict of source_label:target_label for re-keying.
-    # Note: non cis genders not currently reported
-    resource_id = resource_ids['age_gender']
+
+   # Dict of source_label:target_label for re-keying.
+    resource_id = resource_ids['gender']
     GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
-    params = {'$select': 'gender, sum(confirmed_cases)', '$group': 'gender'}
+    params = {'$select': 'gender, MAX(cumulative_confirmed_cases) as cumul_cases',
+            '$group': 'gender' }
     data = session.resource(resource_id, params=params)
+
+    # check that the set of genders present in data is equal to the genders we expect
+    data_genders  = set( [entry['gender'] for entry in data])
+    if GENDER_KEYS.keys() != data_genders:
+        raise FormatError(
+            f"Did not get expected Gender categories. Data received: {data}")
+
     # re-key
-    return {GENDER_KEYS[entry["gender"]]: int(entry["sum_confirmed_cases"])
-            for entry in data}
+    gender_table = {GENDER_KEYS[entry["gender"]]: int(
+        entry["cumul_cases"]) for entry in data}
+
+    return gender_table
 
 def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by transmission category"""
@@ -201,16 +210,19 @@ def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dic
     """
     resource_id = resource_ids["race_eth"]
     # Dict of source_label:target_label for re-keying.
-    # Note: Native_Amer not currently reported
+
     RACE_ETH_KEYS = {'Hispanic or Latino/a, all races': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
                     'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multi-racial': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
-    data = session.resource(resource_id)
+
+    params = {
+        '$select': 'race_ethnicity, MAX(cumulative_confirmed_cases) as cumul_cases', '$group': 'race_ethnicity'}
+    data = session.resource(resource_id, params=params)
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
     race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}
 
     for item in data:  # iterate through all race x ethnicity objects
-        cases = int(item["confirmed_cases"])
+        cases = int(item["cumul_cases"])
         race_eth = item["race_ethnicity"]
         re_key = RACE_ETH_KEYS[race_eth] # look up this item's re-key
         race_eth_data[re_key] += cases
