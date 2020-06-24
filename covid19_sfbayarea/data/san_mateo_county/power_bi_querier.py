@@ -7,9 +7,7 @@ class PowerBiQuerier:
     MODEL_ID = 275725
     POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
     def __init__(self) -> None:
-        self.source = 'c1'
-        self.name = 'cases_by_age'
-        self.property = 'age_cat'
+        self._assert_init_variables_are_set()
 
     def get_data(self) -> None:
         response_json = self._fetch_data()
@@ -25,10 +23,7 @@ class PowerBiQuerier:
         return response.json()
 
     def _parse_data(self, response_json) -> None:
-        results = self._dig(self.path, response_json)
-        data_pairs = [ result['C'] for result in results[1:-1]]
-        return { 'group': group, 'count': count for group, count in data_pairs }
-
+        raise('You must define this.')
 
     def _dig(self, path, item) -> None:
         try:
@@ -108,7 +103,6 @@ class PowerBiQuerier:
             'Version': 1
         }
 
-pbq = PowerBiQuerier()
-import pdb
-pdb.set_trace()
-print(pbq.fetch_data())
+    def _assert_init_variables_are_set(self) -> None:
+        if not (self.source and self.name and self.property and self.json_path):
+            raise('Please set source, name, property, and json_path.')
