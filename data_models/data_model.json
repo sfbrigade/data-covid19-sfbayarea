@@ -1,7 +1,7 @@
-{   
-    "name": "Name1 Name2 County",  
+{
+    "name": "Name1 Name2 County",
     "update_time": "yyyy-mm-ddThh:mmz",
-    "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE", 
+    "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE",
     "meta_from_source" : "STORE IMPORTANT NOTES FROM SOURCE HERE",
     "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
     "series": {
@@ -108,7 +108,7 @@
             "unknown": -1
         },
         "age_group": [
-            {"group": "18_and_younger", "raw_count": -1 }, 
+            {"group": "18_and_younger", "raw_count": -1 },
             {"group": "18_to_30", "raw_count": -1 },
             {"group": "31_to_40", "raw_count": -1 },
             {"group": "41_to_50", "raw_count": -1 },

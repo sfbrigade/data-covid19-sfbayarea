@@ -4,11 +4,13 @@ from requests import post
 
 class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
-    MODEL_ID = 275725
-    POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
     JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
+    DEFAULT_MODEL_ID = 275725
+    DEFAULT_POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
 
     def __init__(self) -> None:
+        self.model_id = getattr(self, 'model_id', self.DEFAULT_MODEL_ID)
+        self.powerbi_resource_key = getattr(self, 'powerbi_resource_key', self.DEFAULT_POWERBI_RESOURCE_KEY)
         self._assert_init_variables_are_set()
 
     def get_data(self) -> None:
@@ -16,11 +18,7 @@ class PowerBiQuerier:
         return self._parse_data(response_json)
 
     def _fetch_data(self) -> None:
-        response = post(
-            self.BASE_URI,
-            headers = { 'X-PowerBI-ResourceKey': self.POWERBI_RESOURCE_KEY },
-            json = self._query_params()
-        )
+        response = post( self.BASE_URI, headers = { 'X-PowerBI-ResourceKey': self.powerbi_resource_key }, json = self._query_params())
         response.raise_for_status()
         return response.json()
 
@@ -28,29 +26,12 @@ class PowerBiQuerier:
         results = self._dig_results(response_json)
         return self._extract_pairs(results)
 
-    def _dig_results(self, results) -> None:
-        try:
-            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
-        except (KeyError, TypeError, IndexError) as err:
-            print('Error reading returned JSON, check path: ', err)
-            raise(err)
-
-    def _extract_pairs(self, results) -> None:
-        pairs = []
-        for index, result in enumerate(results):
-            if len(result['C']) == 2:
-                pairs.append(result['C'])
-            else:
-                previous_result = pairs[index - 1]
-                pairs.append([result['C'][0], previous_result[1]])
-        return pairs
-
     def _query_params(self) -> None:
         return {
             'version': '1.0.0',
             'queries': [self._query()],
             'cancelQueries': [],
-            'modelId': self.MODEL_ID
+            'modelId': self.model_id
         }
 
     def _query(self) -> None:
@@ -119,3 +100,32 @@ class PowerBiQuerier:
     def _assert_init_variables_are_set(self) -> None:
         if not (self.source and self.name and self.property):
             raise('Please set source, name, and property.')
+
+    def _dig_results(self, results) -> None:
+        try:
+            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
+        except (KeyError, TypeError, IndexError) as err:
+            print('Error reading returned JSON, check path: ', err)
+            raise(err)
+
+    def _extract_pairs(self, results) -> None:
+        pairs = []
+        for result in results:
+            if 'R' in result:
+                for repeated_index, is_repeated in enumerate(self._determine_repeated_values(result['R'])):
+                    if is_repeated:
+                        previous_result = pairs[-1]
+                        result['C'].insert(repeated_index, previous_result[repeated_index])
+
+            pairs.append(result['C'])
+        return pairs
+
+    # PowerBI uses the key 'R' to represent repeated values.
+    # The values to repeat are indexed by bits, starting with 1. These bits are sent as decimal.
+    # So element 0 has a value of 1, element 1 has a value of 2, element 2 has a value of 4 and they keep doubling.
+    # These values are then added together.
+    # For example, 14 would mean that the repeated indexes 1, 2, and 3 (2nd, 3rd, and 4th elements) repeat.
+    def _determine_repeated_values(self, r) -> None:
+        r_in_binary = reversed('{:b}'.format(r))
+        return [ bool(int(one_or_zero)) for one_or_zero in r_in_binary ]
+
