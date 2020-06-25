@@ -1,6 +1,7 @@
 import json
 from functools import reduce
 from requests import post
+from typing import Any, Dict, List
 
 class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
@@ -9,24 +10,30 @@ class PowerBiQuerier:
     DEFAULT_POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
 
     def __init__(self) -> None:
-        self.model_id = getattr(self, 'model_id', self.DEFAULT_MODEL_ID)
-        self.powerbi_resource_key = getattr(self, 'powerbi_resource_key', self.DEFAULT_POWERBI_RESOURCE_KEY)
+        self._set_defaults()
         self._assert_init_variables_are_set()
 
-    def get_data(self) -> None:
+    def get_data(self) -> List:
         response_json = self._fetch_data()
         return self._parse_data(response_json)
 
-    def _fetch_data(self) -> None:
+    def _set_defaults(self) -> None:
+        self.model_id = getattr(self, 'model_id', self.DEFAULT_MODEL_ID)
+        self.name = getattr(self, 'name')
+        self.powerbi_resource_key = getattr(self, 'powerbi_resource_key', self.DEFAULT_POWERBI_RESOURCE_KEY)
+        self.property = getattr(self, 'property')
+        self.source = getattr(self, 'source')
+
+    def _fetch_data(self) -> Dict:
         response = post( self.BASE_URI, headers = { 'X-PowerBI-ResourceKey': self.powerbi_resource_key }, json = self._query_params())
         response.raise_for_status()
         return response.json()
 
-    def _parse_data(self, response_json) -> None:
+    def _parse_data(self, response_json: Dict[str, List]) -> List:
         results = self._dig_results(response_json)
-        return self._extract_pairs(results)
+        return self._extract_lists(results)
 
-    def _query_params(self) -> None:
+    def _query_params(self) -> Dict[str, Any]:
         return {
             'version': '1.0.0',
             'queries': [self._query()],
@@ -34,7 +41,7 @@ class PowerBiQuerier:
             'modelId': self.model_id
         }
 
-    def _query(self) -> None:
+    def _query(self) -> Dict[str, Any]:
         return {
             'Query': { 'Commands': [self._command()] },
             'CacheKey': json.dumps({ 'Commands': [self._command()] }),
@@ -45,7 +52,7 @@ class PowerBiQuerier:
             }
         }
 
-    def _command(self) -> None:
+    def _command(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         return {
              'SemanticQueryDataShapeCommand': {
                  'Query': {
@@ -58,7 +65,7 @@ class PowerBiQuerier:
              }
          }
 
-    def _select(self) -> None:
+    def _select(self) -> List[Dict[str, Any]]:
         return [
             {
                 'Column': self._column_expression(self.property),
@@ -73,7 +80,7 @@ class PowerBiQuerier:
             }
        ]
 
-    def _order_by(self) -> None:
+    def _order_by(self) -> List[Dict[str, Any]]:
         return [
             {
                 'Direction': 1,
@@ -81,13 +88,13 @@ class PowerBiQuerier:
             }
         ]
 
-    def _column_expression(self, property) -> None:
+    def _column_expression(self, property: str) -> Dict[str, Any]:
         return {
             'Expression': { 'SourceRef': { 'Source': self.source } },
             'Property': property
         }
 
-    def _binding(self) -> None:
+    def _binding(self) -> Dict[str, Any]:
         return {
             'Primary': { 'Groupings': [{ 'Projections': [0, 1] }] },
             'DataReduction': {
@@ -98,18 +105,18 @@ class PowerBiQuerier:
         }
 
     def _assert_init_variables_are_set(self) -> None:
-        if not (self.source and self.name and self.property):
-            raise('Please set source, name, and property.')
+        if not (getattr(self, 'source') and getattr(self, 'name') and getattr(self, 'property')):
+            raise(UnboundLocalError('Please set source, name, and property.'))
 
-    def _dig_results(self, results) -> None:
+    def _dig_results(self, results: Dict[str, List]) -> List[Dict[str, int]]:
         try:
-            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
+            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results) # type: ignore
         except (KeyError, TypeError, IndexError) as err:
             print('Error reading returned JSON, check path: ', err)
             raise(err)
 
-    def _extract_pairs(self, results) -> None:
-        pairs = []
+    def _extract_lists(self, results: List[Dict]) -> List[List]:
+        pairs: List[List] = []
         for result in results:
             if 'R' in result:
                 for repeated_index, is_repeated in enumerate(self._determine_repeated_values(result['R'])):
@@ -125,7 +132,7 @@ class PowerBiQuerier:
     # So element 0 has a value of 1, element 1 has a value of 2, element 2 has a value of 4 and they keep doubling.
     # These values are then added together.
     # For example, 14 would mean that the repeated indexes 1, 2, and 3 (2nd, 3rd, and 4th elements) repeat.
-    def _determine_repeated_values(self, r) -> None:
+    def _determine_repeated_values(self, r: int) -> List[int]:
         r_in_binary = reversed('{:b}'.format(r))
         return [ bool(int(one_or_zero)) for one_or_zero in r_in_binary ]
 
