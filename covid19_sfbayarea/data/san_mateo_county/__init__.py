@@ -1,6 +1,6 @@
 import json
 
-from typing import Dict, List, Tuple
+from typing import Dict
 
 from cases_by_age import CasesByAge
 from cases_by_ethnicity import CasesByEthnicity
