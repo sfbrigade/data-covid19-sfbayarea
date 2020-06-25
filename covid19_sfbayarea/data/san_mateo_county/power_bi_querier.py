@@ -6,6 +6,8 @@ class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
     MODEL_ID = 275725
     POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
+    JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
+
     def __init__(self) -> None:
         self._assert_init_variables_are_set()
 
@@ -25,9 +27,10 @@ class PowerBiQuerier:
     def _parse_data(self, response_json) -> None:
         raise('You must define this.')
 
-    def _dig(self, path, item) -> None:
+    def _dig_results(self, results) -> None:
         try:
-            return reduce(lambda subitem, next_step: subitem[next_step], path, item)
+            results_list = reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
+            return [ result['C'] for result in results_list ]
         except (KeyError, TypeError, IndexError) as err:
             print('Error reading returned JSON, check path: ', err)
             raise(err)
