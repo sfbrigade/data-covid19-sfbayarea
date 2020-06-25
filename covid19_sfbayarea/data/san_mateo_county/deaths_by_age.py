@@ -1,6 +1,6 @@
 from power_bi_querier import PowerBiQuerier
 
-class CasesByAge(PowerBiQuerier):
+class DeathsByAge(PowerBiQuerier):
     def __init__(self) -> None:
         self.source = 'c1'
         self.name = 'cases_by_age'

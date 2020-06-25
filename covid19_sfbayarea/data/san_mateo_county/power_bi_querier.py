@@ -25,15 +25,25 @@ class PowerBiQuerier:
         return response.json()
 
     def _parse_data(self, response_json) -> None:
-        raise('You must define this.')
+        results = self._dig_results(response_json)
+        return self._extract_pairs(results)
 
     def _dig_results(self, results) -> None:
         try:
-            results_list = reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
-            return [ result['C'] for result in results_list ]
+            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results)
         except (KeyError, TypeError, IndexError) as err:
             print('Error reading returned JSON, check path: ', err)
             raise(err)
+
+    def _extract_pairs(self, results) -> None:
+        pairs = []
+        for index, result in enumerate(results):
+            if len(result['C']) == 2:
+                pairs.append(result['C'])
+            else:
+                previous_result = pairs[index - 1]
+                pairs.append([result['C'][0], previous_result[1]])
+        return pairs
 
     def _query_params(self) -> None:
         return {
@@ -107,5 +117,5 @@ class PowerBiQuerier:
         }
 
     def _assert_init_variables_are_set(self) -> None:
-        if not (self.source and self.name and self.property and self.json_path):
-            raise('Please set source, name, property, and json_path.')
+        if not (self.source and self.name and self.property):
+            raise('Please set source, name, and property.')
