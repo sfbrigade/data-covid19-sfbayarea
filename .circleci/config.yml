@@ -8,15 +8,15 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
-            - data-covid-19-sfbayarea-{{ arch }}-
+            - data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+            - data-covid-19-sfbayarea-v1-{{ arch }}-
 
       - run:
           name: Install Dependencies
           command: ./install.sh
 
       - save_cache:
-          key: data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+          key: data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
           paths:
             - env
 
@@ -43,15 +43,15 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
-            - data-covid-19-sfbayarea-{{ arch }}-
+            - data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+            - data-covid-19-sfbayarea-v1-{{ arch }}-
 
       - run:
           name: Install Dependencies
           command: ./install.sh
 
       - save_cache:
-          key: data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+          key: data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
           paths:
             - env
 
