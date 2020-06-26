@@ -25,7 +25,7 @@ def cli_date(date_string: str) -> datetime:
     except Exception:
         raise click.BadParameter(f'"{date_string}" is not a date')
     if value >= datetime.now().astimezone():
-        raise click.BadParameter(f'must be a date in the past.')
+        raise click.BadParameter('must be a date in the past.')
 
     return value
 
