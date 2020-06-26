@@ -13,7 +13,7 @@ jobs:
 
       - run:
           name: Install Dependencies
-          command: sh install.sh
+          command: ./install.sh
 
       - save_cache:
           key: data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
@@ -48,7 +48,7 @@ jobs:
 
       - run:
           name: Install Dependencies
-          command: sh install.sh
+          command: ./install.sh
 
       - save_cache:
           key: data-covid-19-sfbayarea-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
