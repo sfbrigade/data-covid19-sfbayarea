@@ -1,3 +1,4 @@
+from datetime import datetime
 import requests
 from typing import Dict, List
 from .feed import NewsFeed, NewsItem
@@ -22,6 +23,10 @@ class NewsScraper:
     FEED_INFO: Dict = {}
     URL = ''
 
+    def __init__(self, from_date: datetime = None, to_date: datetime = None) -> None:
+        self.from_date = from_date
+        self.to_date = to_date or datetime.now().astimezone()
+
     def create_feed(self) -> NewsFeed:
         return NewsFeed(**self.FEED_INFO)
 
@@ -44,7 +49,9 @@ class NewsScraper:
         feed = self.create_feed()
         html = self.load_html(self.URL)
         news = self.parse_page(html, self.URL)
-        feed.append(*news)
+        feed.append(*(item
+                      for item in news
+                      if self._in_time_range(item)))
         return feed
 
     def load_html(self, url: str) -> str:
@@ -55,7 +62,12 @@ class NewsScraper:
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         raise NotImplementedError()
 
+    def _in_time_range(self, candidate: NewsItem) -> bool:
+        time = candidate.date_published
+        return time < self.to_date and (not self.from_date or
+                                        time >= self.from_date)
+
     @classmethod
-    def get_news(cls) -> NewsFeed:
-        instance = cls()
+    def get_news(cls, from_date: datetime = None, to_date: datetime = None) -> NewsFeed:
+        instance = cls(from_date, to_date)
         return instance.scrape()

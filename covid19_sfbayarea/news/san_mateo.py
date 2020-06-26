@@ -67,7 +67,9 @@ class SanMateoNews(NewsScraper):
         feed = self.create_feed()
         xml = self.load_xml(self.URL)
         news = self.parse_feed(xml, self.URL)
-        feed.append(*news)
+        feed.append(*(item
+                      for item in news
+                      if self._in_time_range(item)))
         return feed
 
     def load_xml(self, url: str) -> bytes:
