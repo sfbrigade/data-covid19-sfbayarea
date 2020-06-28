@@ -12,7 +12,7 @@ import re
 from .webdriver import get_firefox
 from utils import get_data_model
 
-def get_county_data() -> Dict:
+def get_county() -> Dict:
     """Main method for populating county data"""
 
     url = 'https://coronavirus.marinhhs.org/surveillance'
@@ -32,7 +32,7 @@ def get_county_data() -> Dict:
     model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     
-    print(model)
+    return model
 
 def extract_csvs(chart_id: str, url: str) -> str:
     """This method extracts the csv string from the data wrapper charts."""
@@ -304,4 +304,4 @@ def get_test_series_helper(series: list, entries: list, keys: list) -> List:
     return series
 
 
-get_county_data()
+get_county()
