@@ -5,7 +5,7 @@ from . import san_francisco
 scrapers: Dict[str, Any] = {
     'alameda': alameda,
     # 'contra_costa': None,
-    'marin': marin_scraper,
+    'marin': marin,
     # 'napa': None,
     'san_francisco': san_francisco
     # 'san_mateo': None,
