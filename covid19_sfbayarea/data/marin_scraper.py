@@ -11,7 +11,7 @@ import re
 
 from .utils import get_data_model
 
-def get_county_data() -> Dict:
+def get_county() -> Dict:
 	"""Main method for populating county data"""
 
 	url = 'https://coronavirus.marinhhs.org/surveillance'
