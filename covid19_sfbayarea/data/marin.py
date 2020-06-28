@@ -9,8 +9,8 @@ from urllib.parse import unquote_plus
 from datetime import datetime
 import re
 
-from ..webdriver import get_firefox
-from .utils import get_data_model
+from .webdriver import get_firefox
+from utils import get_data_model
 
 def get_county_data() -> Dict:
     """Main method for populating county data"""
@@ -65,7 +65,7 @@ def extract_csvs(chart_id: str, url: str) -> str:
 
     return csv_string
 
-def get_metadata(url: str, chart_ids: str) -> Tuple:
+def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
     notes = []
     driver = get_firefox()
     driver.implicitly_wait(30)
@@ -81,6 +81,7 @@ def get_metadata(url: str, chart_ids: str) -> Tuple:
         if not target:
             raise ValueError('Cannot handle this header.')
         for sib in target.find_next_siblings()[:1]: # I only want the first paragraph tag
+        ### FIXXX #######
             # Is it more efficient to use something like (soup object).select('h1 + p') to grab the first paragraph that follows?
             metadata += [sib.text]
 
