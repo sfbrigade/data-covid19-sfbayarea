@@ -8,6 +8,8 @@ class PowerBiQuerier:
     JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
     DEFAULT_MODEL_ID = 275725
     DEFAULT_POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
+    DATASET_ID = 'aa4631ab-2f78-40f6-b4c4-d2f5f8a89bcc'
+    REPORT_ID = 'baf74baa-bdc9-4c71-995a-b996f1d0b7e9'
 
     def __init__(self) -> None:
         self._set_defaults()
@@ -47,8 +49,8 @@ class PowerBiQuerier:
             'CacheKey': json.dumps({ 'Commands': [self._command()] }),
             'QueryId': '',
             'ApplicationContext': {
-                'DatasetId':'aa4631ab-2f78-40f6-b4c4-d2f5f8a89bcc',
-                'Sources': [{ 'ReportId': 'baf74baa-bdc9-4c71-995a-b996f1d0b7e9' }]
+                'DatasetId': self.DATASET_ID,
+                'Sources': [{ 'ReportId': self.REPORT_ID }]
             }
         }
 
