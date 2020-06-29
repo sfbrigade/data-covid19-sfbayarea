@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from . import alameda
 from . import san_francisco
+from . import marin
 
 scrapers: Dict[str, Any] = {
     'alameda': alameda,

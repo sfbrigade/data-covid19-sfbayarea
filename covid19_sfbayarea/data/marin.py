@@ -22,6 +22,8 @@ def get_county() -> Dict:
     # population totals and transmission data missing.
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
+    model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
+
     # No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
     model['source_url'] = url
     model['meta_from_source'] = get_metadata(url, chart_ids)
