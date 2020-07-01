@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import csv
 import json
-import numpy as np
+#import numpy as np
 from typing import List, Dict, Tuple
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -9,8 +9,8 @@ from urllib.parse import unquote_plus
 from datetime import datetime
 import re
 
-from .webdriver import get_firefox
-from utils import get_data_model
+from ..webdriver import get_firefox
+from .utils import get_data_model
 
 def get_county() -> Dict:
     """Main method for populating county data"""
@@ -27,12 +27,12 @@ def get_county() -> Dict:
     # No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
     model['source_url'] = url
     model['meta_from_source'] = get_metadata(url, chart_ids)
-    model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
-    model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
-    model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
+    #model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    #model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
+    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    #model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    #model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
+    #model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     
     return model
 
@@ -50,7 +50,8 @@ def extract_csvs(chart_id: str, url: str) -> str:
     # Grab the raw data out of the link's href attribute
     csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
     # Switch back to the parent frame to "reset" the context
-    driver.switch_to.parent_frame()
+    # I think I can delete this b/c I switch back to the default content below
+    #driver.switch_to.parent_frame()
     
     # Deal with the data
     if csv_data.startswith('data:'):
@@ -76,16 +77,20 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
     metadata = []
 
     to_be_matched = ['Total Cases, Recovered, Hospitalizations and Deaths by Date Reported', 'Daily Count of Positive Results and Total Tests for Marin County Residents by Test Date ', 'Cases, Hospitalizations, and Deaths by Age, Gender and Race/Ethnicity ']
-    chart_metadata = []
+    
+    chart_metadata = set()
 
     for text in to_be_matched:
-        target = soup.find('h4',text=text)
-        if not target:
-            raise ValueError('Cannot handle this header.')
-        for sib in target.find_next_siblings()[:1]: # I only want the first paragraph tag
-        ### FIXXX #######
-            # Is it more efficient to use something like (soup object).select('h1 + p') to grab the first paragraph that follows?
-            metadata += [sib.text]
+        #target = soup.find('h4',text=text)
+        #if not target:
+            #raise ValueError('Cannot handle this header.')
+        if soup.select('h4 + p')[0].text:
+            metadata += [soup.select('h4 + p')[0].text]
+        else:
+            raise ValueError('Location of metadata has changed.')
+
+        #for sib in target.find_next_siblings()[:1]: # I only want the first paragraph tag
+            #metadata += [sib.text]
 
     # Metadata for each chart visualizing the data of the csv file I'll pull. There's probably a better way to organize this.
     for chart_id in chart_ids.values():
@@ -93,7 +98,7 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
         driver.switch_to.frame(frame)
         # The metadata for the charts is located in elements with the class `dw-chart-notes' 
         for c in driver.find_elements_by_class_name('dw-chart-notes'):
-            chart_metadata.append(c.text)
+            chart_metadata.add(c.text)
 
         # Switch back to the parent frame to "reset" the context
         driver.switch_to.parent_frame()
@@ -101,7 +106,7 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
     driver.quit() 
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
-    return metadata, list(set(chart_metadata)) 
+    return metadata, list(chart_metadata)
 
 def get_case_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
