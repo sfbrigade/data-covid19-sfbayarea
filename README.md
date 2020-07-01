@@ -10,3 +10,40 @@ To run the scraper, you can use the run script by typing `sh run_scraper.sh` int
 
 ## Running the API
 The best way to run the API right now is to run the command `FLASK_APP="app.py" FLASK_ENV=development flask run;`. Note that this is not the best way to run the scraper at this time.
+
+## Development
+
+We use CircleCI to lint the code and run tests in this repository, but you can (and should!) also run tests locally.
+
+The commands described below should all be run from within the virtual environment you’ve created for this project. If you used `install.sh` to get set up, you’ll need to activate your virtual environment before running them with the command:
+
+```sh
+$ source env/bin/activate
+```
+
+If you manage your environments differently (e.g. with Conda or Pyenv-Virtualenv), use whatever method you normally do to set up your environment.
+
+### Tests
+
+You can run tests using `pytest` like so:
+
+```sh
+# In the root directory of the project:
+$ python -m pytest -v .
+```
+
+### Linting and Code Conventions
+
+We use Pyflakes for linting. Many editors have support for running it while you type (either built-in or via a plugin), but you can also run it directly from the command line:
+
+```sh
+# In the root directory of the project:
+$ pyflakes .
+```
+
+We also use type annotations throughout the project. To check their validity with Mypy, run:
+
+```sh
+# In the root directory of the project:
+$ mypy .
+```
