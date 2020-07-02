@@ -29,10 +29,10 @@ def main(counties: Tuple[str], format: str, output: str) -> None:
 
         for format_name in format:
             if format_name == 'json_simple':
-                data = json.dumps(feed.format_json_simple(), indent=2)
+                data = feed.format_json_simple()
                 extension = '.simple.json'
             elif format_name == 'json_feed':
-                data = json.dumps(feed.format_json_feed(), indent=2)
+                data = feed.format_json_feed()
                 extension = '.json'
             else:
                 data = feed.format_rss()
@@ -41,7 +41,7 @@ def main(counties: Tuple[str], format: str, output: str) -> None:
             if output:
                 parent = Path(output)
                 parent.mkdir(exist_ok=True)
-                with parent.joinpath(f'{county}{extension}').open('w+') as f:
+                with parent.joinpath(f'{county}{extension}').open('wb') as f:
                     f.write(data)
             else:
                 print(data)
