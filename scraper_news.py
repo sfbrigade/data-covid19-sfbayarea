@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import click
-import json
 from covid19_sfbayarea import news
 from pathlib import Path
 from typing import Tuple
