@@ -12,9 +12,16 @@ from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
 from .time_series_tests import TimeSeriesTests
+from ..utils import get_data_model
 
 LANDING_PAGE = 'https://www.smchealth.org/post/san-mateo-county-covid-19-data-1'
+
 def get_county() -> Dict:
+    out = get_data_model()
+    out.update(fetch_data())
+    return out
+
+def fetch_data() -> Dict:
     return {
         'name': 'San Mateo County',
         'source_url': LANDING_PAGE,
