@@ -27,7 +27,7 @@ def get_county() -> Dict:
     # No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
     model['source_url'] = url
     model['meta_from_source'] = get_metadata(url, chart_ids)
-    #model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
     #model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
     #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     #model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
@@ -110,32 +110,55 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
 
 def get_case_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
-    csv_ = extract_csvs(chart_id, url)
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
     series = []
 
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',')
+    #csv_strs = csv_.splitlines()
+    keys = csv_reader.fieldnames
+    next(csv_reader)
+
+    #keys = csv_strs[0].split(',')
     
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed')
 
     case_history = []
 
-    for row in csv_strs[1:]:
-        daily = {}
-        # Grab the date in the first column
-        date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
-        daily["date"] = date_time_obj.isoformat()
-        # Collect the case totals in order to compute the change in cases per day 
-        case_history.append(int(row.split(',')[1]))
-        # Grab the cumulative number in the fifth column
-        daily["cumul_cases"] = int(row.split(',')[1])
-        series.append(daily)
+    # for row in csv_strs[1:]:
+    #     daily = {}
+    #     # Grab the date in the first column
+    #     date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
+    #     daily["date"] = date_time_obj.isoformat()
+    #     # Collect the case totals in order to compute the change in cases per day 
+    #     case_history.append(int(row.split(',')[1]))
+    #     # Grab the cumulative number in the fifth column
+    #     daily["cumul_cases"] = int(row.split(',')[1])
+    #     series.append(daily)
         
-    case_history_diff = np.diff(case_history) 
-    # there will be no calculated difference for the first day, so adding it in manually
-    case_history_diff = np.insert(case_history_diff, 0, 0) 
-    # adding the case differences into the series
+    # case_history_diff = np.diff(case_history) 
+    # # there will be no calculated difference for the first day, so adding it in manually
+    # case_history_diff = np.insert(case_history_diff, 0, 0) 
+    # # adding the case differences into the series
+    # for val, case_num in enumerate(case_history_diff):
+    #     series[val]["cases"] = case_num
+    # return series
+
+    for row in csv_reader:
+        daily = {}
+        date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
+        daily["date"] = date_time_obj.strftime('%Y-%m-%d')
+        case_history.append(int(row["Total Cases"]))
+        daily["cumul_cases"] = int(row["Total Cases"])
+        series.append(daily)
+
+    case_history_diff = []
+    # Since i'm substracting pairwise elements, I don't want to go too far in the array.
+    for i in range(0, len(case_history)-1):
+        case_history_diff.append((int(case_history[i+1]) - int(case_history[i])) + int(series[0]["cumul_cases"]))
+        # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
+    case_history_diff.insert(0, int(series[0]["cumul_cases"]))
+
     for val, case_num in enumerate(case_history_diff):
         series[val]["cases"] = case_num
     return series
@@ -148,6 +171,7 @@ def get_death_series(chart_id: str, url: str) -> List:
     csv_strs = csv_.splitlines()
     keys = csv_strs[0].split(',')
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
+        print(keys)
         raise ValueError('The headers have changed.')
 
     death_history = []
