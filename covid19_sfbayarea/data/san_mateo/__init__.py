@@ -1,6 +1,7 @@
 import json
 
 from datetime import datetime
+from dateutil import tz
 from typing import Any, Dict
 
 from .cases_by_age import CasesByAge
@@ -48,7 +49,10 @@ def fetch_data() -> Dict:
 
 def most_recent_case_time(data: Dict[str, Any]) -> str:
     most_recent_cases = data['series']['cases'][-1]
-    return datetime.strptime(most_recent_cases['date'], '%Y-%m-%d').isoformat()
+    pacific_time = tz.gettz('America/Los_Angeles')
+    # Offset by 8 hours to ensure the correct day is shown
+    start_of_day_pacific = datetime.strptime(most_recent_cases['date'] + '-8', '%Y-%m-%d-%H')
+    return start_of_day_pacific.astimezone(pacific_time).isoformat()
 
 
 if __name__ == '__main__':
