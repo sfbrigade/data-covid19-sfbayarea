@@ -48,7 +48,7 @@ def get_timeseries() -> List:
         logging.info(f"Got {results_counter} results out of {total} ...")
         more = results.get("_links").get("next")
 
-        # Don't ask for more pages than are ther
+        # Don't ask for more pages than there are
         if more and results_counter <= total:
             url = CAGOV_BASEURL + more
             params = None
