@@ -43,12 +43,12 @@ def fetch_data() -> Dict:
             'race_eth': DeathsByEthnicity().get_data()
         }
     }
-    data.update({ 'update_time': get_most_recent_update_time(data['series']['cases']) })
+    data.update({ 'update_time': most_recent_case_time(data) })
     return data
 
-def get_most_recent_update_time(cases: Dict[str, Any]) -> str:
-    most_recent_day_in_data = cases[-1]['date']
-    return datetime.strptime(most_recent_day_in_data, '%Y-%m-%d').isoformat()
+def most_recent_case_time(data: Dict[str, Any]) -> str:
+    most_recent_cases = data['series']['cases'][-1]
+    return datetime.strptime(most_recent_cases['date'], '%Y-%m-%d').isoformat()
 
 
 if __name__ == '__main__':
