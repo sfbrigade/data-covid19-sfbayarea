@@ -1,6 +1,7 @@
 import json
 
-from typing import Dict
+from datetime import datetime
+from typing import Any, Dict
 
 from .cases_by_age import CasesByAge
 from .cases_by_ethnicity import CasesByEthnicity
@@ -22,9 +23,11 @@ def get_county() -> Dict:
     return out
 
 def fetch_data() -> Dict:
-    return {
+    data = {
         'name': 'San Mateo County',
         'source_url': LANDING_PAGE,
+        'meta_from_source': 'PowerBI Dashboard',
+        'meta_from_baypd': 'See power_bi_scraper.py for methods',
         'series': {
             'cases': TimeSeriesCases().get_data(),
             'tests': TimeSeriesTests().get_data()
@@ -40,6 +43,13 @@ def fetch_data() -> Dict:
             'race_eth': DeathsByEthnicity().get_data()
         }
     }
+    data.update({ 'update_time': get_most_recent_update_time(data['series']['cases']) })
+    return data
+
+def get_most_recent_update_time(cases: Dict[str, Any]) -> str:
+    most_recent_day_in_data = cases[-1]['date']
+    return datetime.strptime(most_recent_day_in_data, '%Y-%m-%d').isoformat()
+
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
