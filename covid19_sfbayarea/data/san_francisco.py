@@ -89,7 +89,7 @@ def get_cases_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get cases timeseries json, sum over transmision cat by date"""
     resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Confirmed',
-            '$select': 'date,sum(case_count) as cases', '$group': 'date', '$order': 'date'}
+            '$select': 'specimen_collection_date as date, sum(case_count) as cases', '$group': 'specimen_collection_date', '$order': 'specimen_collection_date'}
     data = session.resource(resource_id, params=params)
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
     # calculate daily cumulative
@@ -108,7 +108,7 @@ def get_deaths_series(session: SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get  deaths timeseries, sum over transmision cat by date"""
     resource_id = resource_ids['cases_deaths_transmission']
     params = {'case_disposition': 'Death',
-            '$select': 'date,sum(case_count) as deaths', '$group': 'date', '$order': 'date'}
+            '$select': 'specimen_collection_date as date, sum(case_count) as deaths', '$group': 'specimen_collection_date', '$order': 'specimen_collection_date'}
     series = session.resource(resource_id, params=params)
     death_series = []
     # convert date from ISO string to 'yyyy-mm-dd'. convert number strings to int.
