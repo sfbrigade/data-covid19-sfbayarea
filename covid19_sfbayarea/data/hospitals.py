@@ -23,7 +23,8 @@ HOSPITALS_RESOURCE_ID = "42d33765-20fd-44b8-a978-b083b7542225"
 RESULTS_LIMIT = 50
 
 # For the output data
-SERIES_NAME = "CA Hospitals"
+SERIES_NAME = "Hospitalization"
+BAYPD_META = "This data was pulled from the data.ca.gov CKAN Data API"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -85,9 +86,15 @@ def get_timeseries(county: str = "all") -> Dict:
                 break
 
         # Package up the data
+        if county == "all":
+            ts_data["name"] = f"{SERIES_NAME} - All CA Counties"
+        else:
+            ts_data["name"] = f"{SERIES_NAME} - {county} County"
+
         now = datetime.now(tz.tzutc()).isoformat()
-        ts_data["name"] = SERIES_NAME + " " + county
         ts_data["update_time"] = now
+        ts_data["source_url"] = HOSPITALS_LANDING_PAGE
+        ts_data["meta_from_baypd"] = BAYPD_META
         ts_data["series"] = timeseries
         logging.info("Collected all pages")
 
