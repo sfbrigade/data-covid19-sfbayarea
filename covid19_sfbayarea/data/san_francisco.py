@@ -3,7 +3,6 @@ import json
 from typing import Dict, List
 from collections import Counter
 from .utils import get_data_model, SocrataApi
-from ..errors import FormatError
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
@@ -14,7 +13,7 @@ def get_county() -> Dict:
     # create a SocrataApi instance
     RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'gender': 'nhy6-gqam', 'age': 'sunc-2t3k',
                      'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
-    
+
     session = SocrataApi('https://data.sfgov.org/')
 
     # fetch metadata
@@ -173,7 +172,7 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by gender"""
-              
+
     # Dict of source_label:target_label for re-keying.
     # Note: non cis genders not currently reported
     resource_id = resource_ids['gender']
