@@ -24,7 +24,9 @@ logging.basicConfig(level=logging.INFO)
 
 
 def get_county(county: str) -> Dict:
-    """Return data just for the selected county. Include field notes."""
+    """Return data just for the selected county. Include field notes.
+    This is basically an alias for `get_timeseries()` provided for consistency.
+    """
     data = get_timeseries(county)
 
     return data
