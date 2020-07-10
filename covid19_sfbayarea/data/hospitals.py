@@ -87,7 +87,7 @@ def get_timeseries(county: str = "all") -> Dict:
     except AttributeError:
         logging.exception("Error parsing response")
 
-    except requests.Exceptions.RequestExceptions:
+    except requests.exceptions.RequestException:
         logging.exception("Error fetching from API")
 
 
