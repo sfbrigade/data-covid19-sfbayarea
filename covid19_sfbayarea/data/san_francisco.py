@@ -198,8 +198,14 @@ def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dic
     # Dict of source_label:target_label for re-keying.
     RACE_ETH_KEYS = {'Hispanic or Latino/a, all races': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
                     'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multi-racial': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
-    params = { '$select': 'race_ethnicity, max(cumulative_confirmed_cases) as cases', '$group': 'race_ethnicity'}
+    # find the latest date of data collection
+    params = {'$select': 'max(specimen_collection_date) as date'}
+    latest_date = session.resource(resource_id, params=params)[0]
+
+    # get cumulative confirmed cases on latest date
+    params = {'$select': 'race_ethnicity, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"'}
     data = session.resource(resource_id, params=params)
+
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
     race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}
