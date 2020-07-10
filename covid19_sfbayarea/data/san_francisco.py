@@ -183,7 +183,7 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     data = session.resource(resource_id, params=params)
 
     # re-key
-    table = dict()
+    table : Dict[str, int]= dict()
     for entry in data:
         rekey = GENDER_KEYS[entry['gender']]
         table[rekey] = table.get(rekey,0) + int(entry["cases"])
