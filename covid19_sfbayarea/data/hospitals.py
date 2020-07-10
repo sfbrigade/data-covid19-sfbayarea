@@ -3,6 +3,8 @@
 import json
 import logging
 import requests
+from datetime import datetime
+from dateutil import tz
 from typing import Dict
 
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
@@ -19,6 +21,9 @@ CAGOV_BASEURL = "https://data.ca.gov"
 CAGOV_API = "/api/3/action/datastore_search"
 HOSPITALS_RESOURCE_ID = "42d33765-20fd-44b8-a978-b083b7542225"
 RESULTS_LIMIT = 50
+
+# For the output data
+SERIES_NAME = "CA Hospitals"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -79,6 +84,10 @@ def get_timeseries(county: str = "all") -> Dict:
             else:
                 break
 
+        # Package up the data
+        now = datetime.now(tz.tzutc()).isoformat()
+        ts_data["name"] = SERIES_NAME + " " + county
+        ts_data["update_time"] = now
         ts_data["series"] = timeseries
         logging.info("Collected all pages")
 
