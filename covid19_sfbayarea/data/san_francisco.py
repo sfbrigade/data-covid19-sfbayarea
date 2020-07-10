@@ -25,7 +25,7 @@ def get_county() -> Dict:
     out["source_url"] = "https://data.sfgov.org/stories/s/San-Francisco-COVID-19-Data-and-Reports/fjki-2fab"
     out["update_time"] = sorted(update_times)[0]  # get earliest update time
     out["meta_from_source"] = meta_from_source
-    out["meta_from_baypd"] = "SF county only reports tests with positive or negative results, excluding pending tests. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. BayPD is not currently reporting deaths by demographic groups. These will be made available when the data is accessible."
+    out["meta_from_baypd"] = "SF county reports tests with positive or negative results. The following datapoints are not directly reported, and were calculated by BayPD using available data: cumulative cases, cumulative deaths, cumulative positive tests, cumulative negative tests, cumulative total tests. \n\n Race and Ethnicity: individuals are assigned to just one category. Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'. Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification. Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race category in the source data. BayPD assigns those cases without race category, and with ethnicity = 'Unknown', as 'Native American' race. BayPD is not currently reporting deaths by demographic groups. These will be made available when the data is accessible."
 
     # get timeseries and demographic totals
     out["series"] = get_timeseries(session, RESOURCE_IDS)
@@ -128,17 +128,17 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
     """Get tests by day, order by date ascending"""
     resource_id = resource_ids['tests']
     test_series = []
-    params = {'$order': 'result_date'}
+    params = {'$order': 'specimen_collection_date'}
     series = session.resource(resource_id, params=params)
 
     # parse source series into out series, calculating cumulative values
     # Counter is from the built-in `collections` module.
     totals:Counter = Counter()
     for entry in series:
-        out_entry = dict(date=entry["result_date"][0:10],
-                        tests=int(entry["tests"]),
-                        positive=int(entry["pos"]))
-        out_entry['negative'] = out_entry["tests"] - out_entry["positive"]
+        out_entry = dict(date=entry["specimen_collection_date"][0:10],
+                        tests=int(float(entry["tests"])),
+                        positive=int(float(entry["pos"])))
+        out_entry['negative'] = int(float(entry['neg']))
         totals.update(out_entry)
         out_entry.update(cumul_tests=totals['tests'],
                         cumul_pos=totals['positive'],
