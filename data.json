@@ -2000,9 +2000,9 @@
     },
     "case_totals": {
       "gender": {
-        "female": 1789,
         "male": 2499,
-        "unknown": 25
+        "unknown": 25,
+        "female": 1789
       },
       "age_group": [
         {

@@ -174,8 +174,14 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     # Note: non cis genders not currently reported
     resource_id = resource_ids['gender']
     GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown", "Trans Female": "female", "Trans Male": "male"}
-    params = {'$select': 'gender, max(cumulative_confirmed_cases) as cases', '$group': 'gender'}
+    # find the latest date of data collection
+    params = {'$select': 'max(specimen_collection_date) as date'}
+    latest_date = session.resource(resource_id, params=params)[0]
+
+    # get cumulative confirmed cases on latest date
+    params = {'$select': 'gender, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"'}
     data = session.resource(resource_id, params=params)
+
     # re-key
     table = dict()
     for entry in data:
