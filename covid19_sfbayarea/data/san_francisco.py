@@ -3,15 +3,18 @@ import json
 from typing import Dict, List
 from collections import Counter
 from .utils import get_data_model, SocrataApi
+from ..errors import FormatError
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
+
 
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
     RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'gender': 'nhy6-gqam', 'age': 'sunc-2t3k',
                      'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
+    
     session = SocrataApi('https://data.sfgov.org/')
 
     # fetch metadata
@@ -170,6 +173,7 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by gender"""
+              
     # Dict of source_label:target_label for re-keying.
     # Note: non cis genders not currently reported
     resource_id = resource_ids['gender']
@@ -205,7 +209,6 @@ def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dic
     # get cumulative confirmed cases on latest date
     params = {'$select': 'race_ethnicity, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"'}
     data = session.resource(resource_id, params=params)
-
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
     race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}

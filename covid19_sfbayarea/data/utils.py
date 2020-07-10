@@ -4,6 +4,7 @@ from typing import Dict, Any
 import requests
 from urllib.parse import urljoin
 from cachecontrol import CacheControl  # type: ignore
+from .errors import BadRequest
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
@@ -25,9 +26,17 @@ class SocrataApi:
         self.metadata_url = urljoin(self.base_url, '/api/views/metadata/v1/')
 
     def request(self, url:str, **kwargs: Any) -> Dict:
-        response = self.session.get(url, **kwargs)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = self.session.get(url, **kwargs)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            try:
+                server_message = response.json()['message'] # see if the API returned message data
+            except Exception:
+                # if no JSON data, re-rasie the original error
+                raise http_err
+            raise BadRequest(server_message, response=response)
 
     def resource(self, resource_id: str, **kwargs: Any) -> Dict:
         return self.request(f'{self.resource_url}{resource_id}', **kwargs)
