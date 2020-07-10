@@ -57,9 +57,9 @@ def get_timeseries(county: str = "all") -> Dict:
             total = int(results.get("total"))
 
             # Get notes only on the first pull
-            if not ts_data.get("field_notes"):
+            if not ts_data.get("meta_from_source"):
                 notes = results.get("fields")
-                ts_data["field_notes"] = notes
+                ts_data["meta_from_source"] = notes
 
             else:
                 pass
