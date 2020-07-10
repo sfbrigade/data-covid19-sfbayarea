@@ -12,7 +12,7 @@ def get_county() -> Dict:
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
-    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'gender': 'nhy6-gqam',
+    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'gender': 'nhy6-gqam', 'age': 'sunc-2t3k',
                      'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
     session = SocrataApi('https://data.sfgov.org/')
 
@@ -148,17 +148,17 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
 
 def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
-    resource_id = resource_ids['age_gender']
+    resource_id = resource_ids['age']
     # Dict of target_label:source_label for lookups
     AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
                 "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
 
 
-    params = {'$select': 'age_group, sum(confirmed_cases)', '$order': 'age_group', '$group': 'age_group'}
+    params = {'$select': 'age_group, max(cumulative_confirmed_cases) as cases', '$order': 'age_group', '$group': 'age_group'}
     data = session.resource(resource_id, params=params)
 
     # flatten data into a dictionary of age_group:cases
-    data = { item["age_group"] : int(item["sum_confirmed_cases"]) for item in data }
+    data = { item["age_group"] : int(item["cases"]) for item in data }
     age_table = []
     # fill in values in age table
     for target_key, source_key in AGE_KEYS.items():
