@@ -23,44 +23,72 @@ RESULTS_LIMIT = 50
 logging.basicConfig(level=logging.INFO)
 
 
-def get_timeseries() -> List:
+def get_county(county: str) -> Dict:
+    """Return data just for the selected county. Include field notes."""
+    data = get_timeseries(county)
+
+    return data
+
+
+def get_timeseries(county: str = "all") -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
+    ts_data = {}
     timeseries = []
-    results_counter = 0
 
     params = {"resource_id": HOSPITALS_RESOURCE_ID, "limit": RESULTS_LIMIT}
+
+    if county != "all":
+        params.update({"q": county})
+
     url = CAGOV_BASEURL + CAGOV_API
 
-    # Handle the pagination
-    while True:
-        if params:
-            r = requests.get(url, params=params).json()
-        else:
-            r = requests.get(url).json()
+    try:
+        # Handle the pagination
+        while True:
+            if params:
+                r = requests.get(url, params=params)
+            else:
+                r = requests.get(url)
 
-        # TODO get notes for each field
-        results = r.get("result")
-        total = int(results.get("total"))
-        records = results.get("records")
-        timeseries.extend(records)
+            r.raise_for_status()
+            results = r.json().get("result")
+            total = int(results.get("total"))
 
-        results_counter = len(timeseries)
-        logging.info(f"Got {results_counter} results out of {total} ...")
-        more = results.get("_links").get("next")
+            # Get notes only on the first pull
+            if not ts_data.get("field_notes"):
+                notes = results.get("fields")
+                ts_data["field_notes"] = notes
 
-        # Don't ask for more pages than there are
-        if more and results_counter <= total:
-            url = CAGOV_BASEURL + more
-            params = None
+            else:
+                pass
 
-        else:
-            break
+            records = results.get("records")
+            timeseries.extend(records)
 
-    logging.info("Collected all pages")
+            results_count = len(timeseries)
+            logging.info(f"Got {results_count} results out of {total} ...")
+            more = results.get("_links").get("next")
 
-    return timeseries
+            # Don't ask for more pages than there are
+            if more and results_count < total:
+                url = CAGOV_BASEURL + more
+                params = None
+
+            else:
+                break
+
+        ts_data["timeseries"] = timeseries
+        logging.info("Collected all pages")
+
+        return ts_data
+
+    except AttributeError:
+        logging.exception("Error parsing response")
+
+    except requests.Exceptions.RequestExceptions:
+        logging.exception("Error fetching from API")
 
 
 if __name__ == "__main__":
     """ When run as a script, prints the data to stdout"""
-    print(json.dumps(get_timeseries(), indent=4))
+    print(json.dumps(get_timeseries("San Francisco"), indent=4))
