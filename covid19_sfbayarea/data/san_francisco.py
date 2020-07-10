@@ -12,7 +12,7 @@ def get_county() -> Dict:
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
     # create a SocrataApi instance
-    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'age_gender': 'sunc-2t3k',
+    RESOURCE_IDS = {'cases_deaths_transmission': 'tvq9-ec9w', 'gender': 'nhy6-gqam',
                      'race_eth': 'vqqm-nsqg', 'tests': 'nfpa-mg4g'}
     session = SocrataApi('https://data.sfgov.org/')
 
@@ -170,13 +170,16 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     """Get cases by gender"""
     # Dict of source_label:target_label for re-keying.
     # Note: non cis genders not currently reported
-    resource_id = resource_ids['age_gender']
-    GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown"}
-    params = {'$select': 'gender, sum(confirmed_cases)', '$group': 'gender'}
+    resource_id = resource_ids['gender']
+    GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown", "Trans Female": "female", "Trans Male": "male"}
+    params = {'$select': 'gender, max(cumulative_confirmed_cases) as cases', '$group': 'gender'}
     data = session.resource(resource_id, params=params)
     # re-key
-    return {GENDER_KEYS[entry["gender"]]: int(entry["sum_confirmed_cases"])
-            for entry in data}
+    table = dict()
+    for entry in data:
+        rekey = GENDER_KEYS[entry['gender']]
+        table[rekey] = table.get(rekey,0) + int(entry["cases"])
+    return table
 
 def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """Get cases by transmission category"""
