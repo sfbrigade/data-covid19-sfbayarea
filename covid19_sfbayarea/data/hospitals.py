@@ -90,5 +90,5 @@ def get_timeseries(county: str = "all") -> Dict:
 
 
 if __name__ == "__main__":
-    """ When run as a script, prints the data to stdout"""
-    print(json.dumps(get_timeseries("San Francisco"), indent=4))
+    """When run as a script, prints all data to stdout"""
+    print(json.dumps(get_timeseries(), indent=4))
