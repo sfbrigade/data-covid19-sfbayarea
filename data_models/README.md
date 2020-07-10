@@ -136,8 +136,48 @@ The fields will be used for normalizing the county case and death tabulations, a
         }
     }
 ```
-5. __Hospitalization Data__  
-We plan to retrieve hospitalization data by county from a common source, the [California Health and Human Services Open Data Portal (CHHS)](https://data.chhs.ca.gov/dataset/california-covid-19-hospital-data-and-case-statistics/resource/6cd8d424-dfaa-4bdd-9410-a3d656e1176e?inner_span=True.). These datapoints are not currently reflected in the data model.
+5. __Hospitalization Data__
+California COVID-19 hospitalization data is retrieved separately from the the [California Health and Human Services Open Data Portal (CHHS)](https://data.ca.gov/dataset/covid-19-hospital-data#). The keys for the top-level data points `name`, `update_time`, `source_url`, `meta_from_source`, and `meta_from_baypd` are the same as the model described above. However, the structure of the data for `meta_from_source` and `series` differs.
+
+`meta_from_source` holds a list of dicts describing each field in the data, provided directly from CHHS. Each dict, except for the first describing the `_id` field, has the keys `info`, `type`, and `id`. Here is an example:
+
+```
+    "meta_from_source": [
+        {
+            "type": "int",
+            "id": "_id"
+        },
+        {
+            "info": {
+                "notes": "The County where the hospital is located. None of the consolidated reporters had hospitals in different counties.",
+                "type_override": "",
+                "label": "County"
+            },
+            "type": "text",
+            "id": "county"
+        }
+
+        -- snip --
+```
+
+Each entry in `series` is a flat record with each of the fields described in `meta_from_source`, one for each day on which an observation was made:
+
+```
+        {
+            "icu_covid_confirmed_patients": 0.0,
+            "icu_suspected_covid_patients": 0.0,
+            "hospitalized_covid_patients": null,
+            "hospitalized_suspected_covid_patients": 10.0,
+            "icu_available_beds": 18.0,
+            "county": "Humboldt",
+            "hospitalized_covid_confirmed_patients": 1.0,
+            "_id": 1,
+            "all_hospital_beds": null,
+            "todays_date": "2020-03-29T00:00:00"
+        }
+```
+
+The `name` value starts with "Hospitalization - " and then the full name of the county (e.g. "Hospitalization - Alameda County"). If the argument `"all"` is passed to `get_county()` (the default in the `get_timeseries()` function), then data for all counties will be fetched, and the name value will be "Hospitalization - All CA Counties"
 
 # Notes and resources 
 Please contribute!
