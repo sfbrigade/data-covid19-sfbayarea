@@ -79,7 +79,7 @@ def get_timeseries(county: str = "all") -> Dict:
             else:
                 break
 
-        ts_data["timeseries"] = timeseries
+        ts_data["series"] = timeseries
         logging.info("Collected all pages")
 
         return ts_data
