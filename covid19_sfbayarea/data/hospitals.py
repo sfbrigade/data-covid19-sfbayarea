@@ -3,7 +3,7 @@
 import json
 import logging
 import requests
-from typing import Dict, List
+from typing import Dict
 
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
 # The input data is fetched from an API endpoint, and appears to be updated at
