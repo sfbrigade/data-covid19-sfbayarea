@@ -151,8 +151,12 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
     AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
                 "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
 
+    # find the latest date of data collection
+    params = {'$select': 'max(specimen_collection_date) as date'}
+    latest_date = session.resource(resource_id, params=params)[0]
 
-    params = {'$select': 'age_group, max(cumulative_confirmed_cases) as cases', '$order': 'age_group', '$group': 'age_group'}
+    # get cumulative confirmed cases on latest date
+    params = {'$select': 'age_group, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"','$order': 'age_group'}
     data = session.resource(resource_id, params=params)
 
     # flatten data into a dictionary of age_group:cases
