@@ -197,23 +197,19 @@ def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -
 def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dict:
     """
     Fetch race x ethnicity data. Individuals are assigned to one race/eth category.
-    Individuals identified as 'Hispanic or Latino' are assigned 'Latinx_or_Hispanic'.
-    Individuals identified as 'Not Hispanic or Latino' are assigned to their race identification.
-    Due to an error in the source data, it appears that Native American datapoint is not currently assigned a race label.
-    TO-DO: update this code when the Native American cases are assigned a race label.
     """
-    resource_id = resource_ids["race_eth"]
+    resource_id = resource_ids['race_eth']
     # Dict of source_label:target_label for re-keying.
-    # Note: Native_Amer not currently reported
     RACE_ETH_KEYS = {'Hispanic or Latino/a, all races': 'Latinx_or_Hispanic', 'Asian': 'Asian', 'Black or African American': 'African_Amer', 'White': 'White',
                     'Native Hawaiian or Other Pacific Islander': 'Pacific_Islander', 'Native American': 'Native_Amer', 'Multi-racial': 'Multiple_Race', 'Other': 'Other', 'Unknown': 'Unknown'}
-    data = session.resource(resource_id)
+    params = { '$select': 'race_ethnicity, max(cumulative_confirmed_cases) as cases', '$group': 'race_ethnicity'}
+    data = session.resource(resource_id, params=params)
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
     race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}
 
     for item in data:  # iterate through all race x ethnicity objects
-        cases = int(item["confirmed_cases"])
+        cases = int(item["cases"])
         race_eth = item["race_ethnicity"]
         re_key = RACE_ETH_KEYS[race_eth] # look up this item's re-key
         race_eth_data[re_key] += cases
