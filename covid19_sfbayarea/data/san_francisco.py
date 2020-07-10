@@ -206,6 +206,18 @@ def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dic
 
     return race_eth_data
 
+def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
+    """Get cases by transmission category"""
+    resource_id = resource_ids['cases_deaths_transmission']
+    # Dict of source_label:target_label for re-keying
+    TRANSMISSION_KEYS = {"Community": "community",
+                        "From Contact": "from_contact", "Unknown": "unknown"}
+    params = { '$select': 'transmission_category, sum(case_count)', '$group': 'transmission_category'}
+    data = session.resource(resource_id, params=params)
+    # re-key
+    transmission_data = { TRANSMISSION_KEYS[ entry["transmission_category"] ]: int(entry["sum_case_count"]) for entry in data}
+    return transmission_data
+
 if __name__ == '__main__':
     """ When run as a script, logs data to console"""
     print(json.dumps(get_county(), indent=4))
