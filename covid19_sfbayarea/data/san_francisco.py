@@ -6,8 +6,6 @@ from .utils import get_data_model, SocrataApi
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
-    # TODO: Add deaths data when it is available through the api.
-    # TODO: In get_race_eth_table(), update code when SF provides a race label for the Native American datapoint.
 
     # Load data model template into a local dictionary called 'out'.
     out = get_data_model()
@@ -180,18 +178,6 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
         rekey = GENDER_KEYS[entry['gender']]
         table[rekey] = table.get(rekey,0) + int(entry["cases"])
     return table
-
-def get_transmission_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
-    """Get cases by transmission category"""
-    resource_id = resource_ids['cases_deaths_transmission']
-    # Dict of source_label:target_label for re-keying
-    TRANSMISSION_KEYS = {"Community": "community",
-                        "From Contact": "from_contact", "Unknown": "unknown"}
-    params = { '$select': 'transmission_category, sum(case_count)', '$group': 'transmission_category'}
-    data = session.resource(resource_id, params=params)
-    # re-key
-    transmission_data = { TRANSMISSION_KEYS[ entry["transmission_category"] ]: int(entry["sum_case_count"]) for entry in data}
-    return transmission_data
 
 # Confirmed cases by race and ethnicity
 def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dict:
