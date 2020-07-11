@@ -5,7 +5,7 @@ import logging
 import requests
 from datetime import datetime
 from dateutil import tz
-from typing import Dict
+from typing import Any, Dict, List, Union
 
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
 # The input data is fetched from an API endpoint, and appears to be updated at
@@ -13,7 +13,6 @@ from typing import Dict
 # provided at the county level. This module's top-level function takes a county
 # as an arg and returns the data for that county as JSON.
 
-# TODO Document data model
 
 # URLs and APIs
 HOSPITALS_LANDING_PAGE = "https://data.ca.gov/dataset/covid-19-hospital-data#"
@@ -40,21 +39,38 @@ def get_county(county: str) -> Dict:
 
 def get_timeseries(county: str = "all") -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
-    ts_data = {}
-    timeseries = []
+    ts_data: Dict[str, Union[str, List]] = {}
+    timeseries: List[Dict[str, Any]] = []
 
-    params = {"resource_id": HOSPITALS_RESOURCE_ID, "limit": RESULTS_LIMIT}
+    # Add header data
+    if county == "all":
+        ts_data["name"] = f"{SERIES_NAME} - All CA Counties"
+    else:
+        ts_data["name"] = f"{SERIES_NAME} - {county} County"
+
+    now = datetime.now(tz.tzutc()).isoformat()
+    ts_data["update_time"] = now
+    ts_data["source_url"] = HOSPITALS_LANDING_PAGE
+    ts_data["meta_from_baypd"] = BAYPD_META
+
+    # Call may be made without params on subsequent calls
+    params: Dict[str, Union[int, str]] = {
+        "resource_id": HOSPITALS_RESOURCE_ID,
+        "limit": RESULTS_LIMIT
+    }
 
     if county != "all":
-        params.update({"q": county})
+        params["q"] = county
 
     url = CAGOV_BASEURL + CAGOV_API
 
     try:
         # Handle the pagination
         while True:
-            if params:
+            # pass params if we don't have timeseries data yet
+            if not timeseries:
                 r = requests.get(url, params=params)
+
             else:
                 r = requests.get(url)
 
@@ -80,31 +96,21 @@ def get_timeseries(county: str = "all") -> Dict:
             # Don't ask for more pages than there are
             if more and results_count < total:
                 url = CAGOV_BASEURL + more
-                params = None
 
             else:
                 break
 
-        # Package up the data
-        if county == "all":
-            ts_data["name"] = f"{SERIES_NAME} - All CA Counties"
-        else:
-            ts_data["name"] = f"{SERIES_NAME} - {county} County"
-
-        now = datetime.now(tz.tzutc()).isoformat()
-        ts_data["update_time"] = now
-        ts_data["source_url"] = HOSPITALS_LANDING_PAGE
-        ts_data["meta_from_baypd"] = BAYPD_META
         ts_data["series"] = timeseries
         logging.info("Collected all pages")
-
-        return ts_data
 
     except AttributeError:
         logging.exception("Error parsing response")
 
     except requests.exceptions.RequestException:
         logging.exception("Error fetching from API")
+
+    finally:
+        return ts_data
 
 
 if __name__ == "__main__":
