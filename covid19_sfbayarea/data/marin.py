@@ -28,10 +28,10 @@ def get_county() -> Dict:
     # No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
     model['source_url'] = url
     model['meta_from_source'] = get_metadata(url, chart_ids)
-    #model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    #model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
+    model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
     #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    #model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     #model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     #model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     
@@ -50,10 +50,8 @@ def extract_csvs(chart_id: str, url: str) -> str:
     driver.switch_to.frame(frame)
     # Grab the raw data out of the link's href attribute
     csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
-    # Switch back to the parent frame to "reset" the context
-    # I think I can delete this b/c I switch back to the default content below
-    #driver.switch_to.parent_frame()
-    
+
+  
     # Deal with the data
     if csv_data.startswith('data:'):
         media, data = csv_data[5:].split(',', 1)
@@ -111,102 +109,111 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
 
 def get_case_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
-    csv_ = extract_csvs(chart_id, url)
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
     series = []
 
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',')
+    keys = csv_reader.fieldnames
     
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed')
 
     case_history = []
 
-    for row in csv_strs[1:]:
+    for row in csv_reader:
         daily = {}
-        # Grab the date in the first column
-        date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
-        daily["date"] = date_time_obj.isoformat()
+        date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
+        daily["date"] = date_time_obj.strftime('%Y-%m-%d')
         # Collect the case totals in order to compute the change in cases per day 
-        case_history.append(int(row.split(',')[1]))
-        # Grab the cumulative number in the fifth column
-        daily["cumul_cases"] = int(row.split(',')[1])
+        case_history.append(int(row["Total Cases"]))
+        daily["cumul_cases"] = int(row["Total Cases"])
         series.append(daily)
-        
-    case_history_diff = np.diff(case_history) 
-    # there will be no calculated difference for the first day, so adding it in manually
-    case_history_diff = np.insert(case_history_diff, 0, 0) 
-    # adding the case differences into the series
+
+    case_history_diff = []
+    # Since i'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
+    for i in range(0, len(case_history)-1):
+        case_history_diff.append((int(case_history[i+1]) - int(case_history[i])) + int(series[0]["cumul_cases"]))
+        # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
+    case_history_diff.insert(0, int(series[0]["cumul_cases"]))
+
     for val, case_num in enumerate(case_history_diff):
         series[val]["cases"] = case_num
     return series
 
 def get_death_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative deaths, and new deaths."""
-    csv_ = extract_csvs(chart_id, url)
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
     series = []
 
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',')
+    keys = csv_reader.fieldnames
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed.')
 
     death_history = []
 
-    for row in csv_strs[1:]:
+    for row in csv_reader:
         daily = {}
-        # Grab the date in the first column
-        date_time_obj = datetime.strptime(row.split(',')[0], '%m/%d/%Y')
-        daily["date"] = date_time_obj.isoformat()
-        # Collect the death totals in order to compute the change in deaths per day 
-        death_history.append(int(row.split(',')[4]))
-        # Grab the cumulative number in the fifth column
-        daily["cumul_deaths"] = int(row.split(',')[4])
+        date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
+        daily["date"] = date_time_obj.strftime('%Y-%m-%d')
+        # Collect the case totals in order to compute the change in cases per day 
+        death_history.append(int(row["Total Deaths"]))
+        daily["cumul_deaths"] = int(row["Total Deaths"])
         series.append(daily)
-        
-    death_history_diff = np.diff(death_history) 
-    # there will be no calculated difference for the first day, so adding it in manually
-    death_history_diff = np.insert(death_history_diff, 0, 0) 
-    # adding the case differences into the series
-    for val, death_num in enumerate(death_history_diff):
-        series[val]["deaths"] = death_num
+
+    death_history_diff = []
+    # Since i'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
+    for i in range(0, len(death_history)-1):
+        death_history_diff.append((int(death_history[i+1]) - int(death_history[i])) + int(series[0]["cumul_deaths"]))
+        # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
+    death_history_diff.insert(0, int(series[0]["cumul_deaths"]))
+
+    for val, case_num in enumerate(death_history_diff):
+        series[val]["deaths"] = case_num
     return series
 
 def get_breakdown_age(chart_id: str, url: str) -> Tuple:
     """This method gets the breakdown of cases and deaths by age."""
-    csv_ = extract_csvs(chart_id, url)
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
     c_brkdown = []
     d_brkdown = []
 
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',') 
+    keys = csv_reader.fieldnames
 
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
 
     ages = ['0-18', '19-34', '35-49', '50-64', '65+'] 
-    for row in csv_strs[1:]:
+    new_ages = ['0_to_18', '19_to_34', '35_to_49', '50_to_64', '65_and_older']
+
+    # TO-DO: should probably make this a key mapping like I do for race_eth
+
+    for row in csv_reader:
         c_age = {}
         d_age = {}
-        # Extracting the age group and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
-        # Each new row has data for a different age group.
-        c_age["group"] = row.split(',')[0]
+         # Extracting the age group and the raw count for both cases and deaths.
+        c_age["group"] = row['Age Category']
         if c_age["group"] not in ages:
             raise ValueError('The age groups have changed.')
-        c_age["raw_count"] = int(row.split(',')[2])
-        d_age["group"] = row.split(',')[0]
-        d_age["raw_count"] = int(row.split(',')[4])
-        c_brkdown.append(c_age)
-        d_brkdown.append(d_age)
+        else:
+            c_age["raw_count"] = int(row["Cases"])
+            d_age["group"] = row['Age Category']
+            d_age["raw_count"] = int(row["Deaths"])
+            c_brkdown.append(c_age)
+            d_brkdown.append(d_age)
+
+    c_age["group"].keys = new_ages
+    d_age["group"].keys = new_ages
 
     return c_brkdown, d_brkdown
 
 def get_breakdown_gender(chart_id: str, url: str) -> Tuple:
     """This method gets the breakdown of cases and deaths by gender."""
-    csv_ = extract_csvs(chart_id, url)
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
 
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',') 
+    keys = csv_reader.fieldnames
     if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed.')
 
@@ -214,25 +221,33 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple:
     c_gender = {}
     d_gender = {}
     
-    for row in csv_strs[1:]:
+    for row in csv_reader:
         # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
         # Each new row has data for a different gender.
-        split = row.split(',')
-        gender = split[0].lower()
+        gender = row["Gender"].lower()
         if gender not in genders:
             return ValueError('The genders have changed.')
-        c_gender[gender] = int(split[2])
-        d_gender[gender] = int(split[4])            
+        c_gender[gender] = int(row["Cases"])
+        d_gender[gender] = int(row["Deaths"])
+
+    # for row in csv_strs[1:]:
+    #     # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
+    #     # Each new row has data for a different gender.
+    #     split = row.split(',')
+    #     gender = split[0].lower()
+    #     if gender not in genders:
+    #         return ValueError('The genders have changed.')
+    #     c_gender[gender] = int(split[2])
+    #     d_gender[gender] = int(split[4])            
 
     return c_gender, d_gender
 
 def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
     """This method gets the breakdown of cases and deaths by race/ethnicity."""
 
-    csv_ = extract_csvs(chart_id, url)
-
-    csv_strs = csv_.splitlines()
-    keys = csv_strs[0].split(',') 
+    csv_str = extract_csvs(chart_id, url)
+    csv_reader = csv.DictReader(csv_str.splitlines())
+    keys = csv_reader.fieldnames
     
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Case Count', 'Percent of Cases', 'Hospitalization Count', 'Percent of Hospitalizations', 'Death Count', 'Percent of Deaths']:
         raise ValueError("The headers have changed.")
@@ -243,15 +258,14 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
 
     c_race_eth = {}
     d_race_eth = {}
-    
-    for row in csv_strs[1:]:
-        split = row.split(',')
-        race_eth = split[0].lower()
+
+    for row in csv_reader:
+        race_eth = row["Race/Ethnicity"].lower()
         if race_eth not in key_mapping:
             raise ValueError("The race_eth groups have changed.")
         else:
-            c_race_eth[key_mapping[race_eth]] = int(split[2])
-            d_race_eth[key_mapping[race_eth]] = int(split[6])
+            c_race_eth[key_mapping[race_eth]] = int(row["Case Count"])
+            d_race_eth[key_mapping[race_eth]] = int(row["Death Count"])
 
     return c_race_eth, d_race_eth
 
