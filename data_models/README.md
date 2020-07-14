@@ -284,7 +284,9 @@ Data broken down by gender is not available.
 		{"group": "19_to_34", "raw_count": -1 },
 		{"group": "35_to_49", "raw_count": -1 },
 		{"group": "50_to_64", "raw_count": -1 },
-		{"group": "65_and_older", "raw_count": -1 }
+        {"group": "65_to_79", "raw_count": -1 },
+        {"group": "80_to_94", "raw_count": -1 },
+		{"group": "95_and_older", "raw_count": -1 }
 		]
 
 ## Solano
