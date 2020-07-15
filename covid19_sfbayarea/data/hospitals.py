@@ -46,7 +46,7 @@ def get_timeseries(county: str = "all") -> Dict:
     if county == "all":
         ts_data["name"] = f"{SERIES_NAME} - All CA Counties"
     else:
-        ts_data["name"] = f"{SERIES_NAME} - {county} County"
+        ts_data["name"] = f"{SERIES_NAME} - {county.title()} County"
 
     now = datetime.now(tz.tzutc()).isoformat()
     ts_data["update_time"] = now
@@ -60,7 +60,7 @@ def get_timeseries(county: str = "all") -> Dict:
     }
 
     if county != "all":
-        params["q"] = county
+        params["q"] = county.title()
 
     url = CAGOV_BASEURL + CAGOV_API
 
