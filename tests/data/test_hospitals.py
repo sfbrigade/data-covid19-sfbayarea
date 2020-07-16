@@ -21,6 +21,20 @@ SAMPLE_RECORD = {
     'todays_date': '2020-03-30T00:00:00'
 }
 
+SAMPLE_OUTPUT = {
+    'icu_covid_confirmed_patients': 4,
+    'icu_suspected_covid_patients': 2,
+    'hospitalized_covid_patients': -1,
+    'hospitalized_suspected_covid_patients': 9,
+    'icu_available_beds': 16,
+    'rank': 0.0573088,
+    'county': 'Marin',
+    'hospitalized_covid_confirmed_patients': 10,
+    '_id': 103,
+    'all_hospital_beds': -1,
+    'report_date': '2020-03-30'
+}
+
 
 def test_truncate_ts():
     ts = SAMPLE_RECORD.get("todays_date")
@@ -40,3 +54,8 @@ def test_floats_to_ints():
     assert type(converted.get("icu_covid_confirmed_patients")) is int
     assert converted.get("icu_covid_confirmed_patients") == int(4)
     assert converted.get("icu_available_beds") == int(16)
+
+
+def test_standardize_data():
+    standardized = hospitals.standardize_data(SAMPLE_RECORD)
+    assert standardized == SAMPLE_OUTPUT
