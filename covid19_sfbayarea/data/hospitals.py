@@ -114,6 +114,23 @@ def get_timeseries(county: str = "all") -> Dict:
         return ts_data
 
 
+def standardize_data(record: Dict) -> Dict:
+    """Transform certain data fields to make them conform to BAPD style
+
+    Specifically:
+    - truncate timestamps to ISO 8601-formatted dates
+    - convert all 'null' values to -1
+    - cast zero-point floats as int
+
+    Also, the key 'todays_date' is converted to 'report_date' for clarity.
+    """
+    record["report_date"] = truncate_ts(record.pop("todays_date"))
+    record = convert_null(record)
+    record = floats_to_ints(record)
+
+    return record
+
+
 def truncate_ts(ts: str) -> str:
     """Truncate a timestampe to an ISO 8601-formatted date"""
     trunc_ts = parse(ts).date().isoformat()
