@@ -133,6 +133,30 @@ def convert_null(record: Dict) -> Dict:
     return record
 
 
+def floats_to_ints(record: Dict) -> Dict:
+    """Convert zero-point floats for numeric fields to ints"""
+    fields: List = [
+        "all_hospital_beds",
+        "hospitalized_covid_confirmed_patients",
+        "hospitalized_covid_patients",
+        "hospitalized_suspected_covid_patients",
+        "icu_available_beds",
+        "icu_covid_confirmed_patients",
+        "icu_suspected_covid_patients",
+    ]
+
+    for field in fields:
+        val = record.get(field)
+
+        if val is None:
+            continue
+
+        else:
+            record[field] = int(val)
+
+    return record
+
+
 if __name__ == "__main__":
     """When run as a script, prints all data to stdout"""
     print(json.dumps(get_timeseries(), indent=4))
