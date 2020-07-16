@@ -5,6 +5,7 @@ import logging
 import requests
 from datetime import datetime
 from dateutil import tz
+from dateutil.parser import parse
 from typing import Any, Dict, List, Union
 
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
@@ -111,6 +112,12 @@ def get_timeseries(county: str = "all") -> Dict:
 
     finally:
         return ts_data
+
+
+def truncate_ts(ts: str) -> str:
+    """Truncate a timestampe to an ISO 8601-formatted date"""
+    trunc_ts = parse(ts).date().isoformat()
+    return trunc_ts
 
 
 if __name__ == "__main__":
