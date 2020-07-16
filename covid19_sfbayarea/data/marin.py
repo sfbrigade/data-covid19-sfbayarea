@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 import csv
-import json
-#import numpy as np
 from typing import List, Dict, Tuple
-from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.parse import unquote_plus
 from datetime import datetime
-import re
-
-#testing 
+ 
 from ..webdriver import get_firefox
 from .utils import get_data_model
 
@@ -30,11 +25,10 @@ def get_county() -> Dict:
     #model['meta_from_source'] = get_metadata(url, chart_ids)
     #model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
     #model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     #model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     #model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
-    
     return model
 
 def extract_csvs(chart_id: str, url: str) -> str:
@@ -68,7 +62,6 @@ def extract_csvs(chart_id: str, url: str) -> str:
     return csv_string
 
 def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
-    notes = []
     driver = get_firefox()
     driver.implicitly_wait(30)
     driver.get(url)
@@ -186,28 +179,22 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple:
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
 
-    ages = ['0-18', '19-34', '35-49', '50-64', '65-79', '80-94', '95+' ] 
-    new_ages = ['0_to_18', '19_to_34', '35_to_49', '50_to_64', '65_to_79', '80_to_94', '95_and_older']
-
-    # TO-DO: should probably make this a key mapping like I do for race_eth
+    key_mapping = {"0-18": "0_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"} 
 
     for row in csv_reader:
         c_age = {}
         d_age = {}
          # Extracting the age group and the raw count for both cases and deaths.
-        c_age["group"] = row['Age Category']
-        if c_age["group"] not in ages:
+        c_age["group"], d_age["group"] = row['Age Category'], row['Age Category']
+        if c_age["group"] not in key_mapping:
             raise ValueError(str(c_age["group"]) + ' is not in the list of age groups. The age groups have changed.')
         else:
+            c_age["group"] = key_mapping[c_age["group"]]
             c_age["raw_count"] = int(row["Cases"])
-            d_age["group"] = row['Age Category']
+            d_age["group"] = key_mapping[d_age["group"]]
             d_age["raw_count"] = int(row["Deaths"])
             c_brkdown.append(c_age)
             d_brkdown.append(d_age)
-
-    index = 0
-    for (c_group, d_group) in zip(c_age, d_age):
-        return c_group, d_group
 
     return c_brkdown, d_brkdown
 
@@ -252,7 +239,7 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
     csv_reader = csv.DictReader(csv_str.splitlines())
     keys = csv_reader.fieldnames
     
-    if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Case Count', 'Percent of Cases', 'Hospitalization Count', 'Percent of Hospitalizations', 'Death Count', 'Percent of Deaths']:
+    if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
         raise ValueError("The headers have changed.")
 
     key_mapping = {"black/african american":"African_Amer", "hispanic/latino": "Latinx_or_Hispanic",
@@ -267,8 +254,8 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
         if race_eth not in key_mapping:
             raise ValueError("The race_eth groups have changed.")
         else:
-            c_race_eth[key_mapping[race_eth]] = int(row["Case Count"])
-            d_race_eth[key_mapping[race_eth]] = int(row["Death Count"])
+            c_race_eth[key_mapping[race_eth]] = int(row["Cases"])
+            d_race_eth[key_mapping[race_eth]] = int(row["Deaths"])
 
     return c_race_eth, d_race_eth
 
@@ -277,81 +264,32 @@ def get_test_series(chart_id: str, url: str) -> Tuple:
 
     csv_ = extract_csvs(chart_id, url)
     csv_strs = csv_.splitlines()
-    #csv_reader = csv.DictReader(csv_str.splitlines())
-    #keys = csv_reader.fieldnames # this table is flipped so, the "keys" are actually the some of the data values (the dates)
 
-    test_history = []
-    keys = [row.split(',')[0] for row in csv_strs]
     dates, positives, negatives = [row.split(',')[1:] for row in csv_strs] 
-    # I thought this should be 1: instead of :1 but why is :1 right?
-    # :1 is not right, but it doesn't give an error
-
+    # I think this should be 1: instead of :1 
     series = zip(dates, positives, negatives)
+
     test_series = []
 
     cumul_pos = 0
     cumul_neg = 0
     for entry in series:
         daily = {}
-        date_time_obj = datetime.strptime(entry[0], '%m/%d/%Y')
-        daily["date"] = date_time_obj.isoformat()
-        daily["positive"] = int(entry[1])
-        cumul_pos += daily["positive"]
-        daily["cumul_pos"] = cumul_pos
-        daily["negative"] = int(entry[2])
-        cumul_neg += daily["negative"]
-        daily["cumul_neg"] = cumul_neg
-        test_series.append(daily)
+        # I'm not sure why, but I just found out that some of the test series have a 'null' value (in the spot where the number of positive tests is), so I needed to account for that here.
+        # At least for now, it's only present at the end, so I just break out of the loop and return the test series. 
+        if entry[1] != 'null':
+            date_time_obj = datetime.strptime(entry[0], '%m/%d/%Y')
+            daily["date"] = date_time_obj.strftime('%Y-%m-%d')
+            daily["positive"] = int(entry[1])
+            cumul_pos += daily["positive"]
+            daily["negative"] = int(entry[2])
+            cumul_neg += daily["negative"]
+            daily["cumul_pos"] = cumul_pos
+            daily["cumul_neg"] = cumul_neg
+            test_series.append(daily)
+        else:
+            break
+        
     return test_series
-
-
-    ########################## OLD CODE ################################################
-    
-    # Grab the dates, which are in the header
-    # for entry in csv_strs[:1][0].split(',')[1:]: 
-    #     # need to exclude very first item in the csv_strs[:1][0].split(',') list (which is the value 'Date')
-    #     daily = {}
-    #     date_time_obj = datetime.strptime(entry, '%m/%d/%Y')
-    #     daily["date"] = date_time_obj.isoformat()
-    #     series.append(daily)
-
-    # # The slicing makes this if statement hard to look at... there must be a better way?
-    # if csv_strs[1:2][0].split(',')[:1][0] != 'Positive Tests' and csv_strs[2:][0].split(',')[:1][0] != 'Negative Tests':
-    #     raise ValueError('The kinds of tests have changed.')
-
-    # # Grab the positive test result numbers, which is in the second row. 
-    # # [1:] is included to make sure that 'Positive Tests' is not captured.
-    # p_entries = csv_strs[1:2][0].split(',')[1:]
-    # n_entries = csv_strs[2:][0].split(',')[1:]
-    
-    # get_test_series_helper(series, p_entries, ['positive', 'cumul_pos'])
-    # get_test_series_helper(series, n_entries, ['negative', 'cumul_neg'])
-    
-    # return series   
-    ################################################
-
-# def get_test_series_helper(series: list, entries: list, keys: list) -> List:
-#     """This method helps get the pos/neg test count and the cumulative pos/neg test count."""
-    
-#     # initialize values cumulative number, the positive/negative and cumul_pos/neg values for the first day, and the index needed for the while loop.
-    
-#     # there's probably a more efficient way to do all of this, but I just wasn't sure.
-#     cumul = int(entries[0])
-#     series[0][keys[0]] = int(entries[0])
-#     series[0][keys[1]] = cumul
-#     index = 1   
-
-#     while index < len(series):
-#         # get a particular day
-#         day = series[index]
-#         curr = int(entries[index])
-#         # get pos/neg test count
-#         day[keys[0]] = int(curr)
-#         # add that day's pos/neg test count to get cumulative number of positive tests
-#         cumul += curr
-#         day[keys[1]] = cumul 
-#         index += 1
-#     return series
-
 
 get_county()
