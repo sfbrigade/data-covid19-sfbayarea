@@ -120,6 +120,19 @@ def truncate_ts(ts: str) -> str:
     return trunc_ts
 
 
+def convert_null(record: Dict) -> Dict:
+    """Convert any null values to -1"""
+    for k, v in record.items():
+
+        if v is None:
+            record[k] = -1
+
+        else:
+            continue
+
+    return record
+
+
 if __name__ == "__main__":
     """When run as a script, prints all data to stdout"""
     print(json.dumps(get_timeseries(), indent=4))
