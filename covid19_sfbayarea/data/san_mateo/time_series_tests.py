@@ -60,5 +60,9 @@ class TimeSeriesTests(PowerBiQuerier):
     def _binding(self) -> Dict[str, Any]:
         return {
             'Primary': { 'Groupings': [{ 'Projections': [0, 1, 2, 3] }] },
+            'DataReduction': {
+                'DataVolume': 4,
+                'Primary': { 'Sample': {} }
+            },
             'Version': 1
         }

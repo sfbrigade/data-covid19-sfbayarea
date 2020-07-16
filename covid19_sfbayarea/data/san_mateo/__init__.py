@@ -31,6 +31,7 @@ def fetch_data() -> Dict:
         'meta_from_baypd': 'See power_bi_scraper.py for methods',
         'series': {
             'cases': TimeSeriesCases().get_data(),
+            'deaths': [], # This dashboard had no time series for deaths.
             'tests': TimeSeriesTests().get_data()
         },
         'case_totals': {
