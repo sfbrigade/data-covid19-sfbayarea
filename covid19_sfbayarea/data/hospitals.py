@@ -42,6 +42,7 @@ def get_timeseries(county: str = "all") -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
     ts_data: Dict[str, Union[str, List]] = {}
     timeseries: List[Dict[str, Any]] = []
+    series_standardized: List[Dict[str, Any]] = []
 
     # Add header data
     if county == "all":
@@ -101,7 +102,11 @@ def get_timeseries(county: str = "all") -> Dict:
             else:
                 break
 
-        ts_data["series"] = timeseries
+        # standardize the format of the data in a new list
+        for record in timeseries:
+            series_standardized.append(standardize_data(record))
+
+        ts_data["series"] = series_standardized
         logging.info("Collected all pages")
 
     except AttributeError:
