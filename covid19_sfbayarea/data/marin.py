@@ -20,20 +20,18 @@ def get_county() -> Dict:
     model['update_time'] = datetime.today().isoformat()
     model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
     model['source_url'] = url
-    # model['meta_from_source'] = get_metadata(url, chart_ids)
-    # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    # model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    # model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    # model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    model['meta_from_source'] = get_metadata(url, chart_ids)
+    model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
+    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     return model
 
 def extract_csvs(chart_id: str, url: str) -> str:
     """This method extracts the csv string from the data wrapper charts."""
-    driver = get_firefox()
-    # need to figure out how to change the webdriver
-    
+    driver = get_firefox()    
     driver.implicitly_wait(30)
     driver.get(url)
 
@@ -71,18 +69,12 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
     chart_metadata = set()
 
     for text in to_be_matched:
-        #target = soup.find('h4',text=text)
-        #if not target:
-            #raise ValueError('Cannot handle this header.')
         if soup.select('h4 + p')[0].text:
             metadata += [soup.select('h4 + p')[0].text]
         else:
             raise ValueError('Location of metadata has changed.')
 
-        #for sib in target.find_next_siblings()[:1]: # I only want the first paragraph tag
-            #metadata += [sib.text]
-
-    # Metadata for each chart visualizing the data of the csv file I'll pull. There's probably a better way to organize this.
+    # Metadata for each chart visualizing the data of the csv file I'll pull. 
     for chart_id in chart_ids.values():
         frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
         driver.switch_to.frame(frame)
@@ -102,12 +94,13 @@ def get_case_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
-    series: list = list()
 
     # use a function for this or context manager / function
 
     keys = csv_reader.fieldnames
-    
+
+    series: list = list()
+
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed')
 
@@ -137,9 +130,10 @@ def get_death_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative deaths, and new deaths."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
+    keys = csv_reader.fieldnames
+
     series: list = list()
 
-    keys = csv_reader.fieldnames
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed.')
 
@@ -155,7 +149,7 @@ def get_death_series(chart_id: str, url: str) -> List:
         series.append(daily)
 
     death_history_diff = []
-    # Since i'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
+    # Since I'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
     for i in range(0, len(death_history)-1):
         death_history_diff.append((int(death_history[i+1]) - int(death_history[i])) + int(series[0]["cumul_deaths"]))
         # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
@@ -169,10 +163,10 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
     """This method gets the breakdown of cases and deaths by age."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
+    keys = csv_reader.fieldnames
+
     c_brkdown: list = list()
     d_brkdown: list = list()
-
-    keys = csv_reader.fieldnames
 
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
