@@ -7,6 +7,7 @@ from datetime import datetime
 import locale
 from lxml.builder import E  # type: ignore
 import lxml.etree as ElementTree  # type: ignore
+from operator import attrgetter
 from typing import Dict, List, Optional, Any
 
 
@@ -91,7 +92,15 @@ class NewsFeed:
 
     def append(self, *items: NewsItem) -> None:
         self.items.extend(items)
-        self.items.sort(reverse=True, key=lambda item: item.date_published)
+        self.sort_items()
+
+    def sort_items(self) -> None:
+        # Sort primarily by date, then ID. Since date_published can be a
+        # date + time but, in practice, is often just a date, we frequently see
+        # items get shuffled between scraping runs because date_published is
+        # not very unique. Use the ID a [relatively] stable secondary criteria.
+        self.items.sort(reverse=True, key=attrgetter('id'))
+        self.items.sort(reverse=True, key=attrgetter('date_published'))
 
     def format_json_simple(self) -> Dict:
         """
