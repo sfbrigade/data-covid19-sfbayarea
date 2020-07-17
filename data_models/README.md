@@ -136,8 +136,12 @@ The fields will be used for normalizing the county case and death tabulations, a
         }
     }
 ```
+
 5. __Hospitalization Data__
-California COVID-19 hospitalization data is retrieved separately from the the [California Health and Human Services Open Data Portal (CHHS)](https://data.ca.gov/dataset/covid-19-hospital-data#). The keys for the top-level data points `name`, `update_time`, `source_url`, `meta_from_source`, and `meta_from_baypd` are the same as the model described above. However, the structure of the data for `meta_from_source` and `series` differs.
+
+California COVID-19 hospitalization data is retrieved separately from the the
+[California Health and Human Services Open Data Portal
+(CHHS)](https://data.ca.gov/dataset/covid-19-hospital-data#). The keys for the  top-level data points `name`, `update_time`, `source_url`, `meta_from_source`, and `meta_from_baypd` are the same as the model described above. However, the structure of the data for `meta_from_source` and `series` differs. The model for the hospitalization data is in [hospitals_data_model.json](./hospitals_data_model.json).
 
 `meta_from_source` holds a list of dicts describing each field in the data, provided directly from CHHS. Each dict, except for the first describing the `_id` field, has the keys `info`, `type`, and `id`. Here is an example:
 
@@ -160,20 +164,22 @@ California COVID-19 hospitalization data is retrieved separately from the the [C
         -- snip --
 ```
 
-Each entry in `series` is a flat record with each of the fields described in `meta_from_source`, one for each day on which an observation was made:
+Each entry in `series` is a flat record with each of the fields described in
+`meta_from_source`, one for each day on which an observation was made. As
+described above, null or default values are represented as `-1`.
 
 ```
         {
-            "icu_covid_confirmed_patients": 0.0,
-            "icu_suspected_covid_patients": 0.0,
-            "hospitalized_covid_patients": null,
-            "hospitalized_suspected_covid_patients": 10.0,
-            "icu_available_beds": 18.0,
-            "county": "Humboldt",
-            "hospitalized_covid_confirmed_patients": 1.0,
-            "_id": 1,
-            "all_hospital_beds": null,
-            "todays_date": "2020-03-29T00:00:00"
+            "icu_covid_confirmed_patients": -1,
+            "icu_suspected_covid_patients": -1,
+            "hospitalized_covid_patients": -1,
+            "hospitalized_suspected_covid_patients": -1,
+            "icu_available_beds": -1,
+            "county": "Name1 Name2",
+            "hospitalized_covid_confirmed_patients": -1,
+            "_id": -1,
+            "all_hospital_beds": -1,
+            "report_date": "yyyy-mm-dd"
         }
 ```
 
