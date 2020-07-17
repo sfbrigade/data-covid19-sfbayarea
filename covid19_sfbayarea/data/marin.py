@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import csv
 from typing import List, Dict, Tuple
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
 from datetime import datetime
  
@@ -19,16 +19,14 @@ def get_county() -> Dict:
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
     model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
-
-    # No actual update time on their website? They update most charts daily (so the isoformat is only partially correct.)
     model['source_url'] = url
-    #model['meta_from_source'] = get_metadata(url, chart_ids)
-    #model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    #model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
-    #model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
-    #model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
+    # model['meta_from_source'] = get_metadata(url, chart_ids)
+    # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    # model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
+    # model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    # model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
+    model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     return model
 
 def extract_csvs(chart_id: str, url: str) -> str:
@@ -61,7 +59,7 @@ def extract_csvs(chart_id: str, url: str) -> str:
 
     return csv_string
 
-def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple:
+def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
     driver = get_firefox()
     driver.implicitly_wait(30)
     driver.get(url)
@@ -104,11 +102,11 @@ def get_case_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
-    series = []
+    series: list = list()
+
+    # use a function for this or context manager / function
 
     keys = csv_reader.fieldnames
-
-    # TO-DO: is it possible to do 112, 113 and 116 with a context manager to reduce amount of code throughout this file?
     
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
         raise ValueError('The headers have changed')
@@ -116,12 +114,12 @@ def get_case_series(chart_id: str, url: str) -> List:
     case_history = []
 
     for row in csv_reader:
-        daily = {}
+        daily: dict = dict()
         date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
         daily["date"] = date_time_obj.strftime('%Y-%m-%d')
         # Collect the case totals in order to compute the change in cases per day 
         case_history.append(int(row["Total Cases"]))
-        daily["cumul_cases"] = int(row["Total Cases"])
+        daily["cumul_cases"] = int(row["Total Cases"]) 
         series.append(daily)
 
     case_history_diff = []
@@ -132,14 +130,14 @@ def get_case_series(chart_id: str, url: str) -> List:
     case_history_diff.insert(0, int(series[0]["cumul_cases"]))
 
     for val, case_num in enumerate(case_history_diff):
-        series[val]["cases"] = case_num
+        series[val]["cases"] = case_num 
     return series
 
 def get_death_series(chart_id: str, url: str) -> List:
     """This method extracts the date, number of cumulative deaths, and new deaths."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
-    series = []
+    series: list = list()
 
     keys = csv_reader.fieldnames
     if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
@@ -148,7 +146,7 @@ def get_death_series(chart_id: str, url: str) -> List:
     death_history = []
 
     for row in csv_reader:
-        daily = {}
+        daily: dict = dict()
         date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
         daily["date"] = date_time_obj.strftime('%Y-%m-%d')
         # Collect the case totals in order to compute the change in cases per day 
@@ -167,12 +165,12 @@ def get_death_series(chart_id: str, url: str) -> List:
         series[val]["deaths"] = case_num
     return series
 
-def get_breakdown_age(chart_id: str, url: str) -> Tuple:
+def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
     """This method gets the breakdown of cases and deaths by age."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
-    c_brkdown = []
-    d_brkdown = []
+    c_brkdown: list = list()
+    d_brkdown: list = list()
 
     keys = csv_reader.fieldnames
 
@@ -182,8 +180,8 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple:
     key_mapping = {"0-18": "0_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"} 
 
     for row in csv_reader:
-        c_age = {}
-        d_age = {}
+        c_age: dict = dict()
+        d_age: dict = dict()
          # Extracting the age group and the raw count for both cases and deaths.
         c_age["group"], d_age["group"] = row['Age Category'], row['Age Category']
         if c_age["group"] not in key_mapping:
@@ -198,7 +196,7 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple:
 
     return c_brkdown, d_brkdown
 
-def get_breakdown_gender(chart_id: str, url: str) -> Tuple:
+def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by gender."""
     csv_str = extract_csvs(chart_id, url)
     csv_reader = csv.DictReader(csv_str.splitlines())
@@ -216,23 +214,14 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple:
         # Each new row has data for a different gender.
         gender = row["Gender"].lower()
         if gender not in genders:
-            return ValueError('The genders have changed.')
+            return ValueError("The genders have changed.") # type: ignore 
+            # is doing this bad practice? mypy doesn't have an issue with the error on line 244 so not sure why this one causes an error
         c_gender[gender] = int(row["Cases"])
-        d_gender[gender] = int(row["Deaths"])
-
-    # for row in csv_strs[1:]:
-    #     # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
-    #     # Each new row has data for a different gender.
-    #     split = row.split(',')
-    #     gender = split[0].lower()
-    #     if gender not in genders:
-    #         return ValueError('The genders have changed.')
-    #     c_gender[gender] = int(split[2])
-    #     d_gender[gender] = int(split[4])            
+        d_gender[gender] = int(row["Deaths"])            
 
     return c_gender, d_gender
 
-def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
+def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by race/ethnicity."""
 
     csv_str = extract_csvs(chart_id, url)
@@ -259,22 +248,21 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple:
 
     return c_race_eth, d_race_eth
 
-def get_test_series(chart_id: str, url: str) -> Tuple:
+def get_test_series(chart_id: str, url: str) -> List:
     """This method gets the date, the number of positive and negative tests on that date, and the number of cumulative positive and negative tests."""
 
     csv_ = extract_csvs(chart_id, url)
     csv_strs = csv_.splitlines()
 
     dates, positives, negatives = [row.split(',')[1:] for row in csv_strs] 
-    # I think this should be 1: instead of :1 
     series = zip(dates, positives, negatives)
 
-    test_series = []
+    test_series: list = list()
 
     cumul_pos = 0
     cumul_neg = 0
     for entry in series:
-        daily = {}
+        daily: dict = dict()
         # I'm not sure why, but I just found out that some of the test series have a 'null' value (in the spot where the number of positive tests is), so I needed to account for that here.
         # At least for now, it's only present at the end, so I just break out of the loop and return the test series. 
         if entry[1] != 'null':
