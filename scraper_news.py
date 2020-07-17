@@ -3,25 +3,23 @@ import click
 import json
 from covid19_sfbayarea import news
 from pathlib import Path
-from typing import Tuple
+from typing import cast, Tuple
 
 
-COUNTY_NAMES = tuple(news.scrapers.keys())
+COUNTY_NAMES = cast(Tuple[str], tuple(news.scrapers.keys()))
 
 
 @click.command(help='Create a news feed for one or more counties. Supported '
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-@click.option('--format', default=('json_simple',),
+@click.option('--format', default=('json_feed',),
               type=click.Choice(('json_feed', 'json_simple', 'rss')),
               multiple=True)
 @click.option('--output', help='write output file(s) to this directory')
 def main(counties: Tuple[str], format: str, output: str) -> None:
     if len(counties) == 0:
-        # FIXME: this should be COUNTY_NAMES, but we need to fix how the
-        # stop-covid19-sfbayarea project uses this first.
-        counties = ('san_francisco',)
+        counties = COUNTY_NAMES
 
     # Do the work!
     for county in counties:
