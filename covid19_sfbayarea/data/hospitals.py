@@ -50,7 +50,7 @@ def get_timeseries(county: str = "all") -> Dict:
     else:
         ts_data["name"] = f"{SERIES_NAME} - {county.title()} County"
 
-    now = datetime.now(tz.tzutc()).isoformat()
+    now = datetime.now(tz.tzutc()).isoformat(timespec="minutes")
     ts_data["update_time"] = now
     ts_data["source_url"] = HOSPITALS_LANDING_PAGE
     ts_data["meta_from_baypd"] = BAYPD_META
