@@ -4,6 +4,7 @@ from typing import List, Dict, Tuple
 from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
 from datetime import datetime
+from contextlib import contextmanager
  
 from ..webdriver import get_firefox
 from .utils import get_data_model
@@ -16,48 +17,55 @@ def get_county() -> Dict:
 
     chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "tests": '2Hgir', "age": "VOeBm", "gender": "FEciW", "race_eth": "aBeEd"} 
     # population totals and transmission data missing.
+    driver = get_firefox()    
+
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
     model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
     model['source_url'] = url
-    model['meta_from_source'] = get_metadata(url, chart_ids)
-    model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
-    model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
-    model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
+    #model['meta_from_source'] = get_metadata(url, chart_ids)
+    model['meta_from_source'] = get_chart_meta(url, driver, chart_ids)
+
+    # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
+    # model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
+    # model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    # model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    # model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
+    # model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     return model
 
-def extract_csvs(chart_id: str, url: str) -> str:
-    """This method extracts the csv string from the data wrapper charts."""
+@contextmanager
+def chart_frame(driver, chart_id: str):
+    frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
+    driver.switch_to.frame(frame)
+    try:
+        yield frame
+    finally:
+        driver.switch_to.default_content()
+
+def get_chart_data(url, driver, chart_id: str) -> List[str]:
+     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
     driver = get_firefox()    
     driver.implicitly_wait(30)
     driver.get(url)
 
-    frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
+    with chart_frame(driver, chart_id):
+        csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+        # Deal with the data
+        if csv_data.startswith('data:'):
+            media, data = csv_data[5:].split(',', 1)
+            # Will likely always have this kind of data type
+            if media != 'application/octet-stream;charset=utf-8':
+                raise ValueError(f'Cannot handle media type "{media}"')
+            csv_string = unquote_plus(data)
+            csv_data = csv_string.splitlines()
+        else:
+            raise ValueError('Cannot handle this csv_data href')
 
-    driver.switch_to.frame(frame)
-    # Grab the raw data out of the link's href attribute
-    csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+    return csv_data
 
-  
-    # Deal with the data
-    if csv_data.startswith('data:'):
-        media, data = csv_data[5:].split(',', 1)
-        # Will likely always have this kind of data type
-        if media != 'application/octet-stream;charset=utf-8':
-            raise ValueError(f'Cannot handle media type "{media}"')
-        csv_string = unquote_plus(data)
-    else:
-        raise ValueError('Cannot handle this csv_data href')
-
-    # Then leave the iframe
-    driver.switch_to.default_content()
-
-    return csv_string
-
-def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
+def get_chart_meta(url, driver, chart_ids: Dict[str, str]) -> List:
+    """This method gets all the metadata underneath the data wrapper charts."""
     driver = get_firefox()
     driver.implicitly_wait(30)
     driver.get(url)
@@ -76,6 +84,53 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
 
     # Metadata for each chart visualizing the data of the csv file I'll pull. 
     for chart_id in chart_ids.values():
+        with chart_frame(driver, chart_id):
+            notes = driver.find_elements_by_class_name('dw-chart-notes')
+            chart_metadata = list({note.text for note in notes})
+
+        # The metadata for the charts is located in elements with the class `dw-chart-notes' 
+        for c in driver.find_elements_by_class_name('dw-chart-notes'):
+            chart_metadata.add(c.text)
+
+        # Switch back to the parent frame to "reset" the context
+        driver.switch_to.parent_frame()
+
+    driver.quit() 
+
+    # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
+    return metadata, list(chart_metadata)
+
+def extract_csvs(chart_id: str, url: str) -> str:
+    """This method extracts the csv string from the data wrapper charts."""
+    driver = get_firefox()    
+    driver.implicitly_wait(30)
+    driver.get(url)
+
+    frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
+
+    driver.switch_to.frame(frame)
+    # Grab the raw data out of the link's href attribute
+    csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+
+    # Deal with the data
+    if csv_data.startswith('data:'):
+        media, data = csv_data[5:].split(',', 1)
+        # Will likely always have this kind of data type
+        if media != 'application/octet-stream;charset=utf-8':
+            raise ValueError(f'Cannot handle media type "{media}"')
+        csv_string = unquote_plus(data)
+    else:
+        raise ValueError('Cannot handle this csv_data href')
+
+    # Then leave the iframe
+    driver.switch_to.default_content()
+
+    return csv_string
+
+def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
+
+    # Metadata for each chart visualizing the data of the csv file I'll pull. 
+    for chart_id in chart_ids.values():
         frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
         driver.switch_to.frame(frame)
         # The metadata for the charts is located in elements with the class `dw-chart-notes' 
@@ -90,12 +145,13 @@ def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return metadata, list(chart_metadata)
 
-def get_case_series(chart_id: str, url: str) -> List:
+def get_case_series(chart_id: str, url: str, driver) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
-    csv_str = extract_csvs(chart_id, url)
-    csv_reader = csv.DictReader(csv_str.splitlines())
-
-    # use a function for this or context manager / function
+    
+    csv_data = get_chart_data(url, driver, chart_id)
+    csv_reader = csv.DictReader(csv_data)
+    # csv_str = extract_csvs(chart_id, url)
+    # csv_reader = csv.DictReader(csv_str.splitlines())
 
     keys = csv_reader.fieldnames
 
@@ -126,10 +182,12 @@ def get_case_series(chart_id: str, url: str) -> List:
         series[val]["cases"] = case_num 
     return series
 
-def get_death_series(chart_id: str, url: str) -> List:
+def get_death_series(chart_id: str, url: str, driver) -> List:
     """This method extracts the date, number of cumulative deaths, and new deaths."""
-    csv_str = extract_csvs(chart_id, url)
-    csv_reader = csv.DictReader(csv_str.splitlines())
+    csv_data = get_chart_data(url, driver, chart_id)
+    csv_reader = csv.DictReader(csv_data)
+    # csv_str = extract_csvs(chart_id, url)
+    # csv_reader = csv.DictReader(csv_str.splitlines())
     keys = csv_reader.fieldnames
 
     series: list = list()
@@ -159,10 +217,12 @@ def get_death_series(chart_id: str, url: str) -> List:
         series[val]["deaths"] = case_num
     return series
 
-def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
+def get_breakdown_age(chart_id: str, url: str, driver) -> Tuple[List, List]:
     """This method gets the breakdown of cases and deaths by age."""
-    csv_str = extract_csvs(chart_id, url)
-    csv_reader = csv.DictReader(csv_str.splitlines())
+    csv_data = get_chart_data(url, driver, chart_id)
+    csv_reader = csv.DictReader(csv_data)
+    # csv_str = extract_csvs(chart_id, url)
+    # csv_reader = csv.DictReader(csv_str.splitlines())
     keys = csv_reader.fieldnames
 
     c_brkdown: list = list()
@@ -190,10 +250,12 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
 
     return c_brkdown, d_brkdown
 
-def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
+def get_breakdown_gender(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by gender."""
-    csv_str = extract_csvs(chart_id, url)
-    csv_reader = csv.DictReader(csv_str.splitlines())
+    csv_data = get_chart_data(url, driver, chart_id)
+    csv_reader = csv.DictReader(csv_data)
+    # csv_str = extract_csvs(chart_id, url)
+    # csv_reader = csv.DictReader(csv_str.splitlines())
     keys = csv_reader.fieldnames
 
     if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
@@ -215,11 +277,13 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
 
     return c_gender, d_gender
 
-def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
+def get_breakdown_race_eth(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by race/ethnicity."""
 
-    csv_str = extract_csvs(chart_id, url)
-    csv_reader = csv.DictReader(csv_str.splitlines())
+    csv_data = get_chart_data(url, driver, chart_id)
+    csv_reader = csv.DictReader(csv_data)
+    #csv_str = extract_csvs(chart_id, url)
+    #csv_reader = csv.DictReader(csv_str.splitlines())
     keys = csv_reader.fieldnames
     
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
@@ -244,11 +308,11 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
 
 def get_test_series(chart_id: str, url: str) -> List:
     """This method gets the date, the number of positive and negative tests on that date, and the number of cumulative positive and negative tests."""
+    csv_data = get_chart_data(url, driver, chart_id)
+    # csv_ = extract_csvs(chart_id, url)
+    # csv_strs = csv_.splitlines()
 
-    csv_ = extract_csvs(chart_id, url)
-    csv_strs = csv_.splitlines()
-
-    dates, positives, negatives = [row.split(',')[1:] for row in csv_strs] 
+    dates, positives, negatives = [row.split(',')[1:] for row in csv_data] 
     series = zip(dates, positives, negatives)
 
     test_series: list = list()
