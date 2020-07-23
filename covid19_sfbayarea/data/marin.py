@@ -24,7 +24,7 @@ def get_county() -> Dict:
     model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
     model['source_url'] = url
     #model['meta_from_source'] = get_metadata(url, chart_ids)
-    model['meta_from_source'] = get_chart_meta(url, driver, chart_ids)
+    model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
     # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
     # model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
@@ -44,61 +44,65 @@ def chart_frame(driver, chart_id: str):
         driver.switch_to.default_content()
 
 def get_chart_data(url, driver, chart_id: str) -> List[str]:
-     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
-    driver = get_firefox()    
-    driver.implicitly_wait(30)
-    driver.get(url)
+    """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
+    with get_firefox() as driver:
+        driver.implicitly_wait(30)
+        driver.get(url)
 
-    with chart_frame(driver, chart_id):
-        csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
-        # Deal with the data
-        if csv_data.startswith('data:'):
-            media, data = csv_data[5:].split(',', 1)
-            # Will likely always have this kind of data type
-            if media != 'application/octet-stream;charset=utf-8':
-                raise ValueError(f'Cannot handle media type "{media}"')
-            csv_string = unquote_plus(data)
-            csv_data = csv_string.splitlines()
-        else:
-            raise ValueError('Cannot handle this csv_data href')
+        with chart_frame(driver, chart_id):
+            csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+            # Deal with the data
+            if csv_data.startswith('data:'):
+                media, data = csv_data[5:].split(',', 1)
+                # Will likely always have this kind of data type
+                if media != 'application/octet-stream;charset=utf-8':
+                    raise ValueError(f'Cannot handle media type "{media}"')
+                csv_string = unquote_plus(data)
+                csv_data = csv_string.splitlines()
+            else:
+                raise ValueError('Cannot handle this csv_data href')
 
     return csv_data
 
-def get_chart_meta(url, driver, chart_ids: Dict[str, str]) -> List:
-    """This method gets all the metadata underneath the data wrapper charts."""
-    driver = get_firefox()
-    driver.implicitly_wait(30)
-    driver.get(url)
-    soup = BeautifulSoup(driver.page_source, 'html5lib')
-    metadata = []
+def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
+    """This method gets all the metadata underneath the data wrapper charts and the metadata."""
+    with get_firefox() as driver: 
+        driver.implicitly_wait(30)
+        driver.get(url)
+        soup = BeautifulSoup(driver.page_source, 'html5lib')
+        metadata = set()
+        
+        chart_metadata = set()
 
-    to_be_matched = ['Total Cases, Recovered, Hospitalizations and Deaths by Date Reported', 'Daily Count of Positive Results and Total Tests for Marin County Residents by Test Date ', 'Cases, Hospitalizations, and Deaths by Age, Gender and Race/Ethnicity ']
-    
-    chart_metadata = set()
+        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
+            if soup_obj.findAll('p'):
+                metadata = set({paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","") for paragraph in soup_obj.findAll('p')})
+            else:
+                raise ValueError('Metadata location has changed.')
 
-    for text in to_be_matched:
-        if soup.select('h4 + p')[0].text:
-            metadata += [soup.select('h4 + p')[0].text]
-        else:
-            raise ValueError('Location of metadata has changed.')
+        # Metadata for each chart visualizing the data of the csv file I'll pull.
+        
+        # new function 
+        for chart_id in chart_ids.values():
+            with chart_frame(driver, chart_id):
+                for soup_obj in soup.findAll('div', attrs={"class": 'notes-block'}):
+                    #chart_metadata = soup_obj
+                    if soup_obj.findAll('span'):
+                        chart_metadata = set({obj.text for obj in soup_obj.findAll('span')})
+                    else:
+                        raise ValueError('Metadata location has changed.')
 
-    # Metadata for each chart visualizing the data of the csv file I'll pull. 
-    for chart_id in chart_ids.values():
-        with chart_frame(driver, chart_id):
-            notes = driver.find_elements_by_class_name('dw-chart-notes')
-            chart_metadata = list({note.text for note in notes})
+            # Switch back to the parent frame to "reset" the context
+            #driver.switch_to.parent_frame() # I think this is handled by the context manager
 
-        # The metadata for the charts is located in elements with the class `dw-chart-notes' 
-        for c in driver.find_elements_by_class_name('dw-chart-notes'):
-            chart_metadata.add(c.text)
-
-        # Switch back to the parent frame to "reset" the context
-        driver.switch_to.parent_frame()
-
-    driver.quit() 
+        # old function - to be deleted
+        # for chart_id in chart_ids.values():
+        #     with chart_frame(driver, chart_id):
+        #         notes = driver.find_elements_by_class_name('dw-chart-notes')
+        #         chart_metadata = list({note.text for note in notes})
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
-    return metadata, list(chart_metadata)
+    return list(metadata), list(chart_metadata)
 
 def extract_csvs(chart_id: str, url: str) -> str:
     """This method extracts the csv string from the data wrapper charts."""
