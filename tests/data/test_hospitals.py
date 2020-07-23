@@ -27,7 +27,6 @@ SAMPLE_OUTPUT = {
     'hospitalized_covid_patients': -1,
     'hospitalized_suspected_covid_patients': 9,
     'icu_available_beds': 16,
-    'rank': 0.0573088,
     'county': 'Marin',
     'hospitalized_covid_confirmed_patients': 10,
     '_id': 103,

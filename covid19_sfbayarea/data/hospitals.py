@@ -124,12 +124,14 @@ def standardize_data(record: Dict) -> Dict:
 
     Specifically:
     - truncate timestamps to ISO 8601-formatted dates
+    - remove "rank" field, if it exists
     - convert all 'null' values to -1
     - cast zero-point floats as int
 
     Also, the key 'todays_date' is converted to 'report_date' for clarity.
     """
     record["report_date"] = truncate_ts(record.pop("todays_date"))
+    record.pop("rank", None)
     record = convert_null(record)
     record = floats_to_ints(record)
 
