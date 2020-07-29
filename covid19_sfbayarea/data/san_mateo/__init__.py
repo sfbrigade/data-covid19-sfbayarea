@@ -8,6 +8,8 @@ from .cases_by_age import CasesByAge
 from .cases_by_ethnicity import CasesByEthnicity
 from .cases_by_gender import CasesByGender
 
+from .meta import Meta
+
 from .deaths_by_age import DeathsByAge
 from .deaths_by_ethnicity import DeathsByEthnicity
 from .deaths_by_gender import DeathsByGender
@@ -27,8 +29,12 @@ def fetch_data() -> Dict:
     data = {
         'name': 'San Mateo County',
         'source_url': LANDING_PAGE,
-        'meta_from_source': 'PowerBI Dashboard',
-        'meta_from_baypd': 'See power_bi_scraper.py for methods',
+        'meta_from_source': Meta().get_data(),
+        'meta_from_baypd': """
+          See power_bi_scraper.py for methods.
+          San Mateo does not provide a timestamp for their last dataset update,
+          so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
+         """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
             'deaths': [], # This dashboard had no time series for deaths.
@@ -54,7 +60,6 @@ def most_recent_case_time(data: Dict[str, Any]) -> str:
     # Offset by 8 hours to ensure the correct day is shown
     start_of_day_pacific = datetime.strptime(most_recent_cases['date'] + '-8', '%Y-%m-%d-%H')
     return start_of_day_pacific.astimezone(pacific_time).isoformat()
-
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
