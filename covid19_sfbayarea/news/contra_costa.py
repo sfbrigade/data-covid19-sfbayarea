@@ -34,7 +34,14 @@ MONTH_HEADING_PATTERN = re.compile(
 )
 
 # The text of a news item is formatted roughly as "title - date".
-ARTICLE_TITLE_PATTERN = re.compile(r'^\s*(.*?)\s*-\s*(\d+/\d+/\d+)\s*$')
+ARTICLE_TITLE_PATTERN = re.compile(r'''
+    ^\s*
+    (.*?)             # Title is everything up to...
+    (?:\s*\|\s*\w+)?  # An optional `| <language>` alternate language link
+    \s*-\s*           # A `-` separator
+    (\d+/\d+/\d+)     # The date in mm/dd/yyyy format
+    \s*$
+''', re.VERBOSE)
 
 
 class ContraCostaNews(NewsScraper):

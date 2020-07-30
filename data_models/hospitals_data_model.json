@@ -1,0 +1,31 @@
+{
+    "name": "Hospitalization - Name1 Name2 County | All CA Counties",
+    "update_time": "yyyy-mm-ddThh:mmz",
+    "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE",
+    "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
+    "meta_from_source": [
+        {
+            "info": {
+                "notes": "NOTES ABOUT THE FIELD, IF ANY",
+                "type_override": "FIELD DATA TYPE - GENERALLY SAME AS 'TYPE' BELOW",
+                "label": "HUMAN-FRIENDLY FIELD LABEL"
+            },
+            "type": "FIELD DATA TYPE - SQL-LIKE (E.G. 'int', 'numeric', 'text')",
+            "id": "FIELD ID IN SERIES DATA"
+        }
+    ],
+    "series": [
+        {
+            "icu_covid_confirmed_patients": -1,
+            "icu_suspected_covid_patients": -1,
+            "hospitalized_covid_patients": -1,
+            "hospitalized_suspected_covid_patients": -1,
+            "icu_available_beds": -1,
+            "county": "Name1 Name2",
+            "hospitalized_covid_confirmed_patients": -1,
+            "_id": -1,
+            "all_hospital_beds": -1,
+            "report_date": "yyyy-mm-dd"
+        }
+    ]
+}
