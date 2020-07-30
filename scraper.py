@@ -3,7 +3,7 @@ import requests
 import json
 from typing import List, Dict
 
-def get_json() -> Dict:
+def get_json() -> List[Dict]:
     """
     Fetches location-keyed data in JSON format from the CDS
     and parses it into a dict
@@ -26,7 +26,7 @@ def clean_dates(dates: Dict[str,Dict]) -> List[Dict]:
         date_list.append(val)
     return date_list
 
-def get_county_data(county_names: List[str], data: Dict) -> Dict:
+def get_county_data(county_names: List[str], data: List[Dict]) -> Dict:
     """
     Takes in a list of county names and maps the corresponding county data
     to that list
