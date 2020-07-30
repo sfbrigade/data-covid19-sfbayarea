@@ -64,8 +64,8 @@ class NewsScraper:
 
     def _in_time_range(self, candidate: NewsItem) -> bool:
         time = candidate.date_published
-        return time < self.to_date and (not self.from_date or
-                                        time >= self.from_date)
+        return time <= self.to_date and (not self.from_date or
+                                         time >= self.from_date)
 
     @classmethod
     def get_news(cls, from_date: datetime = None, to_date: datetime = None) -> NewsFeed:
