@@ -5,7 +5,7 @@ import re
 import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
-from format_error import FormatError # type: ignore
+from ..errors import FormatError  # type: ignore
 
 def get_section_by_title(header: str, soup: BeautifulSoup) -> element.Tag:
     """
