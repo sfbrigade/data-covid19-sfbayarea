@@ -4,6 +4,7 @@ Tools for modeling news feeds and serializing to multiple formats.
 
 from dataclasses import dataclass, field, fields
 from datetime import datetime
+import json
 import locale
 from lxml.builder import E  # type: ignore
 import lxml.etree as ElementTree  # type: ignore
@@ -102,7 +103,12 @@ class NewsFeed:
         self.items.sort(reverse=True, key=attrgetter('id'))
         self.items.sort(reverse=True, key=attrgetter('date_published'))
 
-    def format_json_simple(self) -> Dict:
+    def format_json_simple(self, pretty: bool = True) -> bytes:
+        indent = 2 if pretty else None
+        data = json.dumps(self.format_json_simple_dict(), indent=indent)
+        return data.encode('utf-8')
+
+    def format_json_simple_dict(self) -> Dict:
         """
         Output this news feed in a simplified JSON format. The output is a
         JSON-serializable dict; not an actual string.
@@ -115,7 +121,12 @@ class NewsFeed:
             'newsItems': [item.format_json_simple() for item in self.items]
         }
 
-    def format_json_feed(self) -> Dict:
+    def format_json_feed(self, pretty: bool = True) -> bytes:
+        indent = 2 if pretty else None
+        data = json.dumps(self.format_json_feed_dict(), indent=indent)
+        return data.encode('utf-8')
+
+    def format_json_feed_dict(self) -> Dict:
         """
         Output this news feed in JSON Feed format (https://jsonfeed.org/). The
         output is a JSON-serializable dict; not an actual string.
@@ -145,7 +156,7 @@ class NewsFeed:
     # declaration at the top, but `ElementTree.tostring` very reasonably won't
     # output that if you're asking for a string (`encoding='unicode'`) back
     # instead of bytes (e.g. with `encoding='utf-8'`).
-    def format_rss(self, pretty: bool = True) -> str:
+    def format_rss(self, pretty: bool = True) -> bytes:
         """
         Output this news feed in RSS 2.0 format.
         https://www.rssboard.org/rss-specification
@@ -181,6 +192,5 @@ class NewsFeed:
             {'version': '2.0'}
         )
 
-        #
-        return ElementTree.tostring(rss, encoding='unicode',
-                                    pretty_print=pretty)
+        return ElementTree.tostring(rss, encoding='utf-8', pretty_print=pretty,
+                                    xml_declaration=True)
