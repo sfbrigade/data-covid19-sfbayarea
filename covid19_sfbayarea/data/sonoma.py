@@ -133,7 +133,7 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     # turns the transmission categories on the page into the ones we're using
     transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
     for row in rows:
-        type, number, _pct = get_cells(row)
+        type, number, *rest = get_cells(row)
         if type not in transmission_type_conversion:
             raise FormatError('The transmission type {0} was not found in transmission_type_conversion'.format(type))
         type = transmission_type_conversion[type]
@@ -144,7 +144,7 @@ def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
     tests = {}
     rows = get_rows(tests_tag)
     for row in rows:
-        result, number, _pct = get_cells(row)
+        result, number, *rest = get_cells(row)
         lower_res = result.lower()
         tests[lower_res] = parse_int(number)
     return tests;
@@ -159,7 +159,7 @@ def transform_gender(tag: element.Tag) -> Dict[str, int]:
     rows = get_rows(tag)
     gender_string_conversions = {'Males': 'male', 'Females': 'female'}
     for row in rows:
-        gender, cases, _pct = get_cells(row)
+        gender, cases, *rest = get_cells(row)
         if gender not in gender_string_conversions:
             raise FormatError('An unrecognized gender has been added to the gender table')
         categories[gender_string_conversions[gender]] = parse_int(cases)
@@ -174,20 +174,10 @@ def transform_age(tag: element.Tag) -> List[Dict[str, Union[str, int]]]:
     categories: List[Dict[str, Union[str, int]]] = []
     rows = get_rows(tag)
     for row in rows:
-        group, cases, _pct = get_cells(row)
+        group, cases, *rest = get_cells(row)
         raw_cases = parse_int(cases)
-        age_string_transform = {
-            '0-17': '0_to_17',
-            '18-49': '18_to_49',
-            '50-64': '50_to_64',
-            '65 and Above': '65_and_older',
-            'Under Investigation': 'Unknown'
-        }
 
-        if group not in age_string_transform:
-            raise FormatError('A new age group has been added to the cases by race table')
-
-        element: Dict[str, Union[str, int]] = {'group': age_string_transform[group], 'raw_cases': raw_cases}
+        element: Dict[str, Union[str, int]] = {'group': group, 'raw_cases': raw_cases}
         categories.append(element)
     return categories
 
@@ -224,7 +214,8 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
     rows = get_rows(race_eth_tag)
     for row in rows:
-        group_name, cases, _pct = get_cells(row)
+        print(get_cells(row))
+        group_name, cases, *rest = get_cells(row)
         if group_name not in race_transform:
             raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
@@ -244,7 +235,9 @@ def get_county() -> Dict:
     Main method for populating county data .json
     """
     url = 'https://socoemergency.org/emergency/novel-coronavirus/coronavirus-cases/'
-    page = requests.get(url)
+    # need this to avoid 403 error ¯\_(ツ)_/¯
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+    page = requests.get(url, headers=headers)
     page.raise_for_status()
     sonoma_soup = BeautifulSoup(page.content, 'html5lib')
 
