@@ -35,12 +35,14 @@ def cli_date(date_string: str) -> datetime:
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
 @click.option('--from', 'from_', type=cli_date, default='31',
-              help='Only include news items newer than this date. You can '
-                   'specify a number of days ago, e.g. "14" for 2 weeks ago.')
+              help='Only include news items newer than this date. Instead of '
+                   'a date, you can specify a number of days ago, e.g. "14" '
+                   'for 2 weeks ago.')
 @click.option('--format', default=('json_feed',),
               type=click.Choice(('json_feed', 'json_simple', 'rss')),
               multiple=True)
-@click.option('--output', help='write output file(s) to this directory')
+@click.option('--output', metavar='PATH',
+              help='write output file(s) to this directory')
 def main(counties: Tuple[str], from_: datetime, format: str, output: str) -> None:
     if len(counties) == 0:
         counties = COUNTY_NAMES

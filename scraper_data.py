@@ -13,8 +13,8 @@ COUNTY_NAMES : Tuple[str,...]= tuple(data_scrapers.scrapers.keys())
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
-@click.option('--output', help='write output file to this directory')
-
+@click.option('--output', metavar='PATH',
+              help='write output file to this directory')
 def main(counties: Tuple[str,...], output:str) -> None:
     out = dict()
     if len(counties) == 0:
