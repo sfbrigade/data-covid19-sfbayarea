@@ -19,13 +19,13 @@ This project includes three separate scraping tools for different purposes:
 
 The Legacy CDS Scraper loads Bay Area county data from the [Corona Data Scraper][CDS] project. Run it by typing into your terminal:
 
-```sh
+```console
 $ ./run_scraper.sh
 ```
 
 This takes care of activating the virtual environment and running the actual Python scraping script. **If you are managing your virtual environments separately,** you can run the Python script directly with:
 
-```sh
+```console
 $ python3 scraper.py
 ```
 
@@ -34,7 +34,7 @@ $ python3 scraper.py
 
 The newer county website scraper loads data directly from county data portals or by scraping counties’ public health websites. Running the shell script wrapper will take care of activating the virtual environment for you, or you can run the Python script directly:
 
-```sh
+```console
 # Run the wrapper:
 $ ./run_scraper_data.sh
 
@@ -44,7 +44,7 @@ $ python3 scraper_data.py
 
 By default, it will output a JSON object with data for all currently supported counties. Use the `--help` option to see a information about additional arguments (the same options also work when running the Python script directly):
 
-```sh
+```console
 $ ./run_scraper_data.sh --help
 Usage: scraper_data.py [OPTIONS] [COUNTY]...
 
@@ -58,7 +58,7 @@ Options:
 
 - To scrape a specific county or counties, list the counties you want. For example, to scraper only Alameda and Solano counties:
 
-    ```sh
+    ```console
     $ ./run_scraper_data.sh alameda solano
     ```
 
@@ -69,7 +69,7 @@ Options:
 
 The news scraper finds official county news, press releases, etc. relevant to COVID-19 and formats it as news feeds. Running the shell script wrapper will take care of activating the virtual environment for you, or you can run the Python script directly:
 
-```sh
+```console
 # Run the wrapper:
 $ ./run_scraper_news.sh
 
@@ -79,7 +79,7 @@ $ python3 scraper_news.py
 
 By default, it will output a series of JSON Feed-formatted JSON objects — one for each county. Use the `--help` option to see a information about additional arguments (the same options also work when running the Python script directly):
 
-```sh
+```console
 $ ./run_scraper_news.sh --help
 Usage: scraper_news.py [OPTIONS] [COUNTY]...
 
@@ -100,7 +100,7 @@ Options:
 
 - To scrape a specific county or counties, list the counties you want. For example, to scraper only Alameda and Solano counties:
 
-    ```sh
+    ```console
     $ ./run_scraper_data.sh alameda solano
     ```
 
@@ -108,7 +108,7 @@ Options:
 
 - `--format` sets the output format. Acceptable values are: `json_feed` (see the [JSON Feed spec][json_feed_spec]), `json_simple` (a simplified JSON format), or `rss` ([RSS v2][rss_spec]). Specify this option multiple times to output multiple formats, e.g:
 
-    ```sh
+    ```console
     $ ./run_scraper_data.sh --format rss --format json_feed
     ```
 
