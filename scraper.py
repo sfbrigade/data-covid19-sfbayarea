@@ -3,7 +3,7 @@ import requests
 import json
 from typing import List, Dict
 
-def get_json() -> Dict:
+def get_json() -> List[Dict]:
     """
     Fetches location-keyed data in JSON format from the CDS
     and parses it into a dict
@@ -26,20 +26,20 @@ def clean_dates(dates: Dict[str,Dict]) -> List[Dict]:
         date_list.append(val)
     return date_list
 
-def get_county_data(county_names: List[str], data: Dict) -> Dict:
+def get_county_data(county_names: List[str], data: List[Dict]) -> Dict:
     """
     Takes in a list of county names and maps the corresponding county data
     to that list
     """
     county_dicts = {}
-    for name in county_names:
-        clean_county_data = {}
-        county_data = data[name]
-        county_name = county_data['county']
-        clean_county_data['name'] = county_name
-        clean_county_data['population'] = county_data['population']
-        clean_county_data['cases'] = clean_dates(county_data['dates'])
-        county_dicts[county_name] = clean_county_data
+    for county_data in data:
+        if county_data['name'] in county_names:
+            clean_county_data = {}
+            county_name = county_data['countyName']
+            clean_county_data['name'] = county_name
+            clean_county_data['population'] = county_data['population']
+            clean_county_data['cases'] = clean_dates(county_data['dates'])
+            county_dicts[county_name] = clean_county_data
     return county_dicts
 
 def pipeline(counties: List[str]) -> Dict[str, Dict]:
@@ -52,15 +52,15 @@ def pipeline(counties: List[str]) -> Dict[str, Dict]:
     return county_data
 
 bay_area_counties = [
-    'Solano County, California, United States',
-    'Alameda County, California, United States',
-    'Santa Clara County, California, United States',
-    'San Francisco County, California, United States',
-    'Contra Costa County, California, United States',
-    'San Mateo County, California, United States',
-    'Sonoma County, California, United States',
-    'Napa County, California, United States',
-    'Marin County, California, United States'
+    'Solano County, California, US',
+    'Alameda County, California, US',
+    'Santa Clara County, California, US',
+    'San Francisco County, California, US',
+    'Contra Costa County, California, US',
+    'San Mateo County, California, US',
+    'Sonoma County, California, US',
+    'Napa County, California, US',
+    'Marin County, California, US'
 ]
 covid_data = pipeline(bay_area_counties)
 print(json.dumps(covid_data, indent=4))
