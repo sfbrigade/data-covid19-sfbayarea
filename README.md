@@ -7,7 +7,113 @@ This project requires Python 3 to run. It was built specifically with version `3
 To install this project, you can simply run `./install.sh` in your terminal. This will set up the virtual environment and install all of the dependencies from `requirements.txt` and `requirements-dev.txt`. However, it will not keep the virtual environment running when the script ends. If you want to stay in the virtual environment, you will have to run `source env/bin/activate` separately from the install script.
 
 ## Running the scraper
-To run the scraper, you can use the run script by typing `sh run_scraper.sh` into your terminal. This will enable the virtual environment and run `scraper.py`. Once again, the virtual environment will not stay active after the script finishes running. If you want to run the scraper without the run script, enable the virtual environment, then run `python3 scraper.py`.
+
+This project includes three separate scraping tools for different purposes:
+
+- [Legacy CDS (Corona Data Scraper) Scraper](#legacy-scraper)
+- [County Website Scraper](#county-scraper)
+- [County News Scraper](#news-scraper)
+
+
+### <a id="legacy-scraper"></a> Legacy CDS Scraper
+
+The Legacy CDS Scraper loads Bay Area county data from the [Corona Data Scraper][CDS] project. Run it by typing into your terminal:
+
+```console
+$ ./run_scraper.sh
+```
+
+This takes care of activating the virtual environment and running the actual Python scraping script. **If you are managing your virtual environments separately,** you can run the Python script directly with:
+
+```console
+$ python3 scraper.py
+```
+
+
+### <a id="county-scraper"></a> County Website Scraper
+
+The newer county website scraper loads data directly from county data portals or by scraping counties’ public health websites. Running the shell script wrapper will take care of activating the virtual environment for you, or you can run the Python script directly:
+
+```console
+# Run the wrapper:
+$ ./run_scraper_data.sh
+
+# Or run the script directly if you are managing virtual environments youself:
+$ python3 scraper_data.py
+```
+
+By default, it will output a JSON object with data for all currently supported counties. Use the `--help` option to see a information about additional arguments (the same options also work when running the Python script directly):
+
+```console
+$ ./run_scraper_data.sh --help
+Usage: scraper_data.py [OPTIONS] [COUNTY]...
+
+  Create a .json with data for one or more counties. Supported counties:
+  alameda, san_francisco, solano.
+
+Options:
+  --output PATH  write output file to this directory
+  --help         Show this message and exit.
+```
+
+- To scrape a specific county or counties, list the counties you want. For example, to scraper only Alameda and Solano counties:
+
+    ```console
+    $ ./run_scraper_data.sh alameda solano
+    ```
+
+- `--output` specifies a file to write to instead of your terminal’s STDOUT.
+
+
+### <a id="news-scraper"></a> County News Scraper
+
+The news scraper finds official county news, press releases, etc. relevant to COVID-19 and formats it as news feeds. Running the shell script wrapper will take care of activating the virtual environment for you, or you can run the Python script directly:
+
+```console
+# Run the wrapper:
+$ ./run_scraper_news.sh
+
+# Or run the script directly if you are managing virtual environments youself:
+$ python3 scraper_news.py
+```
+
+By default, it will output a series of JSON Feed-formatted JSON objects — one for each county. Use the `--help` option to see a information about additional arguments (the same options also work when running the Python script directly):
+
+```console
+$ ./run_scraper_news.sh --help
+Usage: scraper_news.py [OPTIONS] [COUNTY]...
+
+  Create a news feed for one or more counties. Supported counties: alameda,
+  contra_costa, marin, napa, san_francisco, san_mateo, santa_clara, solano,
+  sonoma.
+
+Options:
+  --from CLI_DATE                 Only include news items newer than this
+                                  date. Instead of a date, you can specify a
+                                  number of days ago, e.g. "14" for 2 weeks
+                                  ago.
+
+  --format [json_feed|json_simple|rss]
+  --output PATH                   write output file(s) to this directory
+  --help                          Show this message and exit.
+```
+
+- To scrape a specific county or counties, list the counties you want. For example, to scraper only Alameda and Solano counties:
+
+    ```console
+    $ ./run_scraper_data.sh alameda solano
+    ```
+
+- `--from` sets the earliest date/time from which to include news items. It can be a date, like `2020-07-15`, a specific time, like `2020-07-15T10:00:00` for 10 am on July 15th, or a number of days before the current time, like `14` for the last 2 weeks.
+
+- `--format` sets the output format. Acceptable values are: `json_feed` (see the [JSON Feed spec][json_feed_spec]), `json_simple` (a simplified JSON format), or `rss` ([RSS v2][rss_spec]). Specify this option multiple times to output multiple formats, e.g:
+
+    ```console
+    $ ./run_scraper_data.sh --format rss --format json_feed
+    ```
+
+- `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
+
 
 ## Running the API
 The best way to run the API right now is to run the command `FLASK_APP="app.py" FLASK_ENV=development flask run;`. Note that this is not the best way to run the scraper at this time.
@@ -48,3 +154,8 @@ We also use type annotations throughout the project. To check their validity wit
 # In the root directory of the project:
 $ mypy .
 ```
+
+
+[CDS]: https://coronadatascraper.com/
+[json_feed_spec]: https://jsonfeed.org/
+[rss_spec]: https://www.rssboard.org/rss-specification
