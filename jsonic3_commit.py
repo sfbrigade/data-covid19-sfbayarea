@@ -34,8 +34,10 @@ def google_sheet_csv_data(sheet: str, gid: str) -> Iterable[List[str]]:
 
 
 # Pass faq Content sheet id and gid to function
-_reader = google_sheet_csv_data('1_wBXS62S5oBQrwetGc8_-dFvDjEmNqzqHwUeP-DzkYs',
- '1318925039')
+_reader = google_sheet_csv_data(
+    '1_wBXS62S5oBQrwetGc8_-dFvDjEmNqzqHwUeP-DzkYs',
+    '1318925039'
+)
 
 # Date, to be updated each time the program runs, in UTC
 date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
