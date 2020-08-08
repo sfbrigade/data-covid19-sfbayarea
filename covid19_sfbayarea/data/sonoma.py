@@ -97,9 +97,9 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
     # cumul_active = 0
     rows = reversed(get_rows(cases_tag))
     for row in rows:
-        row_cells = row.find_all(['th', 'td'])
-        date = dateutil.parser.parse(row_cells[0].text).date().isoformat()
-        active_cases, new_infected, dead, recoveries = [parse_int(el.text) for el in row_cells[1:]]
+        row_cells = get_cells(row)
+        date = dateutil.parser.parse(row_cells[0]).date().isoformat()
+        active_cases, new_infected, dead, recoveries = [parse_int(el) for el in row_cells[1:]]
 
         cumul_cases += new_infected
         case_dict: TimeSeriesItem = { 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases }
@@ -131,7 +131,7 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     for row in rows:
         type, number, *rest = get_cells(row)
         if type not in transmission_type_conversion:
-            raise FormatError('The transmission type {0} was not found in transmission_type_conversion'.format(type))
+            raise FormatError(f'The transmission type {type} was not found in transmission_type_conversion')
         type = transmission_type_conversion[type]
         transmissions[type] = parse_int(number)
     return transmissions
@@ -171,9 +171,9 @@ def transform_age(tag: element.Tag) -> TimeSeries:
     rows = get_rows(tag)
     for row in rows:
         group, cases, *rest = get_cells(row)
-        raw_cases = parse_int(cases)
+        raw_count = parse_int(cases)
 
-        element: TimeSeriesItem = {'group': group, 'raw_cases': raw_cases}
+        element: TimeSeriesItem = {'group': group, 'raw_count': raw_count}
         categories.append(element)
     return categories
 
@@ -197,13 +197,9 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     NB: These are the only races reported seperatley by Sonoma county at this time
     """
     race_cases = {
-        'African_Amer': 0,
         'Asian': 0,
         'Latinx_or_Hispanic': 0,
-        'Native_Amer':0,
-        'Multiple_Race':0,
         'Other': 0,
-        'Pacific_Islander': 0,
         'White': 0,
         'Unknown': 0
     }
