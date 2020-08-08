@@ -12,8 +12,6 @@ scrapers: Dict[str, Any] = {
     'san_francisco': san_francisco,
     # 'san_mateo': None,
     # 'santa_clara': None,
-    # 'solano': None,
     'sonoma': sonoma,
     'solano': solano,
-    # 'sonoma': None,
 }

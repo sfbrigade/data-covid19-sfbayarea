@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import requests
 import json
 import re
@@ -6,6 +5,9 @@ import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 from ..errors import FormatError
+
+TimeSeriesItem = Dict[str, Union[str, int]]
+TimeSeries = List[TimeSeriesItem]
 
 def get_section_by_title(header: str, soup: BeautifulSoup) -> element.Tag:
     """
@@ -76,8 +78,7 @@ def get_source_meta(soup: BeautifulSoup) -> str:
     definitions_text = definitions_section.text
     return definitions_text.replace('\n', '/').strip()
 
-# apologies for this horror of a output type
-def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[str, int]]]]:
+def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
     """
     Takes in a BeautifulSoup tag for the cases table and returns all cases
     (historic and active), deaths, and recoveries in the form:
@@ -101,12 +102,12 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, List[Dict[str, Union[st
         active_cases, new_infected, dead, recoveries = [parse_int(el.text) for el in row_cells[1:]]
 
         cumul_cases += new_infected
-        case_dict: Dict[str, Union[str, int]] = { 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases }
+        case_dict: TimeSeriesItem = { 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases }
         cases.append(case_dict)
 
         new_deaths = dead - cumul_deaths
         cumul_deaths = dead
-        death_dict: Dict[str, Union[str, int]] = { 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead }
+        death_dict: TimeSeriesItem = { 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead }
         deaths.append(death_dict)
 
         # new_recovered = recoveries - cumul_recovered
@@ -160,19 +161,19 @@ def transform_gender(tag: element.Tag) -> Dict[str, int]:
         categories[gender_string_conversions[gender]] = parse_int(cases)
     return categories
 
-def transform_age(tag: element.Tag) -> List[Dict[str, Union[str, int]]]:
+def transform_age(tag: element.Tag) -> TimeSeries:
     """
     Transform function for the cases by age group table.
     Takes in a BeautifulSoup tag for a table and returns a list of
     dictionaries in which the keys are strings and the values integers
     """
-    categories: List[Dict[str, Union[str, int]]] = []
+    categories: TimeSeries = []
     rows = get_rows(tag)
     for row in rows:
         group, cases, *rest = get_cells(row)
         raw_cases = parse_int(cases)
 
-        element: Dict[str, Union[str, int]] = {'group': group, 'raw_cases': raw_cases}
+        element: TimeSeriesItem = {'group': group, 'raw_cases': raw_cases}
         categories.append(element)
     return categories
 
@@ -209,7 +210,6 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
     rows = get_rows(race_eth_tag)
     for row in rows:
-        print(get_cells(row))
         group_name, cases, *rest = get_cells(row)
         if group_name not in race_transform:
             raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
