@@ -118,6 +118,9 @@ Options:
 ## Data Models
 The data models are in JSON format and are located in the `data_models` directory. For more information, see the [data model readme](./data_models/README.md).
 
+## Data Models
+The data models are in JSON format and are located in the `data_models` directory. For more information, see the [data model readme](./data_models/README.md).
+
 ## Development
 
 We use CircleCI to lint the code and run tests in this repository, but you can (and should!) also run tests locally.
