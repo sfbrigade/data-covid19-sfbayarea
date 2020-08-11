@@ -9,6 +9,9 @@ To install this project, you can simply run `./install.sh` in your terminal. Thi
 ## Running the scraper
 To run the scraper, you can use the run script by typing `sh run_scraper.sh` into your terminal. This will enable the virtual environment and run `scraper.py`. Once again, the virtual environment will not stay active after the script finishes running. If you want to run the scraper without the run script, enable the virtual environment, then run `python3 scraper.py`.
 
+## Data Models
+The data models are in JSON format and are located in the `data_models` directory. For more information, see the [data model readme](./data_models/README.md).
+
 ## Development
 
 We use CircleCI to lint the code and run tests in this repository, but you can (and should!) also run tests locally.
