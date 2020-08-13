@@ -223,6 +223,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
+    print(race_cases)
     return race_cases
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
