@@ -129,15 +129,16 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
     """
     transmissions = {}
-    rows = get_rows(transmission_tag)
+    rows = parse_table(transmission_tag)
     # turns the transmission categories on the page into the ones we're using
     transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
     for row in rows:
-        type, number, *rest = get_cells(row)
+        type = row['Source']
+        number = parse_int(row['Cases'])
         if type not in transmission_type_conversion:
             raise FormatError(f'The transmission type {type} was not found in transmission_type_conversion')
         type = transmission_type_conversion[type]
-        transmissions[type] = parse_int(number)
+        transmissions[type] = number
     return transmissions
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
@@ -176,11 +177,10 @@ def transform_age(tag: element.Tag) -> TimeSeries:
     dictionaries in which the keys are strings and the values integers
     """
     categories: TimeSeries = []
-    rows = get_rows(tag)
+    rows = parse_table(tag)
     for row in rows:
-        group, cases, *rest = get_cells(row)
-        raw_count = parse_int(cases)
-
+        raw_count = parse_int(row['Cases'])
+        group = row['Age Group']
         element: TimeSeriesItem = {'group': group, 'raw_count': raw_count}
         categories.append(element)
     return categories
@@ -212,14 +212,16 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         'Unknown': 0
     }
     race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
-    rows = get_rows(race_eth_tag)
+    rows = parse_table(race_eth_tag)
     for row in rows:
-        group_name, cases, *rest = get_cells(row)
+        group_name = row['Race/Ethnicity']
+        cases = parse_int(row['Cases'])
         if group_name not in race_transform:
             raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
-        race_cases[internal_name] = parse_int(cases)
+        race_cases[internal_name] = cases
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
+    print(race_cases)
     return race_cases
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
