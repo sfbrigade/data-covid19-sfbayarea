@@ -36,6 +36,7 @@ def get_cells(row: element.ResultSet) -> List[str]:
     """
     return [el.text for el in row.find_all(['th', 'td'])]
 
+<<<<<<< HEAD
 def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesItem:
     """
     Takes in a list of headers and a corresponding list of cells
@@ -48,6 +49,12 @@ def parse_table(tag: element.Tag) -> UnformattedSeries:
     Takes in a BeautifulSoup table tag and returns a list of dictionaries 
     where the keys correspond to header names and the values to corresponding cell values
     """
+=======
+def row_list_to_dict(row: List[str], headers: List[str]) -> TimeSeriesItem:
+    return dict(zip(headers, row))
+
+def parse_table(tag: element.Tag) -> TimeSeries:
+>>>>>>> Refactor test and gender functions
     rows = tag.find_all('tr')
     header = rows[0]
     body = rows[1:]
@@ -255,7 +262,7 @@ def get_county() -> Dict:
             'tests': transform_tests(total_tests),
         },
     }
-    return model
+    # return model
 
 if __name__ == '__main__':
     print(json.dumps(get_county(), indent=4))
