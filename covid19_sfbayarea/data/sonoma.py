@@ -40,10 +40,10 @@ def get_cells(row: element.ResultSet) -> List[str]:
     """
     return [el.text for el in row.find_all(['th', 'td'])]
 
-def row_list_to_dict(row: List[str], headers: List[str]) -> Dict[str, str]:
+def row_list_to_dict(row: List[str], headers: List[str]) -> TimeSeriesItem:
     return dict(zip(headers, row))
 
-def parse_table(tag: element.Tag) -> List[Dict[str, str]]:
+def parse_table(tag: element.Tag) -> TimeSeries:
     rows = tag.find_all('tr')
     header = rows[0]
     body = rows[1:]
@@ -52,6 +52,10 @@ def parse_table(tag: element.Tag) -> List[Dict[str, str]]:
     return [row_list_to_dict(row, header_cells) for row in body_cells]
 
 def parse_int(text: str) -> int:
+    """
+    Takes in a number in string form and returns that string in integer form 
+    and handles zeroes represented as dashes
+    """
     text = text.strip()
     if text == '-':
         return 0
@@ -137,12 +141,15 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     return transmissions
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
+    """
+    Transform function for the tests table.
+    Takes in a BeautifulSoup tag for a table and returns a dictionary
+    """
     tests = {}
-    rows = get_rows(tests_tag)
+    rows = parse_table(tests_tag)
     for row in rows:
-        result, number, *rest = get_cells(row)
-        lower_res = result.lower()
-        tests[lower_res] = parse_int(number)
+        lower_res = row['Results'].lower()
+        tests[lower_res] = parse_int(row['Number'])
     return tests;
 
 def transform_gender(tag: element.Tag) -> Dict[str, int]:
@@ -151,15 +158,16 @@ def transform_gender(tag: element.Tag) -> Dict[str, int]:
     Takes in a BeautifulSoup tag for a table and returns a dictionary
     in which the keys are strings and the values integers
     """
-    categories = {}
-    rows = get_rows(tag)
+    genders = {}
+    rows = parse_table(tag)
     gender_string_conversions = {'Males': 'male', 'Females': 'female'}
     for row in rows:
-        gender, cases, *rest = get_cells(row)
+        gender = row['Gender']
+        cases = parse_int(row['Cases'])
         if gender not in gender_string_conversions:
             raise FormatError('An unrecognized gender has been added to the gender table')
-        categories[gender_string_conversions[gender]] = parse_int(cases)
-    return categories
+        genders[gender_string_conversions[gender]] = cases
+    return genders
 
 def transform_age(tag: element.Tag) -> TimeSeries:
     """
@@ -251,7 +259,7 @@ def get_county() -> Dict:
             'tests': transform_tests(total_tests),
         },
     }
-    return model
+    # return model
 
 if __name__ == '__main__':
     print(json.dumps(get_county(), indent=4))
