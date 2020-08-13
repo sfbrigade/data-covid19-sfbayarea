@@ -8,6 +8,8 @@ from ..errors import FormatError
 
 TimeSeriesItem = Dict[str, Union[str, int]]
 TimeSeries = List[TimeSeriesItem]
+UnformattedSeriesItem = Dict[str, str]
+UnformattedSeries = List[UnformattedSeriesItem]
 
 def get_section_by_title(header: str, soup: BeautifulSoup) -> element.Tag:
     """
@@ -28,22 +30,16 @@ def get_table(header: str, soup: BeautifulSoup) -> element.Tag:
     # this lets us get the second cases table
     return tables[-1]
 
-def get_rows(tag: element.Tag) -> List[element.ResultSet]:
-    """
-    Gets all tr elements in a tag but the first, which is the header
-    """
-    return tag.find_all('tr')[1:]
-
 def get_cells(row: element.ResultSet) -> List[str]:
     """
     Gets all th and tr elements within a single tr element
     """
     return [el.text for el in row.find_all(['th', 'td'])]
 
-def row_list_to_dict(row: List[str], headers: List[str]) -> TimeSeriesItem:
+def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesItem:
     return dict(zip(headers, row))
 
-def parse_table(tag: element.Tag) -> TimeSeries:
+def parse_table(tag: element.Tag) -> UnformattedSeries:
     rows = tag.find_all('tr')
     header = rows[0]
     body = rows[1:]
@@ -95,15 +91,12 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
     cumul_cases = 0
     deaths = []
     cumul_deaths = 0
-    # recovered = []
-    # cumul_recovered = 0
-    # active = []
-    # cumul_active = 0
-    rows = reversed(get_rows(cases_tag))
+
+    rows = list(reversed(parse_table(cases_tag)))
     for row in rows:
-        row_cells = get_cells(row)
-        date = dateutil.parser.parse(row_cells[0]).date().isoformat()
-        active_cases, new_infected, dead, recoveries = [parse_int(el) for el in row_cells[1:]]
+        date = dateutil.parser.parse(row['Date']).date().isoformat()
+        new_infected = parse_int(row['New'])
+        dead = parse_int(row['Deaths'])
 
         cumul_cases += new_infected
         case_dict: TimeSeriesItem = { 'date': date, 'cases': new_infected, 'cumul_cases': cumul_cases }
@@ -113,12 +106,6 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
         cumul_deaths = dead
         death_dict: TimeSeriesItem = { 'date': date, 'deaths': new_deaths, 'cumul_deaths': dead }
         deaths.append(death_dict)
-
-        # new_recovered = recoveries - cumul_recovered
-        # recovered.append({ 'date': date, 'recovered': new_recovered, 'cumul_recovered': recoveries })
-        #
-        # new_active = active_cases - cumul_active
-        # active.append({ 'date': date, 'active': new_active, 'cumul_active': active_cases })
 
     return { 'cases': cases, 'deaths': deaths }
 
@@ -221,7 +208,6 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
-    print(race_cases)
     return race_cases
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
@@ -261,7 +247,7 @@ def get_county() -> Dict:
             'tests': transform_tests(total_tests),
         },
     }
-    # return model
+    return model
 
 if __name__ == '__main__':
     print(json.dumps(get_county(), indent=4))
