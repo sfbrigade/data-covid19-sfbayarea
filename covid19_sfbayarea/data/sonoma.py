@@ -70,7 +70,7 @@ def generate_update_time(soup: BeautifulSoup) -> str:
     """
     Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
     """
-    update_time_text = soup.find('time', {'class': 'updated'}).text.strip()
+    update_time_text = soup.find('time', {'class': 'updated'})['datetime']
     try:
         date = dateutil.parser.parse(update_time_text)
     except ValueError:
