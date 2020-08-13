@@ -37,6 +37,7 @@ def get_cells(row: element.ResultSet) -> List[str]:
     return [el.text for el in row.find_all(['th', 'td'])]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesItem:
     """
     Takes in a list of headers and a corresponding list of cells
@@ -55,6 +56,12 @@ def row_list_to_dict(row: List[str], headers: List[str]) -> TimeSeriesItem:
 
 def parse_table(tag: element.Tag) -> TimeSeries:
 >>>>>>> Refactor test and gender functions
+=======
+def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesItem:
+    return dict(zip(headers, row))
+
+def parse_table(tag: element.Tag) -> UnformattedSeries:
+>>>>>>> Fix types
     rows = tag.find_all('tr')
     header = rows[0]
     body = rows[1:]
@@ -223,7 +230,6 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     race_cases['Unknown'] = get_unknown_race(race_eth_tag)
-    print(race_cases)
     return race_cases
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
@@ -263,7 +269,7 @@ def get_county() -> Dict:
             'tests': transform_tests(total_tests),
         },
     }
-    # return model
+    return model
 
 if __name__ == '__main__':
     print(json.dumps(get_county(), indent=4))
