@@ -58,10 +58,21 @@ def parse_table(tag: element.Tag) -> TimeSeries:
 >>>>>>> Refactor test and gender functions
 =======
 def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesItem:
+    """
+    Takes in a list of headers and a corresponding list of cells
+    and returns a dictionary associating the headers with the cells
+    """
     return dict(zip(headers, row))
 
 def parse_table(tag: element.Tag) -> UnformattedSeries:
+<<<<<<< HEAD
 >>>>>>> Fix types
+=======
+    """
+    Takes in a BeautifulSoup table tag and returns a list of dictionaries 
+    where the keys correspond to header names and the values to corresponding cell values
+    """
+>>>>>>> Add docstrings
     rows = tag.find_all('tr')
     header = rows[0]
     body = rows[1:]
