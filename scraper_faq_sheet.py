@@ -2,9 +2,9 @@
 Grabs data from the 'FAQ Content' CSV and turns it into nice JSON: a main faq object containing an array of Section objects, each Section Object in turn holding an array of Question objects consisting of question, answer and related link/s, as so:
     [
         {
-          'Q': 'What are the symptoms of COVID-19?',
-          'A': 'Symptoms of COVID-19 include coughing and shortness of breath. Additionally, a person showing two or more of the following symptoms may have the virus: fever, repeated shaking with chills, muscle pain, headache, sore throat, new loss of taste or smell.',
-          'link': 'https://www.cdc.gov/coronavirus/2019-ncov/symptoms-testing/symptoms.html'
+          'q': 'What are the symptoms of COVID-19?',
+          'a': 'Symptoms of COVID-19 include coughing and shortness of breath. Additionally, a person showing two or more of the following symptoms may have the virus: fever, repeated shaking with chills, muscle pain, headache, sore throat, new loss of taste or smell.',
+          'url': 'https://www.cdc.gov/coronavirus/2019-ncov/symptoms-testing/symptoms.html'
         },
     .
     .
