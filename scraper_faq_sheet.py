@@ -13,7 +13,7 @@ Grabs data from the 'FAQ Content' CSV and turns it into nice JSON: a main faq ob
     etc
 In addition to an array of Question objects, each Section incorporates its title and a 'last updated' date value. For the Python intermediary stage (between CSV stream  and JSON) we will create a hierarchy of nested dictionaries and lists equivalent to the JSON objects and arrays.
 
-Execute with: $ python3 scraper_faq_sheet.py path/to/where/I/want/faq_json
+Execute with: $ python3 scraper_faq_sheet.py > path/to/where/I/want/faq.json
 """
 
 #!/usr/bin/env python3
