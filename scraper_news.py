@@ -68,7 +68,7 @@ def main(counties: Tuple[str], from_: datetime, format: str, output: str) -> Non
                 with parent.joinpath(f'{county}{extension}').open('wb') as f:
                     f.write(data)
             else:
-                print(data)
+                click.echo(data)
 
 
 if __name__ == '__main__':
