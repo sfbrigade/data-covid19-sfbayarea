@@ -5,6 +5,12 @@ from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
 from datetime import datetime
 from contextlib import contextmanager
+from requests import get
+import time
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
  
 from ..webdriver import get_firefox
 from .utils import get_data_model
@@ -15,15 +21,27 @@ def get_county() -> Dict:
     url = 'https://coronavirus.marinhhs.org/surveillance'
     model = get_data_model()
 
-    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "tests": '2Hgir', "age": "VOeBm", "gender": "FEciW", "race_eth": "aBeEd"} 
-    # population totals and transmission data missing.
+    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd", "tests": '2Hgir'}  
+    
+    # i don't think it looked at the chart for aBeEd
+
+
+
+
+
+    # TO-DOs
+    # tests have a different csv, might not even have the one I need?
+
+    # age now has zSHDs as the id associated with the href and VOeBm as the id associated with the csv name.
+    # race_eth chart id has also changed - 6RXFj
+    # Missing in mate data - just add the cases from the inmate data to the current scraper
+
     driver = get_firefox()    
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
     model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
     model['source_url'] = url
-    #model['meta_from_source'] = get_metadata(url, chart_ids)
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
     # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
@@ -42,6 +60,7 @@ def chart_frame(driver, chart_id: str):
         yield frame
     finally:
         driver.switch_to.default_content()
+        driver.quit()
 
 def get_chart_data(url, driver, chart_id: str) -> List[str]:
     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
@@ -66,88 +85,45 @@ def get_chart_data(url, driver, chart_id: str) -> List[str]:
 
 def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
     """This method gets all the metadata underneath the data wrapper charts and the metadata."""
+    metadata = set()
+    chart_metadata = set()
+
     with get_firefox() as driver: 
         driver.implicitly_wait(30)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html5lib')
-        metadata = set()
-        
-        chart_metadata = set()
 
-        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
+        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}): 
             if soup_obj.findAll('p'):
                 metadata = set({paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","") for paragraph in soup_obj.findAll('p')})
             else:
                 raise ValueError('Metadata location has changed.')
 
+    with get_firefox() as driver: # I keep getting a connection error so maybe I need to do this again? seems weird.
+        driver.implicitly_wait(30)
+        driver.get(url)
         # Metadata for each chart visualizing the data of the csv file I'll pull.
-        
-        # new function 
-        for chart_id in chart_ids.values():
-            with chart_frame(driver, chart_id):
-                for soup_obj in soup.findAll('div', attrs={"class": 'notes-block'}):
-                    #chart_metadata = soup_obj
-                    if soup_obj.findAll('span'):
-                        chart_metadata = set({obj.text for obj in soup_obj.findAll('span')})
-                    else:
-                        raise ValueError('Metadata location has changed.')
+        # I had to change my metadata function b/c for whatever reason, my usual code didn't pick up on the class notes block. 
+        # There's something weird with the website that Ricardo and I couldn't quite pinpoint. 
+        source_list = set()
+        for chart_id in chart_ids.values(): 
+            driver.implicitly_wait(30)
+            source = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]').get_attribute('src')
+            source_list.add(source)
 
-            # Switch back to the parent frame to "reset" the context
-            #driver.switch_to.parent_frame() # I think this is handled by the context manager
-
-        # old function - to be deleted
-        # for chart_id in chart_ids.values():
-        #     with chart_frame(driver, chart_id):
-        #         notes = driver.find_elements_by_class_name('dw-chart-notes')
-        #         chart_metadata = list({note.text for note in notes})
+    with get_firefox() as driver:
+        for source in source_list:
+            driver.get(source)
+            #breakpoint() 
+            import time; time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate. 
+            # From the source code it seems that .get() should be synchronous but it's not working like that :( 
+            soup = BeautifulSoup(driver.page_source, 'html5lib') 
+            for data in soup.findAll('div', attrs = {'class': 'notes-block'}):
+                #breakpoint() 
+                chart_metadata.add(data.text.strip())
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return list(metadata), list(chart_metadata)
-
-def extract_csvs(chart_id: str, url: str) -> str:
-    """This method extracts the csv string from the data wrapper charts."""
-    driver = get_firefox()    
-    driver.implicitly_wait(30)
-    driver.get(url)
-
-    frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
-
-    driver.switch_to.frame(frame)
-    # Grab the raw data out of the link's href attribute
-    csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
-
-    # Deal with the data
-    if csv_data.startswith('data:'):
-        media, data = csv_data[5:].split(',', 1)
-        # Will likely always have this kind of data type
-        if media != 'application/octet-stream;charset=utf-8':
-            raise ValueError(f'Cannot handle media type "{media}"')
-        csv_string = unquote_plus(data)
-    else:
-        raise ValueError('Cannot handle this csv_data href')
-
-    # Then leave the iframe
-    driver.switch_to.default_content()
-
-    return csv_string
-
-def get_metadata(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
-
-    # Metadata for each chart visualizing the data of the csv file I'll pull. 
-    for chart_id in chart_ids.values():
-        frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
-        driver.switch_to.frame(frame)
-        # The metadata for the charts is located in elements with the class `dw-chart-notes' 
-        for c in driver.find_elements_by_class_name('dw-chart-notes'):
-            chart_metadata.add(c.text)
-
-        # Switch back to the parent frame to "reset" the context
-        driver.switch_to.parent_frame()
-
-    driver.quit() 
-
-    # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
-    return metadata, list(chart_metadata)
 
 def get_case_series(chart_id: str, url: str, driver) -> List:
     """This method extracts the date, number of cumulative cases, and new cases."""
@@ -341,5 +317,3 @@ def get_test_series(chart_id: str, url: str) -> List:
             break
         
     return test_series
-
-get_county()
