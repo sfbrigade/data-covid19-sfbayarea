@@ -240,7 +240,7 @@ def get_county() -> Dict:
         'update_time': generate_update_time(sonoma_soup),
         'source': url,
         'meta_from_source': get_source_meta(sonoma_soup),
-        'meta_from_baypd': 'Racial "Other" category includes "Black/African American, American Indian/Alaska Native, and Other"',
+        'meta_from_baypd': '',
         'series': transform_cases(hist_cases),
         'case_totals': {
             'transmission_cat': transform_transmission(cases_by_source),
