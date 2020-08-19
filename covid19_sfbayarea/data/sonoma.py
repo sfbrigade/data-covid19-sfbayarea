@@ -1,6 +1,5 @@
 import requests
 import json
-import re
 import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
