@@ -180,18 +180,6 @@ def transform_age(tag: element.Tag) -> TimeSeries:
         categories.append(element)
     return categories
 
-def get_unknown_race(race_eth_tag: element.Tag) -> int:
-    """
-    Gets the notes under the 'Cases by race and ethnicity' table to find the
-    number of cases where the person's race is unknown
-    """
-    parent = race_eth_tag.parent
-    note = parent.find('p').text
-    matches = re.search(r'(\d+) \(\d{1,3}%\) missing race/ethnicity', note)
-    if not matches:
-        raise FormatError('The format of the note with unknown race data has changed')
-    return(parse_int(matches.groups()[0]))
-
 def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     """
     Takes in the BeautifulSoup tag for the cases by race/ethnicity table and
@@ -204,9 +192,19 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         'Latinx_or_Hispanic': 0,
         'Other': 0,
         'White': 0,
-        'Unknown': 0
+        'Unknown': 0,
+        'Multiple_Race': 0,
+        'African_Amer': 0,
     }
-    race_transform = {'Asian/Pacific Islander, non-Hispanic': 'Asian', 'Hispanic/Latino': 'Latinx_or_Hispanic', 'Other*, non-Hispanic': 'Other', 'White, non-Hispanic': 'White'}
+    race_transform = {
+        'Asian / Pacific Islander, non-Hispanic': 'Asian',
+        'Hispanic / Latino': 'Latinx_or_Hispanic',
+        'Other': 'Other', 
+        'White, non-Hispanic': 'White',
+        'Multi-Race': 'Multiple_Race',
+        'Black / African American, non-Hispanic': 'African_Amer',
+        'Unknown': 'Unknown'
+    }
     rows = parse_table(race_eth_tag)
     for row in rows:
         group_name = row['Race/Ethnicity']
@@ -215,7 +213,6 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
             raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
-    race_cases['Unknown'] = get_unknown_race(race_eth_tag)
     return race_cases
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
