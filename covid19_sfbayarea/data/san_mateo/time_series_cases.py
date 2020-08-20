@@ -1,26 +1,24 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
-from .power_bi_querier import PowerBiQuerier
+from .time_series_daily import TimeSeriesDaily
+from .time_series_cumulative import TimeSeriesCumulative
 
-class TimeSeriesCases(PowerBiQuerier):
-    def __init__(self) -> None:
-        self.source = 'c'
-        self.name = 'cases_by_day'
-        self.property = 'date_result'
-        super().__init__()
+class TimeSeriesCases():
+    def get_data(self) -> List[Dict[str, int]]:
+        daily_cases = TimeSeriesDaily().get_data()
+        cumulative_cases = TimeSeriesCumulative().get_data()
+        self._assert_daily_and_cumulative_cases_match(daily_cases, cumulative_cases)
 
-    def _parse_data(self, response_json: Dict) -> List[Dict[str, Any]]:
-        data_pairs = super()._parse_data(response_json)
-        results = [ { 'date': self._timestamp_to_date(timestamp), 'cases': cases } for timestamp, cases in data_pairs ]
-        self._add_cumulative_data(results)
-        return results
+        return [{
+            'date': self._timestamp_to_date(timestamp),
+            'cases': daily_cases[timestamp],
+            'cumul_cases': cumulative_cases[timestamp]
+        } for timestamp in daily_cases.keys()]
 
     def _timestamp_to_date(self, timestamp_in_milliseconds: int) -> str:
         return datetime.utcfromtimestamp(timestamp_in_milliseconds / 1000).strftime('%Y-%m-%d')
 
-    def _add_cumulative_data(self, results: List[Dict[str, Any]]) -> None:
-        running_total = 0
-        for result in results:
-            running_total += result['cases']
-            result['cumul_cases'] = running_total
+    def _assert_daily_and_cumulative_cases_match(self, daily_cases: List[int], cumulative_cases: List[int]) -> None:
+        if daily_cases.keys() != cumulative_cases.keys():
+            raise(ValueError('The cumulative and daily cases do not have the same timestamps!'))

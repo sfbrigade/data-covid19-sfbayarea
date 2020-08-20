@@ -31,9 +31,9 @@ def fetch_data() -> Dict:
         'source_url': LANDING_PAGE,
         'meta_from_source': Meta().get_data(),
         'meta_from_baypd': """
-          See power_bi_scraper.py for methods.
-          San Mateo does not provide a timestamp for their last dataset update,
-          so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
+            See power_bi_scraper.py for methods.
+            San Mateo does not provide a timestamp for their last dataset update,
+            so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),

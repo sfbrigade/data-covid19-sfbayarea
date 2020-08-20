@@ -6,13 +6,30 @@ from requests import get
 
 class Meta():
     def get_data(self) -> str:
-        url = ''.join([
-            'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/',
-            PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY,
-            '/modelsAndExploration?preferReadOnlySession=true'
-        ])
-        response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
-        return self._extract_meta(response.json())
+        try:
+            url = ''.join([
+                'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/',
+                PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY,
+                '/modelsAndExploration?preferReadOnlySession=true'
+            ])
+            response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
+            return self._extract_meta(response.json())
+        except:
+            return """
+            Because of limited testing capacity, the number of cases detected
+            through testing represents only a small portion of the total number
+            of likely cases in the County. COVID-19 data are reported as timely,
+            accurately, and completely as we have available. Data are updated as
+            we receive information that is more complete and will change over
+            time as we learn more. Cases are lab-confirmed COVID-19 cases
+            reported to San Mateo County Public Health by providers, commercial
+            laboratories, and academic laboratories, including reporting results
+            through the California Reportable Disease Information Exchange. A
+            lab-confirmed case is defined as detection of SARS-CoV-2 RNA in a
+            clinical specimen using a molecular amplification detection test.
+            Cases are counted by date the lab result was reported.  Deaths
+            reported in this dashboard include only San Mateo County residents.
+            """
 
     def _extract_meta(self, response_json: Dict[str, Any]) -> str:
         visual_containers = self._dig(response_json, ['exploration', 'sections', 0, 'visualContainers'])
