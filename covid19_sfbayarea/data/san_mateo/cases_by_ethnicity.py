@@ -8,7 +8,7 @@ class CasesByEthnicity(PowerBiQuerier):
         self.property = 'race_cat'
         super().__init__()
 
-    def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]:
+    def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]: # type: ignore
         results = super()._parse_data(response_json)
         return { self._map_ethnicity_to_data_model(ethnicity.strip()): count for ethnicity, count in results }
 

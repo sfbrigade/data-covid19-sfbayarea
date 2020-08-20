@@ -41,13 +41,13 @@ class Meta():
         paragraphs = self._extract_paragraphs(configs_with_text)
         return [text_run['value'] for paragraph in paragraphs for text_run in paragraph['textRuns']]
 
-    def _extract_paragraphs(self, configs: List[List[Dict]]):
+    def _extract_paragraphs(self, configs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         json_path = ['singleVisual', 'objects', 'general', 0, 'properties', 'paragraphs']
         return [paragraph for config in configs for paragraph in self._dig(config, json_path)]
 
-    def _dig(self, results: Dict[str, List], json_path: List[Any]) -> List[Dict[str, int]]:
+    def _dig(self, items: Dict[str, Any], json_path: List[Any]) -> List[Dict[str, int]]:
         try:
-            return reduce(lambda subitem, next_step: subitem[next_step], json_path, results) # type: ignore
+            return reduce(lambda subitem, next_step: subitem[next_step], json_path, items) # type: ignore
         except (KeyError, TypeError, IndexError) as err:
             print('Error reading returned JSON, check path: ', err)
             raise(err)
