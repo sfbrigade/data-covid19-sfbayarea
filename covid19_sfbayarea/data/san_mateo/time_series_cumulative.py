@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any, Dict, List
 from .power_bi_querier import PowerBiQuerier
 
@@ -31,7 +30,6 @@ class TimeSeriesCumulative(PowerBiQuerier):
 
     def _binding(self) -> Dict[str, Any]:
         return {
-            'Primary': { 'Groupings': [{ 'Projections': [0, 1] }] },
             'DataReduction': {
                 'DataVolume': 4,
                 'Primary': { 'Sample': {} }

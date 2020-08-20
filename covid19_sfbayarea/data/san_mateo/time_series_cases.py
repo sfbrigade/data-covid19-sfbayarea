@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Dict, List
 
 from .time_series_daily import TimeSeriesDaily
 from .time_series_cumulative import TimeSeriesCumulative

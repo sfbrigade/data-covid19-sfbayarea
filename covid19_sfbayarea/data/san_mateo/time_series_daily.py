@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any, Dict, List
 
 from .power_bi_querier import PowerBiQuerier
