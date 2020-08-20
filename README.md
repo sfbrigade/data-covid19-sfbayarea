@@ -7,7 +7,6 @@ This project requires Python 3 to run. It was built specifically with version `3
 To install this project, you can simply run `./install.sh` in your terminal. This will set up the virtual environment and install all of the dependencies from `requirements.txt` and `requirements-dev.txt`. However, it will not keep the virtual environment running when the script ends. If you want to stay in the virtual environment, you will have to run `source env/bin/activate` separately from the install script.
 
 ## Running the scraper
-
 This project includes three separate scraping tools for different purposes:
 
 - [Legacy CDS (Corona Data Scraper) Scraper](#legacy-scraper)
@@ -113,7 +112,6 @@ Options:
     ```
 
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
-
 
 ## Data Models
 The data models are in JSON format and are located in the `data_models` directory. For more information, see the [data model readme](./data_models/README.md).
