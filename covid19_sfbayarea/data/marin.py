@@ -118,8 +118,6 @@ def get_inmate_totals(chart_id: str, url: str) -> Tuple:
 
     keys = csv_reader.fieldnames
 
-    series: list = list()
-
     if keys != ['Updated', 'Total Confirmed Cases', 'Total Resolved Cases', 'COVID-19 Deaths']:
         raise ValueError('The headers have changed')
 
