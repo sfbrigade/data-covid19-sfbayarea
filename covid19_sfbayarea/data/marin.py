@@ -5,11 +5,7 @@ from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
 from datetime import datetime
 from contextlib import contextmanager
-from requests import get
 import time
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 
  
 from ..webdriver import get_firefox
@@ -21,39 +17,29 @@ def get_county() -> Dict:
     url = 'https://coronavirus.marinhhs.org/surveillance'
     model = get_data_model()
 
-    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd", "tests": '2Hgir'}  
-    
-    # i don't think it looked at the chart for aBeEd
-
-
-
-
-
-    # TO-DOs
-    # tests have a different csv, might not even have the one I need?
-
-    # age now has zSHDs as the id associated with the href and VOeBm as the id associated with the csv name.
-    # race_eth chart id has also changed - 6RXFj
-    # Missing in mate data - just add the cases from the inmate data to the current scraper
-
-    driver = get_firefox()    
+    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "inmates": "KCNZn", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd"}
+    # I removed "tests": '2Hgir' from chart_ids b/c it seems to have disappeared from the website?
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
-    model["meta_from_baypd"] = "There's no actual update time on their website. Not all charts are updated daily."
+    model["meta_from_baypd"] = ["There's no actual update time on their website. Not all charts are updated daily.", "The cases and deaths total include inmate numbers, but the cases and deaths series, the testing data and data broken down by race/ethnicity, gender and age do not."]
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
-    # model["series"]["cases"] = get_case_series(chart_ids["cases"], url) 
-    # model["series"]["deaths"] =  get_death_series(chart_ids["deaths"], url)
-    # model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    # model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
-    # model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
-    # model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
+    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases') 
+    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths') 
+    model["inmates"]["cases"] = get_inmate_totals(chart_ids["inmates"], url)[0]
+    model["inmates"]["deaths"] = get_inmate_totals(chart_ids["inmates"], url)[1]
+
+    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
+    model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
+    model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
     return model
 
 @contextmanager
-def chart_frame(driver, chart_id: str):
+def chart_frame(driver, chart_id: str): # type: ignore 
+    # is this bad practice? I didn't know what type to specify here for the frame.
     frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
     driver.switch_to.frame(frame)
     try:
@@ -62,7 +48,7 @@ def chart_frame(driver, chart_id: str):
         driver.switch_to.default_content()
         driver.quit()
 
-def get_chart_data(url, driver, chart_id: str) -> List[str]:
+def get_chart_data(url: str, chart_id: str) -> List[str]: 
     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
     with get_firefox() as driver:
         driver.implicitly_wait(30)
@@ -83,10 +69,10 @@ def get_chart_data(url, driver, chart_id: str) -> List[str]:
 
     return csv_data
 
-def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
-    """This method gets all the metadata underneath the data wrapper charts and the metadata."""
-    metadata = set()
-    chart_metadata = set()
+def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
+    """This method gets all the metadata underneath the data wrapper charts and the metadata at the top of the county dashboard."""
+    metadata: set = set()
+    chart_metadata: set = set()
 
     with get_firefox() as driver: 
         driver.implicitly_wait(30)
@@ -105,7 +91,7 @@ def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
         # Metadata for each chart visualizing the data of the csv file I'll pull.
         # I had to change my metadata function b/c for whatever reason, my usual code didn't pick up on the class notes block. 
         # There's something weird with the website that Ricardo and I couldn't quite pinpoint. 
-        source_list = set()
+        source_list: set = set()
         for chart_id in chart_ids.values(): 
             driver.implicitly_wait(30)
             source = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]').get_attribute('src')
@@ -115,7 +101,7 @@ def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
         for source in source_list:
             driver.get(source)
             #breakpoint() 
-            import time; time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate. 
+            time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate. 
             # From the source code it seems that .get() should be synchronous but it's not working like that :( 
             soup = BeautifulSoup(driver.page_source, 'html5lib') 
             for data in soup.findAll('div', attrs = {'class': 'notes-block'}):
@@ -125,84 +111,64 @@ def get_chart_meta(url, chart_ids: Dict[str, str]) -> List:
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return list(metadata), list(chart_metadata)
 
-def get_case_series(chart_id: str, url: str, driver) -> List:
-    """This method extracts the date, number of cumulative cases, and new cases."""
-    
-    csv_data = get_chart_data(url, driver, chart_id)
+def get_inmate_totals(chart_id: str, url: str) -> Tuple:
+    """This method extracts the number of cases and deaths for San Quentin inmates."""
+    csv_data = get_chart_data(url, chart_id)
     csv_reader = csv.DictReader(csv_data)
-    # csv_str = extract_csvs(chart_id, url)
-    # csv_reader = csv.DictReader(csv_str.splitlines())
 
     keys = csv_reader.fieldnames
 
     series: list = list()
 
-    if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
+    if keys != ['Updated', 'Total Confirmed Cases', 'Total Resolved Cases', 'COVID-19 Deaths']:
         raise ValueError('The headers have changed')
 
-    case_history = []
-
     for row in csv_reader:
-        daily: dict = dict()
-        date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
-        daily["date"] = date_time_obj.strftime('%Y-%m-%d')
-        # Collect the case totals in order to compute the change in cases per day 
-        case_history.append(int(row["Total Cases"]))
-        daily["cumul_cases"] = int(row["Total Cases"]) 
-        series.append(daily)
+        cases = row['Total Confirmed Cases']
+        deaths = row['COVID-19 Deaths']
 
-    case_history_diff = []
-    # Since i'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
-    for i in range(0, len(case_history)-1):
-        case_history_diff.append((int(case_history[i+1]) - int(case_history[i])) + int(series[0]["cumul_cases"]))
-        # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
-    case_history_diff.insert(0, int(series[0]["cumul_cases"]))
+    return (cases, deaths) 
 
-    for val, case_num in enumerate(case_history_diff):
-        series[val]["cases"] = case_num 
-    return series
+def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str) -> List:
+    """This method extracts the date, number of cases/deaths, and new cases/deaths."""
 
-def get_death_series(chart_id: str, url: str, driver) -> List:
-    """This method extracts the date, number of cumulative deaths, and new deaths."""
-    csv_data = get_chart_data(url, driver, chart_id)
+    csv_data = get_chart_data(url, chart_id)
     csv_reader = csv.DictReader(csv_data)
-    # csv_str = extract_csvs(chart_id, url)
-    # csv_reader = csv.DictReader(csv_str.splitlines())
+
     keys = csv_reader.fieldnames
 
     series: list = list()
 
-    if keys != ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths']:
-        raise ValueError('The headers have changed.')
+    if keys != headers:
+        raise ValueError('The headers have changed')
 
-    death_history = []
+    history: list = list()
 
     for row in csv_reader:
         daily: dict = dict()
         date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
         daily["date"] = date_time_obj.strftime('%Y-%m-%d')
         # Collect the case totals in order to compute the change in cases per day 
-        death_history.append(int(row["Total Deaths"]))
-        daily["cumul_deaths"] = int(row["Total Deaths"])
+        history.append(int(row[typ]))
+        daily[model_typ] = int(row[typ]) 
         series.append(daily)
 
-    death_history_diff = []
-    # Since I'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
-    for i in range(0, len(death_history)-1):
-        death_history_diff.append((int(death_history[i+1]) - int(death_history[i])) + int(series[0]["cumul_deaths"]))
+    history_diff: list = list()
+    # Since i'm substracting pairwise elements, I need to adjust the range so I don't get an off by one error.
+    for i in range(0, len(history)-1):
+        history_diff.append((int(history[i+1]) - int(history[i])) + int(series[0][model_typ]))
         # from what I've seen, series[0]["cumul_cases"] will be 0, but I shouldn't assume that.
-    death_history_diff.insert(0, int(series[0]["cumul_deaths"]))
+    history_diff.insert(0, int(series[0][model_typ]))
 
-    for val, case_num in enumerate(death_history_diff):
-        series[val]["deaths"] = case_num
+    for val, num in enumerate(history_diff):
+        series[val][new_count] = num 
     return series
 
-def get_breakdown_age(chart_id: str, url: str, driver) -> Tuple[List, List]:
+def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
     """This method gets the breakdown of cases and deaths by age."""
-    csv_data = get_chart_data(url, driver, chart_id)
+    csv_data = get_chart_data(url, chart_id)
     csv_reader = csv.DictReader(csv_data)
-    # csv_str = extract_csvs(chart_id, url)
-    # csv_reader = csv.DictReader(csv_str.splitlines())
+
     keys = csv_reader.fieldnames
 
     c_brkdown: list = list()
@@ -211,7 +177,7 @@ def get_breakdown_age(chart_id: str, url: str, driver) -> Tuple[List, List]:
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
 
-    key_mapping = {"0-18": "0_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"} 
+    key_mapping = {"0-9": "0_to_9", "10-18": "10_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"} 
 
     for row in csv_reader:
         c_age: dict = dict()
@@ -230,20 +196,19 @@ def get_breakdown_age(chart_id: str, url: str, driver) -> Tuple[List, List]:
 
     return c_brkdown, d_brkdown
 
-def get_breakdown_gender(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]:
+def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by gender."""
-    csv_data = get_chart_data(url, driver, chart_id)
+    csv_data = get_chart_data(url, chart_id)
     csv_reader = csv.DictReader(csv_data)
-    # csv_str = extract_csvs(chart_id, url)
-    # csv_reader = csv.DictReader(csv_str.splitlines())
+
     keys = csv_reader.fieldnames
 
     if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed.')
 
     genders = ['male', 'female']
-    c_gender = {}
-    d_gender = {}
+    c_gender: dict = dict()
+    d_gender: dict = dict()
     
     for row in csv_reader:
         # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
@@ -257,27 +222,24 @@ def get_breakdown_gender(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]:
 
     return c_gender, d_gender
 
-def get_breakdown_race_eth(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]:
+def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by race/ethnicity."""
 
-    csv_data = get_chart_data(url, driver, chart_id)
+    csv_data = get_chart_data(url, chart_id)
     csv_reader = csv.DictReader(csv_data)
-    #csv_str = extract_csvs(chart_id, url)
-    #csv_reader = csv.DictReader(csv_str.splitlines())
+
     keys = csv_reader.fieldnames
     
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
         raise ValueError("The headers have changed.")
 
-    key_mapping = {"black/african american":"African_Amer", "hispanic/latino": "Latinx_or_Hispanic",
-            "american indian/alaska native": "Native_Amer", "native hawaiian/pacific islander": "Pacific_Islander", "white": "White", "asian": "Asian", "multi or other race": "Multi or Other Race"}
-            # "Multiple_Race", "Other" are not separate in this data set - they are one value under "Multi or Other Race"
+    key_mapping = {"Black/African American":"African_Amer", "Hispanic/Latino": "Latinx_or_Hispanic", "White": "White", "Asian": "Asian", "Native Hawaiian/Pacific Islander": "Pacific_Islander", "American Indian/Alaska Native": "Native_Amer", "Multi or Other Race": "Multi_or_Other"}
 
-    c_race_eth = {}
-    d_race_eth = {}
+    c_race_eth: dict = dict()
+    d_race_eth: dict = dict()
 
     for row in csv_reader:
-        race_eth = row["Race/Ethnicity"].lower()
+        race_eth = row["Race/Ethnicity"]
         if race_eth not in key_mapping:
             raise ValueError("The race_eth groups have changed.")
         else:
@@ -288,9 +250,7 @@ def get_breakdown_race_eth(chart_id: str, url: str, driver) -> Tuple[Dict, Dict]
 
 def get_test_series(chart_id: str, url: str) -> List:
     """This method gets the date, the number of positive and negative tests on that date, and the number of cumulative positive and negative tests."""
-    csv_data = get_chart_data(url, driver, chart_id)
-    # csv_ = extract_csvs(chart_id, url)
-    # csv_strs = csv_.splitlines()
+    csv_data = get_chart_data(url, chart_id)
 
     dates, positives, negatives = [row.split(',')[1:] for row in csv_data] 
     series = zip(dates, positives, negatives)

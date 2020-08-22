@@ -115,8 +115,8 @@ Options:
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
 
 
-## Running the API
-The best way to run the API right now is to run the command `FLASK_APP="app.py" FLASK_ENV=development flask run;`. Note that this is not the best way to run the scraper at this time.
+## Data Models
+The data models are in JSON format and are located in the `data_models` directory. For more information, see the [data model readme](./data_models/README.md).
 
 ## Development
 

@@ -86,6 +86,7 @@ Below are the tabulations we are making by gender, age group, race/ethnicity, an
             "Pacific_Islander":-1,
             "White":-1,
             "Unknown":-1
+            "Multi_or_Other": -1 
         },
         "underlying_cond": {
             "none":-1,
@@ -137,7 +138,18 @@ The fields will be used for normalizing the county case and death tabulations, a
     }
 ```
 
-5. __Hospitalization Data__
+6. __Inmate Data__
+
+This part of the data model currently only applies to Marin County, which reports the case and death count separately from the case and death count in the Marin County community. Note that the case and death data available for inmates is not in series form; there are only aggregated totals.
+
+```
+    "inmates": {
+        "cases": -1,
+        "deaths": -1
+    }
+```
+
+6. __Hospitalization Data__
 
 California COVID-19 hospitalization data is retrieved separately from the the
 [California Health and Human Services Open Data Portal
@@ -204,6 +216,8 @@ Scraper authors, please keep an eye out for amendments to the data model.
 
 # Race and Ethnicity
 We need to collapse counties that report race and ethnicity into one race/ethnicity dimension. This section will be updated pending information about San Francisco County's methods for reporting race and ethnicity.
+
+The category "Multi_or_Other" was included because Marin rolls up the numbers from "Multi" and "Other" into one.
 
 # Gender
 One future potential issue is that some counties still lump non-binary and cis-gender people under "Other", and other counties have started to differentiate. Our data model would ideally match the most detailed county's gender categories. A county with only the "Other" county would have the value of -1 for the non male/female categories, indicating that they are not collecting that information. However, this means that our `"Other"` category would not be internally comparable or consistent. The `"Other"` category for a county that has "Male, Female, Other, MTF, FTM" as separate datapoints should really be called `"Other - not MTF, not FTM"` and is not comparable to the `"Other"` category for a county that only has "Male, Female, Other".
