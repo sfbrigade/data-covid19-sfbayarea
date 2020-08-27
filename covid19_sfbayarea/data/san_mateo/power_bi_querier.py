@@ -1,7 +1,7 @@
 import json
-from functools import reduce
 from requests import post
 from typing import Any, Dict, List
+from .utils import dig
 
 class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
@@ -30,7 +30,7 @@ class PowerBiQuerier:
         return response.json()
 
     def _parse_data(self, response_json: Dict[str, List]) -> List:
-        results = self._dig_results(response_json)
+        results = dig(response_json, self.JSON_PATH)
         return self._extract_lists(results)
 
     def _query_params(self) -> Dict[str, Any]:
@@ -103,13 +103,6 @@ class PowerBiQuerier:
     def _assert_init_variables_are_set(self) -> None:
         if not (getattr(self, 'source') and getattr(self, 'name') and getattr(self, 'property')):
             raise(UnboundLocalError('Please set source, name, and property.'))
-
-    def _dig_results(self, results: Dict[str, List]) -> List[Dict[str, int]]:
-        try:
-            return reduce(lambda subitem, next_step: subitem[next_step], self.JSON_PATH, results) # type: ignore
-        except (KeyError, TypeError, IndexError) as err:
-            print('Error reading returned JSON, check path: ', err)
-            raise(err)
 
     def _extract_lists(self, results: List[Dict]) -> List[List]:
         pairs: List[List] = []

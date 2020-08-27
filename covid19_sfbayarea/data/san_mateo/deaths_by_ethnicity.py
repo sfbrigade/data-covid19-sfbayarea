@@ -1,5 +1,6 @@
 from typing import Dict, List
 from .power_bi_querier import PowerBiQuerier
+from .utils import map_ethnicity_to_data_model
 
 class DeathsByEthnicity(PowerBiQuerier):
     def __init__(self) -> None:
@@ -10,4 +11,4 @@ class DeathsByEthnicity(PowerBiQuerier):
 
     def _parse_data(self, response_json: Dict[str, List]) -> List[Dict[str, int]]:
         results = super()._parse_data(response_json)
-        return [ { ethnicity.strip(): count } for ethnicity, count in results ]
+        return { map_ethnicity_to_data_model(ethnicity): count for ethnicity, count in results }

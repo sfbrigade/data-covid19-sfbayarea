@@ -1,5 +1,6 @@
 from typing import Dict, List
 from .power_bi_querier import PowerBiQuerier
+from .utils import map_ethnicity_to_data_model
 
 class CasesByEthnicity(PowerBiQuerier):
     def __init__(self) -> None:
@@ -10,18 +11,4 @@ class CasesByEthnicity(PowerBiQuerier):
 
     def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]: # type: ignore
         results = super()._parse_data(response_json)
-        return { self._map_ethnicity_to_data_model(ethnicity.strip()): count for ethnicity, count in results }
-
-    def _map_ethnicity_to_data_model(self, ethnicity: str) -> str:
-        mapping = {
-            'American Indian/Alaska Native': 'Native_Amer',
-            'Asian': 'Asian',
-            'Latino/Hispanic': 'Latinx_or_Hispanic',
-            'Black': 'African_Amer',
-            'Multirace': 'Multiple_Race',
-            'Other': 'Other',
-            'Pacific Islander': 'Pacific_Islander',
-            'White': 'White',
-            'Unknown': 'Unknown'
-        }
-        return mapping.get(ethnicity, ethnicity)
+        return { map_ethnicity_to_data_model(ethnicity): count for ethnicity, count in results }
