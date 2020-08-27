@@ -16,9 +16,9 @@ def map_ethnicity_to_data_model(ethnicity: str) -> str:
     }
     return mapping.get(ethnicity_without_whitespace, ethnicity_without_whitespace)
 
-def dig(items: Dict[str, Any], json_path: List[Any]) -> List[Dict[str, int]]:
+def dig(items: Dict[str, Any], json_path: List[Any]) -> Any:
     try:
-        return reduce(lambda subitem, next_step: subitem[next_step], json_path, items) # type: ignore
+        return reduce(lambda subitem, next_step: subitem[next_step], json_path, items)
     except (KeyError, TypeError, IndexError) as err:
         print('Error reading returned JSON, check path: ', err)
         raise(err)

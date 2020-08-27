@@ -18,6 +18,7 @@ class PowerBiQuerier:
         return self._parse_data(response_json)
 
     def _set_defaults(self) -> None:
+        self.function = getattr(self, 'function', 'CountNotNull')
         self.model_id = getattr(self, 'model_id', self.DEFAULT_MODEL_ID)
         self.name = getattr(self, 'name')
         self.powerbi_resource_key = getattr(self, 'powerbi_resource_key', self.DEFAULT_POWERBI_RESOURCE_KEY)
@@ -67,14 +68,17 @@ class PowerBiQuerier:
                 'Column': self._column_expression(self.property),
                 'Name': f'{self.name}.{self.property}'
             },
-            {
-                'Aggregation': {
-                    'Expression': { 'Column': self._column_expression('n') },
-                    'Function': 0
-                },
-                'Name': f'CountNonNull({self.name}.n)'
-            }
+            self._aggregation('n')
        ]
+
+    def _aggregation(self, property: str) -> Dict[str, Any]:
+        return {
+            'Aggregation': {
+                'Expression': { 'Column': self._column_expression(property) },
+                'Function': 0
+            },
+            'Name': f'{self.function}({self.name}.{property})'
+        }
 
     def _order_by(self) -> List[Dict[str, Any]]:
         return [
@@ -101,8 +105,8 @@ class PowerBiQuerier:
         }
 
     def _assert_init_variables_are_set(self) -> None:
-        if not (getattr(self, 'source') and getattr(self, 'name') and getattr(self, 'property')):
-            raise(UnboundLocalError('Please set source, name, and property.'))
+        if not (getattr(self, 'source') and getattr(self, 'name') and getattr(self, 'property') and getattr(self, 'function')):
+            raise(UnboundLocalError('Please set source, name, property, and function.'))
 
     def _extract_lists(self, results: List[Dict]) -> List[List]:
         pairs: List[List] = []

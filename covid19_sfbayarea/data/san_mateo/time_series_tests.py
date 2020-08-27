@@ -4,6 +4,7 @@ from .power_bi_querier import PowerBiQuerier
 
 class TimeSeriesTests(PowerBiQuerier):
     def __init__(self) -> None:
+        self.function = 'Sum'
         self.model_id = 275728
         self.powerbi_resource_key = '1b96a93b-9500-44cf-a3ce-942805b455ce'
         self.source = 'l'
@@ -47,15 +48,6 @@ class TimeSeriesTests(PowerBiQuerier):
             self._aggregation('unknown_per_day'),
             self._aggregation('negative_per_day')
        ]
-
-    def _aggregation(self, property: str) -> Dict[str, Any]:
-        return {
-            'Aggregation': {
-                'Expression': { 'Column': self._column_expression(property) },
-                'Function': 0
-            },
-            'Name': f'Sum({self.name}.{property})'
-        }
 
     def _binding(self) -> Dict[str, Any]:
         return {
