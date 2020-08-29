@@ -22,7 +22,7 @@ def get_county() -> Dict:
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
-    model["meta_from_baypd"] = ["Negative and pending tests are excluded from the Marin County test data."]
+    model["meta_from_baypd"] = ""
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
@@ -105,6 +105,9 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
             for data in soup.findAll('div', attrs = {'class': 'notes-block'}):
                 #breakpoint() 
                 chart_metadata.add(data.text.strip())
+
+    #Manually adding in metadata about testing data
+    chart_metadata.add("Negative and pending tests are excluded from the Marin County test data.")
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return list(metadata), list(chart_metadata)
