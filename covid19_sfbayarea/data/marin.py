@@ -17,21 +17,19 @@ def get_county() -> Dict:
     url = 'https://coronavirus.marinhhs.org/surveillance'
     model = get_data_model()
 
-    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "inmates": "KCNZn", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd"}
+    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd"}
     # I removed "tests": '2Hgir' from chart_ids b/c it seems to have disappeared from the website?
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
-    model["meta_from_baypd"] = ["There's no actual update time on their website. Not all charts are updated daily.", "The cases and deaths total include inmate numbers, but the cases and deaths series, the testing data and data broken down by race/ethnicity, gender and age do not."]
+    model["meta_from_baypd"] = ["There's no actual update time on their website. Not all charts are updated daily."]
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
     model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases') 
     model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths') 
-    model["inmates"]["cases"] = get_inmate_totals(chart_ids["inmates"], url)[0]
-    model["inmates"]["deaths"] = get_inmate_totals(chart_ids["inmates"], url)[1]
 
-    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
@@ -110,22 +108,6 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return list(metadata), list(chart_metadata)
-
-def get_inmate_totals(chart_id: str, url: str) -> Tuple:
-    """This method extracts the number of cases and deaths for San Quentin inmates."""
-    csv_data = get_chart_data(url, chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
-    keys = csv_reader.fieldnames
-
-    if keys != ['Updated', 'Total Confirmed Cases', 'Total Resolved Cases', 'COVID-19 Deaths']:
-        raise ValueError('The headers have changed')
-
-    for row in csv_reader:
-        cases = row['Total Confirmed Cases']
-        deaths = row['COVID-19 Deaths']
-
-    return (cases, deaths) 
 
 def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str) -> List:
     """This method extracts the date, number of cases/deaths, and new cases/deaths."""
