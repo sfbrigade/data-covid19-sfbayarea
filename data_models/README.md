@@ -140,7 +140,7 @@ The fields will be used for normalizing the county case and death tabulations, a
 
 6. __Inmate Data__
 
-This part of the data model currently only applies to Marin County, which reports the case and death count separately from the case and death count in the Marin County community. Note that the case and death data available for inmates is not in series form; there are only aggregated totals.
+Data collection is pending resolution of #108.
 
 ```
     "inmates": {
