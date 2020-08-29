@@ -213,7 +213,7 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
         # Each new row has data for a different gender.
         gender = row["Gender"].lower()
         if gender not in genders:
-            return ValueError("The genders have changed.") # type: ignore 
+          raise ValueError("The genders have changed.") # type: ignore 
             # is doing this bad practice? mypy doesn't have an issue with the error on line 244 so not sure why this one causes an error
         c_gender[gender] = int(row["Cases"])
         d_gender[gender] = int(row["Deaths"])            
