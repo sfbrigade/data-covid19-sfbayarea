@@ -17,19 +17,19 @@ def get_county() -> Dict:
     url = 'https://coronavirus.marinhhs.org/surveillance'
     model = get_data_model()
 
-    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd"}
-    # I removed "tests": '2Hgir' from chart_ids b/c the breakdown of negative and positive tests has disappeared from the website
+    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd", "tests": '7sHQq'}
+    # The time series data for negative tests is gone, so I've just scraped positive test data using the new chart referenced above.
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
-    model["meta_from_baypd"] = ["There's no actual update time on their website. Not all charts are updated daily."]
+    model["meta_from_baypd"] = []
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
     model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases') 
     model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths') 
 
-    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
@@ -195,8 +195,7 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
         # Each new row has data for a different gender.
         gender = row["Gender"].lower()
         if gender not in genders:
-          raise ValueError("The genders have changed.") # type: ignore 
-            # is doing this bad practice? mypy doesn't have an issue with the error on line 244 so not sure why this one causes an error
+            raise ValueError("The genders have changed.") 
         c_gender[gender] = int(row["Cases"])
         d_gender[gender] = int(row["Deaths"])            
 
@@ -229,31 +228,25 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     return c_race_eth, d_race_eth
 
 def get_test_series(chart_id: str, url: str) -> List:
-    """This method gets the date, the number of positive and negative tests on that date, and the number of cumulative positive and negative tests."""
+    """This method gets the date, the number of new positive tests on that date, and the number of cumulative positive tests."""
     csv_data = get_chart_data(url, chart_id)
+    csv_reader = csv.DictReader(csv_data)
 
-    dates, positives, negatives = [row.split(',')[1:] for row in csv_data] 
-    series = zip(dates, positives, negatives)
+    keys = csv_reader.fieldnames
+    
+    if keys != ['Test Date', 'Positive Tests']:
+        raise ValueError("The headers have changed.")
 
     test_series: list = list()
 
     cumul_pos = 0
-    cumul_neg = 0
-    for entry in series:
+    for row in csv_reader:
         daily: dict = dict()
-        # I'm not sure why, but I just found out that some of the test series have a 'null' value (in the spot where the number of positive tests is), so I needed to account for that here.
-        # At least for now, it's only present at the end, so I just break out of the loop and return the test series. 
-        if entry[1] != 'null':
-            date_time_obj = datetime.strptime(entry[0], '%m/%d/%Y')
-            daily["date"] = date_time_obj.strftime('%Y-%m-%d')
-            daily["positive"] = int(entry[1])
-            cumul_pos += daily["positive"]
-            daily["negative"] = int(entry[2])
-            cumul_neg += daily["negative"]
-            daily["cumul_pos"] = cumul_pos
-            daily["cumul_neg"] = cumul_neg
-            test_series.append(daily)
-        else:
-            break
+        date_time_obj = datetime.strptime(row['Test Date'], '%m/%d/%Y')
+        daily["date"] = date_time_obj.strftime('%Y-%m-%d')
+        daily["positive"] = int(row["Positive Tests"])
+        cumul_pos += daily["positive"]
+        daily["cumul_positive"] = cumul_pos
+        test_series.append(daily)
         
     return test_series
