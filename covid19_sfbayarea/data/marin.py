@@ -22,7 +22,7 @@ def get_county() -> Dict:
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
-    model["meta_from_baypd"] = []
+    model["meta_from_baypd"] = ["Negative and pending tests are excluded from the Marin County test data."]
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
