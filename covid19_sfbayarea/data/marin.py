@@ -106,8 +106,9 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
                 #breakpoint() 
                 chart_metadata.add(data.text.strip())
 
-    #Manually adding in metadata about testing data
+    # Manually adding in metadata about testing data
     chart_metadata.add("Negative and pending tests are excluded from the Marin County test data.")
+    chart_metadata.add("Note that this test data is about tests done by Marin County residents, not about all tests done in Marin County (includes residents and non-residents).")
 
     # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
     return list(metadata), list(chart_metadata)
