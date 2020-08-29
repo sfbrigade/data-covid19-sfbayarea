@@ -217,7 +217,7 @@ Scraper authors, please keep an eye out for amendments to the data model.
 # Race and Ethnicity
 We need to collapse counties that report race and ethnicity into one race/ethnicity dimension. This section will be updated pending information about San Francisco County's methods for reporting race and ethnicity.
 
-The category "Multi_or_Other" was included because Marin rolls up the numbers from "Multi" and "Other" into one.
+The category "Multi_or_Other" was included because Marin rolls up the numbers from "Multi" and "Other" into one. Please note that this category is not relevant for counties that report 'Multiple Race' and 'Other Race' separately.
 
 # Gender
 One future potential issue is that some counties still lump non-binary and cis-gender people under "Other", and other counties have started to differentiate. Our data model would ideally match the most detailed county's gender categories. A county with only the "Other" county would have the value of -1 for the non male/female categories, indicating that they are not collecting that information. However, this means that our `"Other"` category would not be internally comparable or consistent. The `"Other"` category for a county that has "Male, Female, Other, MTF, FTM" as separate datapoints should really be called `"Other - not MTF, not FTM"` and is not comparable to the `"Other"` category for a county that only has "Male, Female, Other".

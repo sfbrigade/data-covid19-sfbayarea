@@ -18,7 +18,7 @@ def get_county() -> Dict:
     model = get_data_model()
 
     chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd"}
-    # I removed "tests": '2Hgir' from chart_ids b/c it seems to have disappeared from the website?
+    # I removed "tests": '2Hgir' from chart_ids b/c the breakdown of negative and positive tests has disappeared from the website
 
     model['name'] = "Marin County"
     model['update_time'] = datetime.today().isoformat()
@@ -29,7 +29,7 @@ def get_county() -> Dict:
     model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases') 
     model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths') 
 
-    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
+    #model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
     model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
     model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
