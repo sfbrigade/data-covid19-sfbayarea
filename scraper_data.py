@@ -40,12 +40,9 @@ def main(counties: Tuple[str,...], output: str) -> int:
         print(json.dumps(out,indent=2))
 
     if not out: # all counties failed
-        return 126
+        exit(126)
     elif failed_counties: # some counties failed
-        return 1
-    else: # success!
-        return 0
+        exit(1)
 
 if __name__ == '__main__':
-    exit_code = main()
-    exit(exit_code)
+    main()
