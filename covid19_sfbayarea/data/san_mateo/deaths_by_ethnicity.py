@@ -8,6 +8,6 @@ class DeathsByEthnicity(PowerBiQuerier):
         self.property = 'race'
         super().__init__()
 
-    def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]: # type: ignore
+    def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]:
         results = super()._parse_data(response_json)
         return { ethnicity.strip(): count for ethnicity, count in results }
