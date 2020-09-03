@@ -1,6 +1,6 @@
 import json
 from requests import post
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from .utils import dig
 
 class PowerBiQuerier:
