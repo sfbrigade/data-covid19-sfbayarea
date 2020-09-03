@@ -29,7 +29,7 @@ def get_county() -> Dict:
     return out
 
 def fetch_data() -> Dict:
-    data = {
+    data : Dict = {
         'name': 'San Mateo County',
         'source_url': LANDING_PAGE,
         'meta_from_source': Meta().get_data(),
