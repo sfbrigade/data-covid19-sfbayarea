@@ -6,12 +6,12 @@
     "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
     "series": {
         "cases": [
-            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1},
+            { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1 },
             { "date": "yyyy-mm-dd", "cases": -1, "cumul_cases": -1 }
        ],
         "deaths": [
             { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1 },
-            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1}
+            { "date": "yyyy-mm-dd", "deaths": -1, "cumul_deaths": -1 }
         ],
         "tests": [
             {
@@ -57,7 +57,8 @@
             "Other": -1,
             "Pacific_Islander":-1,
             "White":-1,
-            "Unknown":-1
+            "Unknown":-1,
+            "Multi_or_Other": -1
         },
         "transmission_cat": {
             "community": -1,
@@ -84,7 +85,8 @@
             "Other": -1,
             "Pacific_Islander":-1,
             "White":-1,
-            "Unknown":-1
+            "Unknown":-1,
+            "Multi_or_Other": -1
         },
         "underlying_cond": {
             "none":-1,
