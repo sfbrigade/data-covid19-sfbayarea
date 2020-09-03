@@ -130,9 +130,5 @@
             "White":-1,
             "Unknown":-1
         }
-    },
-    "inmates": {
-        "cases": -1,
-        "deaths": -1
     }
 }
