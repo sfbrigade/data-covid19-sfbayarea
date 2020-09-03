@@ -30,7 +30,7 @@ class PowerBiQuerier:
         response.raise_for_status()
         return response.json()
 
-    def _parse_data(self, response_json: Dict[str, List]) -> List:
+    def _parse_data(self, response_json: Dict[str, List]) -> Union[List, Dict]:
         results = dig(response_json, self.JSON_PATH)
         return self._extract_lists(results)
 
