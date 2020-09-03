@@ -13,7 +13,7 @@ class PowerBiQuerier:
         self._set_defaults()
         self._assert_init_variables_are_set()
 
-    def get_data(self) -> List:
+    def get_data(self) -> Union[List, Dict]:
         response_json = self._fetch_data()
         return self._parse_data(response_json)
 
@@ -128,4 +128,3 @@ class PowerBiQuerier:
     def _determine_repeated_values(self, r: int) -> List[int]:
         r_in_binary = reversed('{:b}'.format(r))
         return [ bool(int(one_or_zero)) for one_or_zero in r_in_binary ]
-
