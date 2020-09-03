@@ -59,7 +59,7 @@ def fetch_data() -> Dict:
     }
     last_updated = most_recent_case_time(data)
     data.update({ 'update_time': last_updated.isoformat() })
-    data['series'].update({ 'deaths': cumulative_deaths(last_updated) }) # type: ignore
+    data['series'].update({ 'deaths': cumulative_deaths(last_updated) })
     return data
 
 def most_recent_case_time(data: Dict[str, Any]) -> datetime:
