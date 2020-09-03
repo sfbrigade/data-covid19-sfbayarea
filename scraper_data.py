@@ -16,7 +16,7 @@ COUNTY_NAMES : Tuple[str,...]= tuple(data_scrapers.scrapers.keys())
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
 @click.option('--output', metavar='PATH',
               help='write output file to this directory')
-def main(counties: Tuple[str,...], output: str) -> int:
+def main(counties: Tuple[str,...], output: str) -> None:
     out = dict()
     failed_counties = False
     if len(counties) == 0:
@@ -39,10 +39,8 @@ def main(counties: Tuple[str,...], output: str) -> int:
     else:
         print(json.dumps(out,indent=2))
 
-    if not out: # all counties failed
-        exit(70)
-    elif failed_counties: # some counties failed
-        exit(1)
+    if not out: exit(70) # all counties failed
+    if failed_counties: exit(1) # some counties failed
 
 if __name__ == '__main__':
     main()
