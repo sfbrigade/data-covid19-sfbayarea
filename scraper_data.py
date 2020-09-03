@@ -2,6 +2,7 @@
 import click
 import json
 from covid19_sfbayarea import data as data_scrapers
+from sys import stderr, exit
 from typing import Tuple
 from pathlib import Path
 
@@ -15,14 +16,19 @@ COUNTY_NAMES : Tuple[str,...]= tuple(data_scrapers.scrapers.keys())
                 type=click.Choice(COUNTY_NAMES, case_sensitive=False))
 @click.option('--output', metavar='PATH',
               help='write output file to this directory')
-def main(counties: Tuple[str,...], output:str) -> None:
+def main(counties: Tuple[str,...], output: str) -> None:
     out = dict()
+    failed_counties = False
     if len(counties) == 0:
         counties = COUNTY_NAMES
 
     # Run each scraper's get_county() method. Assign the output to out[county]
     for county in counties:
-        out[county] = data_scrapers.scrapers[county].get_county()
+        try:
+            out[county] = data_scrapers.scrapers[county].get_county()
+        except Exception as e:
+            failed_counties = True
+            print(f'{county} failed to scrape: {e}', file = stderr)
 
     if output:
         parent = Path(output)
@@ -32,6 +38,9 @@ def main(counties: Tuple[str,...], output:str) -> None:
 
     else:
         print(json.dumps(out,indent=2))
+
+    if not out: exit(70) # all counties failed
+    if failed_counties: exit(1) # some counties failed
 
 if __name__ == '__main__':
     main()
