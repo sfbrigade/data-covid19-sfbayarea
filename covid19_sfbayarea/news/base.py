@@ -1,6 +1,6 @@
 from datetime import datetime
 import requests
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .feed import NewsFeed, NewsItem
 from .utils import decode_html_body
 
@@ -20,8 +20,15 @@ class NewsScraper:
     scraping should start, then implement `parse_page()`, which returns a list
     of news items given some HTML.
     """
+
+    # Arguments used when creating a `NewsFeed` instance for the county.
     FEED_INFO: Dict = {}
+
+    # Initial URL to load and parse for news.
     URL = ''
+
+    # Default encoding to use when parsing the page, if none could be detected.
+    ENCODING: Optional[str] = None
 
     def __init__(self, from_date: datetime = None, to_date: datetime = None) -> None:
         self.from_date = from_date
@@ -57,7 +64,7 @@ class NewsScraper:
     def load_html(self, url: str) -> str:
         response = requests.get(self.URL)
         response.raise_for_status()
-        return decode_html_body(response)
+        return decode_html_body(response, self.ENCODING)
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         raise NotImplementedError()
