@@ -39,12 +39,10 @@ def main(counties: Tuple[str, ...], output: str, hospitals: bool) -> None:
 
     # Handle hospitalization data
     hospital_out = []
-    hospital_counties = counties
     failed_hospital_counties = False
 
     if len(counties) == 0:
         counties = COUNTY_NAMES
-        hospital_counties = 'all'
 
     # Run each scraper's get_county() method. Assign the output to out[county]
     for county in counties:
@@ -59,17 +57,22 @@ def main(counties: Tuple[str, ...], output: str, hospitals: bool) -> None:
 
     # Fetch hospitalization data for selected counties, or all counties
     if hospitals:
-        for county in hospital_counties:
-            try:
-                hospital_data = hz.get_county(county)
+        try:
+            if len(counties) == 0:
+                hospital_data = hz.get_county('all')
                 hospital_out.append(hospital_data)
 
-            except Exception as e:
-                failed_hospital_counties = True
-                print(
-                    f'hospitalization data fetch error for {county}: {e}',
-                    file=stderr
-                )
+            else:
+                for county in counties:
+                    hospital_data = hz.get_county(county)
+                    hospital_out.append(hospital_data)
+
+        except Exception as e:
+            failed_hospital_counties = True
+            print(
+                f'hospitalization data fetch error for {county}: {e}',
+                file=stderr
+            )
 
     if output:
         parent = Path(output)
