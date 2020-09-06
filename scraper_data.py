@@ -23,15 +23,28 @@ COUNTY_NAMES: Tuple[str, ...] = tuple(data_scrapers.scrapers.keys())
     type=click.Choice(COUNTY_NAMES, case_sensitive=False)
 )
 @click.option(
+    '--hospitals',
+    is_flag=True,
+    default=False,
+    help='fetch hospitalization data for given county'
+)
+@click.option(
     '--output',
     metavar='PATH',
     help='write output file to this directory'
 )
-def main(counties: Tuple[str, ...], output: str) -> None:
+def main(counties: Tuple[str, ...], output: str, hospitals: bool) -> None:
     out = dict()
     failed_counties = False
+
+    # Handle hospitalization data
+    hospital_out = []
+    hospital_counties = counties
+    failed_hospital_counties = False
+
     if len(counties) == 0:
         counties = COUNTY_NAMES
+        hospital_counties = 'all'
 
     # Run each scraper's get_county() method. Assign the output to out[county]
     for county in counties:
@@ -44,19 +57,40 @@ def main(counties: Tuple[str, ...], output: str) -> None:
             click.echo(f'{message}: {error}', err=True)
             traceback.print_exc()
 
+    # Fetch hospitalization data for selected counties, or all counties
+    if hospitals:
+        for county in hospital_counties:
+            try:
+                hospital_data = hz.get_county(county)
+                hospital_out.append(hospital_data)
+
+            except Exception as e:
+                failed_hospital_counties = True
+                print(
+                    f'hospitalization data fetch error for {county}: {e}',
+                    file=stderr
+                )
+
     if output:
         parent = Path(output)
         parent.mkdir(exist_ok=True)   # if output directory does not exist, create it
+
         with parent.joinpath('data.json').open('w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, indent=2)
 
+        if hospitals:
+            with parent.joinpath('hospital_data.json').open('w', encoding='utf-8') as f:
+                json.dump(hospital_out, f, ensure_ascii=False, indent=2)
+
     else:
         print(json.dumps(out, indent=2))
+        if hospitals:
+            print(json.dumps(hospital_out, indent=2))
 
     if not out:
         exit(70)  # all counties failed
 
-    if failed_counties:
+    if failed_counties or failed_hospital_counties:
         exit(1)   # some counties failed
 
 
