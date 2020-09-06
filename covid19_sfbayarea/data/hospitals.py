@@ -27,7 +27,7 @@ SERIES_NAME = "Hospitalization"
 BAYPD_META = "This data was pulled from the data.ca.gov CKAN Data API"
 
 logging.basicConfig(
-    format=f"%(asctime)s %(message)s",
+    format="%(asctime)s %(message)s",
     level=logging.INFO
 )
 
