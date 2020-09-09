@@ -162,10 +162,10 @@ def guess_html_encoding(response: requests.Response) -> Optional[str]:
     return encoding
 
 
-def decode_html_body(response: requests.Response) -> str:
-    encoding = guess_html_encoding(response)
-    if encoding:
-        return response.content.decode(encoding, errors='replace')
+def decode_html_body(response: requests.Response, encoding: str = None) -> str:
+    detected_encoding = guess_html_encoding(response) or encoding
+    if detected_encoding:
+        return response.content.decode(detected_encoding, errors='replace')
     else:
         # If we couldn't guess the encoding, let requests do its best.
         return response.text
