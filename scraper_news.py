@@ -3,6 +3,8 @@ import click
 from datetime import datetime, timedelta
 from covid19_sfbayarea import news
 from covid19_sfbayarea.news.utils import parse_datetime
+import logging
+import os
 from pathlib import Path
 from typing import cast, Tuple
 
@@ -72,4 +74,5 @@ def main(counties: Tuple[str], from_: datetime, format: str, output: str) -> Non
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=os.getenv('LOG_LEVEL', 'WARN').upper())
     main()
