@@ -32,7 +32,7 @@ def fetch_data() -> Dict:
     data : Dict = {
         'name': 'Alameda County',
         'source_url': LANDING_PAGE,
-        'meta_from_source': Meta().get_data(),
+        # 'meta_from_source': Meta().get_data(),
         'meta_from_baypd': """
             See power_bi_scraper.py for methods.
             San Mateo does not provide a timestamp for their last dataset update,
