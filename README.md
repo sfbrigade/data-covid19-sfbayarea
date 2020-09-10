@@ -1,10 +1,14 @@
 # data-covid19-sfbayarea
+
 Processes for sourcing data for the Stop COVID-19 SF Bay Area dashboard, which you can find [here](https://stop-covid19-sfbayarea.netlify.com/), or [on GitHub](https://github.com/sfbrigade/stop-covid19-sfbayarea).  
 **We are looking for feedback**! Did you come here looking for a data API? Do you have questions, comments, or concerns? Don't leave yet - let us know how you are using this project and what you'd like to see implemented. Please leave us your two cents over in Issues under [#101 Feedback Mega Thread](https://github.com/sfbrigade/data-covid19-sfbayarea/issues/101).
 
+
 ## Installation
+
 This project requires Python 3 to run. It was built specifically with version `3.7.4`, but it may run with other versions. However, it does take advantage of insertion-ordered dictionaries which are only reliable in `3.7+`.
 To install this project, you can simply run `./install.sh` in your terminal. This will set up the virtual environment and install all of the dependencies from `requirements.txt` and `requirements-dev.txt`. However, it will not keep the virtual environment running when the script ends. If you want to stay in the virtual environment, you will have to run `source env/bin/activate` separately from the install script.
+
 
 ## Running the scraper
 
@@ -13,6 +17,8 @@ This project includes three separate scraping tools for different purposes:
 - [Legacy CDS (Corona Data Scraper) Scraper](#legacy-scraper)
 - [County Website Scraper](#county-scraper)
 - [County News Scraper](#news-scraper)
+
+**You can also run each of these tools in Docker.** See the [“using Docker”](#using-docker) section below.
 
 
 ### <a id="legacy-scraper"></a> Legacy CDS Scraper
@@ -113,6 +119,34 @@ Options:
     ```
 
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
+
+
+## Using Docker
+
+As an alternative to installing and running the tools normally, you can use [Docker](https://www.docker.com/) to install and run them. This is especially helpful on Windows, where setting up Selenium and other Linux tools the scraper can be complicated.
+
+1. Download and install Docker from https://www.docker.com/ (You’ll probably need to create a Docker account as well if you don’t already have one.)
+
+2. Now run [any of the tools](#running-the-scraper) by adding their command after `./run_docker.sh`. For example, to run the news scraper:
+
+    ```sh
+    $ ./run_docker.sh python scraper_data.py
+    ```
+
+    Under the hood, this builds the Docker container and then runs the specified command in it.
+
+    Docker acts kind of like a virtual machine, and you can also simply get yourself a command prompt inside the docker container by running `./run_docker.sh` with no arguments:
+
+    ```sh
+    $ ./run_docker.sh
+    # This will output information about the build, and then give you a
+    # command prompt:
+    root@ca87fa64d822:/app#
+
+    # You can now run commands like the data scraper as normal from the prompt:
+    root@ca87fa64d822:/app# python scraper_data.py
+    root@ca87fa64d822:/app# python scraper_news.py
+    ```
 
 
 ## Data Models
