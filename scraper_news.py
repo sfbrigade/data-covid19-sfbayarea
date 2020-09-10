@@ -2,9 +2,12 @@
 import click
 from datetime import datetime, timedelta
 from covid19_sfbayarea import news
+from covid19_sfbayarea.utils import friendly_county
 from covid19_sfbayarea.news.utils import parse_datetime
 import logging
 import os
+import sys
+import traceback
 from pathlib import Path
 from typing import cast, Tuple
 
@@ -32,6 +35,30 @@ def cli_date(date_string: str) -> datetime:
     return value
 
 
+def run_county_news(county: str, from_: datetime, format: Tuple[str], output: str) -> None:
+    '''Run the scraper for a given county and output the results.'''
+    feed = news.scrapers[county].get_news(from_date=from_)
+
+    for format_name in format:
+        if format_name == 'json_simple':
+            data = feed.format_json_simple()
+            extension = '.simple.json'
+        elif format_name == 'json_feed':
+            data = feed.format_json_feed()
+            extension = '.json'
+        else:
+            data = feed.format_rss()
+            extension = '.rss'
+
+        if output:
+            parent = Path(output)
+            parent.mkdir(exist_ok=True)
+            with parent.joinpath(f'{county}{extension}').open('wb') as f:
+                f.write(data)
+        else:
+            click.echo(data)
+
+
 @click.command(help='Create a news feed for one or more counties. Supported '
                     f'counties: {", ".join(COUNTY_NAMES)}.')
 @click.argument('counties', metavar='[COUNTY]...', nargs=-1,
@@ -45,32 +72,26 @@ def cli_date(date_string: str) -> datetime:
               multiple=True)
 @click.option('--output', metavar='PATH',
               help='write output file(s) to this directory')
-def main(counties: Tuple[str], from_: datetime, format: str, output: str) -> None:
+def main(counties: Tuple[str], from_: datetime, format: Tuple[str], output: str) -> None:
     if len(counties) == 0:
         counties = COUNTY_NAMES
 
     # Do the work!
+    error_count = 0
     for county in counties:
-        feed = news.scrapers[county].get_news(from_date=from_)
+        try:
+            run_county_news(county, from_, format, output)
+        except Exception as error:
+            error_count += 1
+            message = click.style(f'{friendly_county(county)} county failed',
+                                  fg='red')
+            click.echo(f'{message}: {error}', err=True)
+            traceback.print_exc()
 
-        for format_name in format:
-            if format_name == 'json_simple':
-                data = feed.format_json_simple()
-                extension = '.simple.json'
-            elif format_name == 'json_feed':
-                data = feed.format_json_feed()
-                extension = '.json'
-            else:
-                data = feed.format_rss()
-                extension = '.rss'
-
-            if output:
-                parent = Path(output)
-                parent.mkdir(exist_ok=True)
-                with parent.joinpath(f'{county}{extension}').open('wb') as f:
-                    f.write(data)
-            else:
-                click.echo(data)
+    if error_count == len(counties):
+        sys.exit(70)
+    elif error_count > 0:
+        sys.exit(1)
 
 
 if __name__ == '__main__':

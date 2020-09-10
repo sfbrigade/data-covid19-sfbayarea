@@ -2,7 +2,9 @@
 import click
 import json
 from covid19_sfbayarea import data as data_scrapers
-from sys import stderr, exit
+from covid19_sfbayarea.utils import friendly_county
+from sys import exit
+import traceback
 from typing import Tuple
 from pathlib import Path
 
@@ -26,9 +28,12 @@ def main(counties: Tuple[str,...], output: str) -> None:
     for county in counties:
         try:
             out[county] = data_scrapers.scrapers[county].get_county()
-        except Exception as e:
+        except Exception as error:
             failed_counties = True
-            print(f'{county} failed to scrape: {e}', file = stderr)
+            message = click.style(f'{friendly_county(county)} county failed',
+                                  fg='red')
+            click.echo(f'{message}: {error}', err=True)
+            traceback.print_exc()
 
     if output:
         parent = Path(output)
