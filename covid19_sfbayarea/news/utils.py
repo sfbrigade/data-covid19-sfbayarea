@@ -10,6 +10,7 @@ from .feed import NewsItem
 
 
 HEADING_PATTERN = re.compile(r'h\d')
+COLLAPSIBLE_WHITESPACE = re.compile(r'[^\S\u00a0]+')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
 US_SHORT_DATE_PATTERN = re.compile(r'^\s*\d+/\d+/\d+\s*$')
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
@@ -162,10 +163,10 @@ def guess_html_encoding(response: requests.Response) -> Optional[str]:
     return encoding
 
 
-def decode_html_body(response: requests.Response) -> str:
-    encoding = guess_html_encoding(response)
-    if encoding:
-        return response.content.decode(encoding, errors='replace')
+def decode_html_body(response: requests.Response, encoding: str = None) -> str:
+    detected_encoding = guess_html_encoding(response) or encoding
+    if detected_encoding:
+        return response.content.decode(detected_encoding, errors='replace')
     else:
         # If we couldn't guess the encoding, let requests do its best.
         return response.text
@@ -179,6 +180,11 @@ def find_with_text(soup: BeautifulSoup, text: str, tag_name: str = None) -> Opti
         return False
 
     return soup.find(match_element)
+
+
+def normalize_whitespace(text: str) -> str:
+    """Normalize the whitespace in a string according to HTML rules."""
+    return COLLAPSIBLE_WHITESPACE.sub(' ', text).strip()
 
 
 def is_covid_related(item: NewsItem) -> bool:

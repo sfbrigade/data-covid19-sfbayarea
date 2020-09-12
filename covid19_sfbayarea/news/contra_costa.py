@@ -2,9 +2,10 @@ from bs4 import BeautifulSoup, element  # type: ignore
 import re
 from typing import List, Optional
 from urllib.parse import urljoin
+from ..errors import FormatError
 from .base import NewsScraper
 from .feed import NewsItem
-from .utils import get_base_url, parse_datetime, HEADING_PATTERN
+from .utils import get_base_url, parse_datetime
 
 
 MONTHS = (
@@ -74,8 +75,15 @@ class ContraCostaNews(NewsScraper):
     URL = 'https://www.coronavirus.cchealth.org/health-services-updates'
 
     def is_news_heading(self, element: element.Tag) -> bool:
-        return (HEADING_PATTERN.match(element.name) and
-                MONTH_HEADING_PATTERN.match(element.get_text())) is not None
+        return bool(element.name == 'h3' and
+                    MONTH_HEADING_PATTERN.match(element.get_text()))
+
+    def get_next_list(self, element: element.Tag) -> element.Tag:
+        for candidate in element.next_siblings:
+            if candidate.name == 'ol' or candidate.name == 'ul':
+                return candidate
+
+        raise FormatError(f'No <ol> or <ul> found after {element}')
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'lxml')
@@ -84,7 +92,7 @@ class ContraCostaNews(NewsScraper):
         month_headings = soup.find_all(self.is_news_heading)
         index = 0
         for heading in month_headings:
-            articles = heading.parent.find_all('li')
+            articles = self.get_next_list(heading).find_all('li')
             for article in articles:
                 index += 1
                 item = self.parse_article(index,
