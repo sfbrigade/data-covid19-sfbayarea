@@ -10,6 +10,7 @@ from .feed import NewsItem
 
 
 HEADING_PATTERN = re.compile(r'h\d')
+COLLAPSIBLE_WHITESPACE = re.compile(r'[^\S\u00a0]+')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
 US_SHORT_DATE_PATTERN = re.compile(r'^\s*\d+/\d+/\d+\s*$')
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
@@ -179,6 +180,11 @@ def find_with_text(soup: BeautifulSoup, text: str, tag_name: str = None) -> Opti
         return False
 
     return soup.find(match_element)
+
+
+def normalize_whitespace(text: str) -> str:
+    """Normalize the whitespace in a string according to HTML rules."""
+    return COLLAPSIBLE_WHITESPACE.sub(' ', text).strip()
 
 
 def is_covid_related(item: NewsItem) -> bool:
