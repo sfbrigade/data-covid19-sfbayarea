@@ -48,3 +48,46 @@ We also use type annotations throughout the project. To check their validity wit
 # In the root directory of the project:
 $ mypy .
 ```
+
+### Reviewing and Merging Pull Requests
+1. **PRs that are hotfixes do not require review.**  
+    - Hotfixes repair broken functionality that was previously vetted, they do not add functionality. For these PRs, please feel free to request a review from one or more people. 
+    - If you are requested to review a hotfix, note that the first priority is to make sure the output is correct. "Get it working first, make it nice later." You do not have to be an expert in the function's history, nor understand every line of the diff changes. If you can verify whether the output is correct, you are qualified and encouraged to review a hotfix!
+    - If no reviewers respond within 2 days, please merge in your PR yourself.  
+    - Examples of hotfixes are:
+        1. Fixing broken scrapers
+        1. Fixing dependencies - libraries, virtual environments, etc.
+        1. Fixing github actions running the scrapers, and fixing CircleCI
+
+2. **PRs that add functionality/features require at least 1 passing review.**
+    - If you are adding functionality, please explicitly require a review from at least one person. 
+    - When at least one person has approved the PR, the  author of the PR is responsible for merging it in. You must have 1+ approving reviews to merge, but you don't need all requested reviewers to approve. 
+    - If you are one of the people required for review, please either complete your review within 3 days, or let the PR author know you are unavailable for review. 
+    - Examples of PRs that add functionality are:
+        1. Adding new scrapers
+        1. Structural refactors, such as changing the data model, or substantial rewrite of an existing scraper
+
+3. **PRs that update the documentation require at least 1 passing review.**
+    - Documentation PRs are in the same tier as #2. Please explicitly require a review from at least one person. 
+    - When at least one person has approved the PR, the  author of the PR is responsible for merging it in. You must have 1+ approving reviews to merge, but you don't need all requested reviewers to approve. 
+    - If you are one of the people required for review, please either complete your review within 3 days, or let the PR author know you are unavailable for review. 
+    - Examples are:
+        1. Updates to the data fetch README
+        1. Commenting code
+        1. Adding to metadata
+
+4. Reviewers
+    1. Everyone can review #1 hotfixes, or #3 documentation. If you want to proactively sign up to be first-string for these reviews, please add your github handle to the list below.
+        - @elaguerta
+        - @benghancock
+
+    2. Experienced developers with deep knowledge of the project should be tapped for PRs that deal with complicated dependencies, language-specific implementation questions, structural/architectural concerns. If you want to be first-string for these reviews, please add your github handle to the list below.
+        - @Mr0grog
+        - @rickpr
+        - @ldtcooper
+
+    1. People who have interest in data, public health, and social science should be tapped for PRs that deal with decisions that affect how data is reported, structured, and provided to the user. If you want to be first-string for these reviews, please list your github name below.
+        - @elaguerta
+        - @benghancock
+        - @ldtcooper
+
