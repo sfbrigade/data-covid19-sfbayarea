@@ -217,6 +217,7 @@ class ItemParser:
         Parse the news item that starts with the given HTML node. Raises
         `NotNews` if the HTML node isn't actually the start of a news item.
         """
+        logger.debug('Parsing node %s', self.start_node)
         self.state = self.START_STATE
         node = self.start_node
         root = node.parent
@@ -287,13 +288,21 @@ class ItemParser:
     def parse_br(self, node: element.Tag) -> None:
         """
         Determine how to handle things after hitting a `<br>` tag, which could
-        be the end of the news item, or just a delimiter between the title and
-        summary.
+        be the end of the news item or a delimiter between different sections
+        of the item, like date, title, and summary.
         """
+        # Two `<br>`s in a row signal the end of the news item.
         if node.name == 'br':
             raise StopIteration()
-        else:
+        # If we've encountered title data, this was a delimiter between title
+        # and summary, so switch to summary parsing.
+        elif self.item.title.strip():
             self.state = 'summary'
+            return self.parse_summary(node)
+        # ...but if we haven't scanned a title yet, keep looking for it.
+        else:
+            self.state = 'title'
+            return self.parse_title(node)
 
     def post_process(self) -> None:
         """Clean up the news item before returning it as a final result."""
