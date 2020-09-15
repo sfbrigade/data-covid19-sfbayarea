@@ -26,23 +26,14 @@ RESULTS_LIMIT = 50
 SERIES_NAME = "Hospitalization"
 BAYPD_META = "This data was pulled from the data.ca.gov CKAN Data API"
 
-logging.basicConfig(
-    format="%(asctime)s %(message)s",
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 
 
 def get_county(county: str) -> Dict:
     """Return data just for the selected county. Include field notes.
     This is basically an alias for `get_timeseries()` provided for consistency.
     """
-    if county != "all":
-        clean_county = county.replace("_", " ").title()
-
-    else:
-        clean_county = county
-
-    data = get_timeseries(clean_county)
+    data = get_timeseries(county)
 
     return data
 
@@ -101,9 +92,7 @@ def get_timeseries(county: str = "all") -> Dict:
             timeseries.extend(records)
 
             results_count = len(timeseries)
-            logging.info(
-                f"Hospital data: Got {results_count} results out of {total} ..."
-            )
+            logging.info(f"Got {results_count} results out of {total} ...")
             more = results.get("_links").get("next")
 
             # Don't ask for more pages than there are
