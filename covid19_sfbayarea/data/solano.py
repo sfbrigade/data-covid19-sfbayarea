@@ -12,13 +12,11 @@ from collections import defaultdict
 from ..errors import FormatError
 
 # URLs and API endpoints:
-# data_url has cases, deaths, tests, and race_eth
+# data_url has cases, deaths, tests
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0/query"
-# data2_url used to be a join on gender and age. As of 6/15/20, Age Groups were removed from this table. It looks like Gender has been updated through 6/12.
-data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
-# age_group_url has cumulative cases and deaths by age group. This endpoint was added to this script on 6/15/20
-age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/AgeGroupsTable/FeatureServer/0/query'
-metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
+# data2_url looks like a join on Race/Eth and Age Group
+data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer/0/query"
+metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
 
 def get_county() -> Dict:
