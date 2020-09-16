@@ -13,13 +13,13 @@ from ..errors import FormatError
 
 # URLs and API endpoints:
 # data_url has cases, deaths, tests, and race_eth
-data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0/query"
+data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0/query"
 # data2_url used to be a join on gender and age. As of 6/15/20, Age Groups were removed from this table. It looks like Gender has been updated through 6/12.
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0/query"
 # age_group_url has cumulative cases and deaths by age group. This endpoint was added to this script on 6/15/20
 age_group_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/AgeGroupsTable/FeatureServer/0/query'
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0?f=pjson'
-dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/6c83d8b0a564467a829bfa875e7437d8'
+dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -30,11 +30,8 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Solano County"
     out["source_url"] = data_url
-    out["meta_from_source"] = get_notes()
     out["meta_from_baypd"] = '\n'.join([
-        "Solano reports daily cumulative cases, deaths, and residents tested. In addition to cumulative cases each day, the county separately reports new daily confirmed cases.",
-        "In the cases timeseries, cumulative cases on any given day may not equal the sum of new daily cases to date.",
-        "This may be because source data for daily cases refers to cases that were laboratory-confirmed by 1:30 pm that day, with weekend case onfirmations possibly occurring on Mondays.",
+        "Solano reports daily cumulative cases, deaths, and residents tested. The county does not report new daily confirmed cases.",
         "Solano reports total number of residents tested on each date. This may exclude counts of tests for individuals being retested. Solano does not report test results.",
         "Deaths by race/eth not currently reported.",
         "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
@@ -55,9 +52,9 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     get_timeseries(out)
-    get_age_table(out)
-    get_gender_table(out)
-    get_race_eth(out)
+    # get_age_table(out)
+    # get_gender_table(out)
+    # get_race_eth(out)
 
     return out
 
@@ -77,17 +74,16 @@ def get_timeseries(out: Dict) -> None:
     series: Dict[str, List] = {"cases": [], "deaths": [], "tests": [] }
     # Dictionary of 'source_label': 'target_label' for re-keying
     TIMESERIES_KEYS = {
-        'date_reported': 'date',
-        'new_cases_confirmed_today': 'cases',
-        'cumulative_number_of_cases_on_t': 'cumul_cases',
+        'Date_reported': 'date',
+        'cumulative_cases': 'cumul_cases',
         'total_deaths': 'cumul_deaths',
         'residents_tested': 'cumul_tests'
     }
 
     # query API for days where cumulative number of cases on the day > 0
-    param_list = {  'where': 'cumulative_number_of_cases_on_t>0',
+    param_list = {  'where': 'cumulative_cases>0',
                     'resultType': 'none',
-                    'outFields': 'date_reported,cumulative_number_of_cases_on_t,total_deaths,residents_tested,new_cases_confirmed_today',
+                    'outFields': 'Date_reported,cumulative_cases,total_deaths,residents_tested',
                     'orderByFields': 'date_reported asc', 'f': 'json'}
     response = requests.get(data_url, params=param_list)
     response.raise_for_status()
@@ -97,9 +93,9 @@ def get_timeseries(out: Dict) -> None:
     # convert dates
     PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
     for obj in features:
-        timestamp = obj['date_reported']
+        timestamp = obj['Date_reported']
         date = datetime.fromtimestamp(timestamp/1000, tz=PACIFIC_TIME)
-        obj['date_reported'] = date.strftime("%Y-%m-%d")
+        obj['Date_reported'] = date.strftime("%Y-%m-%d")
 
     re_keyed = [{TIMESERIES_KEYS[key]: value for key, value in entry.items()}
                 for entry in features]
@@ -123,10 +119,6 @@ def get_timeseries(out: Dict) -> None:
         cumul_cases = entry["cumul_cases"]
         cumul_deaths = entry["cumul_deaths"]
         cumul_tests = entry["cumul_tests"]
-
-        # grab cases and replace None with 0
-        if entry["cases"] is None:
-            entry["cases"] = 0
 
         if cumul_cases is not None:
             cases_entry = { k: entry[k] for k in CASES_TEMPLATE if k in entry }
