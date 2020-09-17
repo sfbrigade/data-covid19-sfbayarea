@@ -38,19 +38,19 @@ def get_county(county: str) -> Dict:
     return data
 
 
+# FIXME! Take a list of counties instead, and restructure the data to
+#        key data by each county
+
 def get_timeseries(county: str = "all") -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
     ts_data: Dict[str, Union[str, List]] = {}
     timeseries: List[Dict[str, Any]] = []
     series_standardized: List[Dict[str, Any]] = []
 
-    # Add header data
-    if county == "all":
-        ts_data["name"] = f"{SERIES_NAME} - All CA Counties"
-    else:
-        ts_data["name"] = f"{SERIES_NAME} - {county.title()} County"
-
     now = datetime.now(tz.tzutc()).isoformat(timespec="minutes")
+
+    # Add header data
+    ts_data["name"] = SERIES_NAME
     ts_data["update_time"] = now
     ts_data["source_url"] = HOSPITALS_LANDING_PAGE
     ts_data["meta_from_baypd"] = BAYPD_META
@@ -60,9 +60,6 @@ def get_timeseries(county: str = "all") -> Dict:
         "resource_id": HOSPITALS_RESOURCE_ID,
         "limit": RESULTS_LIMIT
     }
-
-    if county != "all":
-        params["q"] = county.title()
 
     url = CAGOV_BASEURL + CAGOV_API
 
@@ -137,6 +134,12 @@ def standardize_data(record: Dict) -> Dict:
 
     return record
 
+def restructure_data(timeseries: Dict) -> Dict:
+    """Transform the timeseries data (a list of dicts) into a dict
+    with keys for each county name, and a list of dicts with records
+    for that particular county"""
+
+    # TODO!
 
 def truncate_ts(ts: str) -> str:
     """Truncate a timestampe to an ISO 8601-formatted date"""
