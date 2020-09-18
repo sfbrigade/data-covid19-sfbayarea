@@ -14,7 +14,7 @@ from ..errors import FormatError
 # URLs and API endpoints:
 # data_url has cases, deaths, tests
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0/query"
-# data2_url looks like a join on Race/Eth and Age Group
+# data2_url looks like a join on Race/Eth and Age Group #TODO: Parse this nightmare
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0?f=pjson'
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
@@ -52,7 +52,7 @@ def get_county() -> Dict:
     get_timeseries(out)
     # get_age_table(out)
     # get_gender_table(out)
-    # get_race_eth(out)
+    get_race_eth(out)
 
     return out
 
@@ -155,26 +155,33 @@ def get_notes() -> str:
 def get_race_eth (out: Dict)-> None :
     """
     Fetch cases by race and ethnicity
-    Deaths by race/eth not currently reported. Multiple race and other race individuals counted in the same category, which I'm choosing to map to multiple_race.
-    Updates out dictionary with {"cases_totals": {}}
     """
-    # Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_Survey_part_1_v2_new_public_view/FeatureServer/0&source=sd
+    # Link to map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer&source=sd
     # The table view of the map item is a helpful reference.
 
-    RACE_KEYS = {"Latinx_or_Hispanic": "all_cases_hispanic", "Asian": "all_cases_asian", "African_Amer": "all_cases_black",
-                 "White": "all_cases_white", "Pacific_Islander": "all_cases_pacificIslander", "Native_Amer": "all_cases_ai_an", "Multiple_Race": "all_cases_multi_o",
-                 "Unknown": "unknown_all"}
-
-    # format query to get entry for latest date
-    # check for the 'all_cases_total', which is the first total cases column before the race/eth columns
-    param_list = {'where': 'all_cases_total>0','outFields': '*', 'orderByFields':'date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
-    response = requests.get(data_url, params=param_list)
+    # format query to get entry for latest date for race/eth reporting
+    # filter for any days on which a total race/eth was reported
+    param_list = {'where': "Race_ethnicity='Total_RE'",'outFields': '*', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
+    response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
-    latest_day = parsed['features'][0]['attributes']
+    latest_day_timestamp = parsed['features'][0]['attributes']['Date_reported']
+    # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
+    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
-    race_eth_table = { target_key: latest_day[source_key] for target_key, source_key in RACE_KEYS.items() }
-    out["case_totals"]["race_eth"].update(race_eth_table)
+    # get all non-null values for race/ethnicity total cases on the latest day
+    param2_list = {'where': f"RE_total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Race_ethnicity, RE_total_cases', 'f': 'json'}
+    response2 = requests.get(data2_url, params=param2_list)
+    response2.raise_for_status()
+    parsed2 = response2.json()
+
+    race_eth_table = { entry['attributes']['Race_ethnicity']: entry['attributes']['RE_total_cases']  for entry in parsed2['features'] }
+    # A complete table will have 10 datapoints, as of 9/18/20. If there are any more or less, raise an error.
+    if len(race_eth_table) != 10:
+        raise FormatError( f'Race_eth cases query did not return 10 age groups. Results: {race_eth_table}')
+
+    # save to the out dict
+    out["case_totals"]["race_eth"] = race_eth_table
 
 def get_age_table(out: Dict) -> None:
     """
