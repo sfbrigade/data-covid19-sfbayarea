@@ -51,7 +51,7 @@ def get_county() -> Dict:
     # get cases, deaths, and demographics data
     get_timeseries(out)
     get_age_table(out)
-    # get_gender_table(out)
+    get_gender_table(out)
     get_race_eth(out)
 
     return out
@@ -225,59 +225,28 @@ def get_gender_table(out: Dict) -> None:
     Fetch cases by gender
     Updates out with {"cases_totals": {} }
     """
-    #TODO: Confirm which datapoints are the gender numbers with Solano County, and/or add caveat to metadata that the gender numbers are a guess
-    """
-    This data used to have Age Group numbers. The Age_Group columns are still being shown in this source.
-    See the data at this map item: https://www.arcgis.com/home/webmap/viewer.html?url=https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID_19_survey_part_2_v2_public_view/FeatureServer/0&source=sd
-    The table view of the map item is a helpful reference.
-    """
-
-    # format query to get the latest 3 entries. This will get the latest Male and Female entries, plus one additional entry to check if there was
-    # an Unknown gender engry for the day
-    param_list = {'where': '0=0', 'outFields': '*',
-                  'orderByFields': 'date_reported DESC', 'resultRecordCount': '3', 'f': 'json'}
+     # filter for any days on which a Gender total cases numbner was reported
+    param_list = {'where': "G_Total_cases>0",'outFields': 'Date_reported', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
     response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
-    entries = [ attr["attributes"] for attr in parsed['features'] ] # surface data from nested attributes dict
+    latest_day_timestamp = parsed['features'][0]['attributes']['Date_reported']
+    # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
+    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
+    # get all positive values for Gender total cases reported on the latest day
+    param2_list = {'where': f"G_Total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Gender, G_Total_cases', 'f': 'json'}
+    response2 = requests.get(data2_url, params=param2_list)
+    response2.raise_for_status()
+    parsed2 = response2.json()
 
-    # filter entries to surface the 3 entries for the most recent day with at least 2 Male/Female genders
-    # to find them, compare to a complete day's set of included values
-    complete_day = { 'male', 'female'}
+    gender_cases = { entry['attributes']['Gender']: entry['attributes']['G_Total_cases']  for entry in parsed2['features'] }
+    # A complete table will have at least 2 datapoints, as of 9/18/20. If were less than 2, raise an error.
+    if len(gender_cases) <2 :
+        raise FormatError( f'Gender query returned less than 2 groups. Results: {gender_cases}')
 
-    # days is a dict to collect the set of values
-    # initialize days with an empty set of values for each day
-    days = defaultdict(set)
-    keys_to_check = ["gender"]
-    # collect the values for keys to check in each day's set of values
-    for entry in entries:
-        day = entry["date_reported"]
-        for k in keys_to_check:
-            days[day].add( entry[k] )
-
-    # compare each day's sets of keys to a complete day
-    # make a list of all complete days
-    complete_days = [ k for k,v in days.items() if complete_day.issubset(v) ]
-
-    if len(complete_days) != 1:
-        raise FormatError(f"The source data structure has changed. Issues with gender data for these dates: {','.join(complete_days)}" )
-
-    # include all entries with date equal to the complete day
-    gender_cols = [ entry for entry in entries if entry["date_reported"] in complete_days ]
-
-    # Dicts of source_label: target_label for re-keying.
-    GENDER_KEYS = {"female": "female", "male": "male",
-                   "unknown": "unknown"}
-    gender_table_cases = dict()
-
-    # parse output
-    for entry in gender_cols:
-        gender_key = GENDER_KEYS.get(entry["gender"], "unknown") # for entries where gender not reported, assume unknown
-        gender_cases = entry["number_of_cases"] or 0 # explicitly set 0 for null values
-        gender_table_cases[gender_key] = gender_cases
-
-    out["case_totals"]["gender"].update(gender_table_cases)
+    # save to the out dict
+    out["case_totals"]["gender"] = gender_cases
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
