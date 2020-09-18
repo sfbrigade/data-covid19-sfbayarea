@@ -170,18 +170,20 @@ def get_race_eth (out: Dict)-> None :
     latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
     # get all non-null values for race/ethnicity total cases on the latest day
-    param2_list = {'where': f"RE_total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Race_ethnicity, RE_total_cases', 'f': 'json'}
+    param2_list = {'where': f"RE_total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Race_ethnicity, RE_total_cases, RE_deaths', 'f': 'json'}
     response2 = requests.get(data2_url, params=param2_list)
     response2.raise_for_status()
     parsed2 = response2.json()
 
-    race_eth_table = { entry['attributes']['Race_ethnicity']: entry['attributes']['RE_total_cases']  for entry in parsed2['features'] }
+    race_eth_cases = { entry['attributes']['Race_ethnicity']: entry['attributes']['RE_total_cases']  for entry in parsed2['features'] }
     # A complete table will have 10 datapoints, as of 9/18/20. If there are any more or less, raise an error.
-    if len(race_eth_table) != 10:
-        raise FormatError( f'Race_eth cases query did not return 10 age groups. Results: {race_eth_table}')
+    if len(race_eth_cases) != 10:
+        raise FormatError( f'Race_eth query did not return 10 groups. Results: {race_eth_cases}')
 
+    race_eth_deaths = { entry['attributes']['Race_ethnicity']: entry['attributes']['RE_deaths']  for entry in parsed2['features'] }
     # save to the out dict
-    out["case_totals"]["race_eth"] = race_eth_table
+    out["case_totals"]["race_eth"] = race_eth_cases
+    out["death_totals"]["race_eth"] = race_eth_deaths
 
 def get_age_table(out: Dict) -> None:
     """
