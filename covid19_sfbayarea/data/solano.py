@@ -8,13 +8,12 @@ from datetime import datetime, timezone
 import dateutil.tz
 from ..webdriver import get_firefox
 from .utils import get_data_model
-from collections import defaultdict
 from ..errors import FormatError
 
 # URLs and API endpoints:
 # data_url has cases, deaths, tests
 data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0/query"
-# data2_url looks like a join on Race/Eth and Age Group #TODO: Parse this nightmare
+# data2_url looks like a join on Race/Eth and Age Group
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0?f=pjson'
 
