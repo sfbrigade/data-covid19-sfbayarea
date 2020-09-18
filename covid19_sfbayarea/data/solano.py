@@ -17,6 +17,9 @@ data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/C
 # data2_url looks like a join on Race/Eth and Age Group #TODO: Parse this nightmare
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0?f=pjson'
+
+# note, this is a link to just one dashboard, which is used to scrape the disclaimers.
+# The main public-facing interface with all dashboards is here: https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67
 dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/d28335cd317a45cd84211cd290889c27'
 
 def get_county() -> Dict:
