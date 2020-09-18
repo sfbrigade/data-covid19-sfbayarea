@@ -50,7 +50,7 @@ def get_county() -> Dict:
 
     # get cases, deaths, and demographics data
     get_timeseries(out)
-    # get_age_table(out)
+    get_age_table(out)
     # get_gender_table(out)
     get_race_eth(out)
 
@@ -106,7 +106,7 @@ def get_timeseries(out: Dict) -> None:
 
     for entry in re_keyed:
         #FIXME:
-        # Sonoma county has entries for each day, but some days have "null" for cumulative deaths and cumulative tests.
+        # Solano county has entries for each day, but some days have "null" for cumulative deaths and cumulative tests.
         # This means that cumulative counts go something like: 1, null ,null, null, 2, 3 -- on consecutive days.
         # My best guess is that for deaths and tests they are entering "null" for the cumulative counts on days where the cumulative counts haven't changed from the previous day.
         # The solution below is just to filter out the cumulative count "null" values (Python None), which results in gaps in the timeseries.
@@ -169,7 +169,7 @@ def get_race_eth (out: Dict)-> None :
     # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
     latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
-    # get all non-null values for race/ethnicity total cases on the latest day
+    # get all positive values for race/ethnicity total cases on the latest day
     param2_list = {'where': f"RE_total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Race_ethnicity, RE_total_cases, RE_deaths', 'f': 'json'}
     response2 = requests.get(data2_url, params=param2_list)
     response2.raise_for_status()
@@ -190,36 +190,34 @@ def get_age_table(out: Dict) -> None:
     Fetch cases and deaths by age group
     Updates out with {"cases_totals": {}, "death_totals":{} }
     """
-    param_list = {'where': '0=0', 'outFields': 'Age_Group, All_cases_Number, Died_Number',
-                  'orderByFields': 'Age_Group ASC', 'f': 'json'}
-    response = requests.get(age_group_url, params=param_list)
+
+     # filter for any days on which a total age group cases was reported
+    param_list = {'where': "Age_group='Total_AG'",'outFields': 'Date_reported', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
+    response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
     parsed = response.json()
-    # surface data from nested attributes dict
-    entries = [attr["attributes"] for attr in parsed['features']]
+    latest_day_timestamp = parsed['features'][0]['attributes']['Date_reported']
+    # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
+    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
-    if len(entries) != 4: # check that we have 4 entries, one for each expected age group
-        raise FormatError(
-            f"The source data structure has changed. Query did not return four age groups. Results: {entries}")
+    # get all positive values for race/ethnicity total cases on the latest day
+    param2_list = {'where': f"AG_Total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Age_group, AG_Total_cases, AG_deaths', 'f': 'json'}
+    response2 = requests.get(data2_url, params=param2_list)
+    response2.raise_for_status()
+    parsed2 = response2.json()
 
-    # Dict of source_label: target_label for re-keying.
-    AGE_KEYS = {"0-17 yrs": "0_to_17",
-                "18-49 yrs": "18_to_49", "50-64 yrs": "50_to_64", "65+ yrs": "65_and_older" }
-    age_table_cases = []
-    age_table_deaths = []
+    age_group_cases = { entry['attributes']['Age_group']: entry['attributes']['AG_Total_cases']  for entry in parsed2['features'] }
+    # A complete table will have 5 datapoints, as of 9/18/20. If there are any more or less, raise an error.
+    if len(age_group_cases) != 5:
+        raise FormatError( f'Race_eth query did not return 5 groups. Results: {age_group_cases}')
 
-    # parse output
-    for entry in entries:
-        age_key = AGE_KEYS[entry["Age_Group"]]
-        age_group_cases = entry["All_cases_Number"] or 0 # explicitly set 0 for null values
-        age_group_deaths = entry["Died_Number"] or 0
-        age_table_cases.append(
-            {"group": age_key, "raw_count": age_group_cases})
-        age_table_deaths.append(
-            {"group": age_key, "raw_count": age_group_deaths})
+    age_group_deaths = { entry['attributes']['Age_group']: entry['attributes']['AG_deaths']  for entry in parsed2['features'] }
+    # save to the out dict
+    out["case_totals"]["age_group"] = age_group_cases
+    out["death_totals"]["age_group"] = age_group_deaths
 
-    out["case_totals"]["age_group"] = age_table_cases
-    out["death_totals"]["age_group"] = age_table_deaths
+    out["case_totals"]["age_group"] = age_group_cases
+    out["death_totals"]["age_group"] = age_group_deaths
 
 
 def get_gender_table(out: Dict) -> None:
