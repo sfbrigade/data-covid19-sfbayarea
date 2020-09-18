@@ -17,7 +17,7 @@ data_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/C
 # data2_url looks like a join on Race/Eth and Age Group #TODO: Parse this nightmare
 data2_url = "https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt2v3_view_3/FeatureServer/0/query"
 metadata_url = 'https://services2.arcgis.com/SCn6czzcqKAFwdGU/ArcGIS/rest/services/COVID19Surveypt1v3_view/FeatureServer/0?f=pjson'
-dashboard_url = 'https://doitgis.maps.arcgis.com/apps/MapSeries/index.html?appid=055f81e9fe154da5860257e3f2489d67'
+dashboard_url = 'https://doitgis.maps.arcgis.com/apps/opsdashboard/index.html#/d28335cd317a45cd84211cd290889c27'
 
 def get_county() -> Dict:
     """Main method for populating county data .json"""
@@ -28,12 +28,11 @@ def get_county() -> Dict:
     # populate dataset headers
     out["name"] = "Solano County"
     out["source_url"] = data_url
+    out["meta_from_source"] = get_notes()
     out["meta_from_baypd"] = '\n'.join([
         "Solano reports daily cumulative cases, deaths, and residents tested. The county does not report new daily confirmed cases.",
         "Solano reports total number of residents tested on each date. This may exclude counts of tests for individuals being retested. Solano does not report test results.",
-        "Deaths by race/eth not currently reported.",
-        "Multiple race and other race individuals are reported in the same category, which Bay PD is reporting as Multiple_Race.",
-        "Cases by gender are ambiguous datapoints in the source data, and have not been confirmed by dashboards and reports released by the County to the public."])
+        "Deaths by gender not currently reported."])
 
     # fetch cases metadata, to get the timestamp
     response = requests.get(metadata_url)
@@ -105,14 +104,6 @@ def get_timeseries(out: Dict) -> None:
     TESTS_TEMPLATE = { "date": -1, "tests": -1, "positive": -1, "negative": -1, "pending": -1, "cumul_tests": -1,"cumul_pos": -1, "cumul_neg": -1, "cumul_pend": -1 }
 
     for entry in re_keyed:
-        #FIXME:
-        # Solano county has entries for each day, but some days have "null" for cumulative deaths and cumulative tests.
-        # This means that cumulative counts go something like: 1, null ,null, null, 2, 3 -- on consecutive days.
-        # My best guess is that for deaths and tests they are entering "null" for the cumulative counts on days where the cumulative counts haven't changed from the previous day.
-        # The solution below is just to filter out the cumulative count "null" values (Python None), which results in gaps in the timeseries.
-        # We may want to revisit this and clean up our json to interpolate the values on null-count days until the day the value changes. But that means we're injecting numbers
-        # into the data, and I don't know if we want to do that. But we will be interpolating anyways, in our visualizations, so maybe that's ok.
-
         # grab cumulative values, to check if they are None
         cumul_cases = entry["cumul_cases"]
         cumul_deaths = entry["cumul_deaths"]
@@ -134,9 +125,10 @@ def get_timeseries(out: Dict) -> None:
 def get_notes() -> str:
     """Scrape notes and disclaimers from dashboard."""
     # As of 6/5/20, the only disclaimer is "Data update weekdays at 4:30pm"
+    # As of 9/18/20, the only disclaimer is "Numbers are updated weekdays at 6:00 PM."
     with get_firefox() as driver:
         notes = []
-        match = re.compile('disclaimers?', re.IGNORECASE)
+        match = re.compile('disclaimer?', re.IGNORECASE)
         driver.implicitly_wait(30)
         driver.get(dashboard_url)
         soup = BeautifulSoup(driver.page_source, 'html5lib')
@@ -148,7 +140,7 @@ def get_notes() -> str:
                 has_notes = True
         if not has_notes:
             raise FormatError(
-                "This dashboard url has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url)
+                "This dashboard has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url)
         return '\n\n'.join(notes)
 
 
