@@ -173,6 +173,16 @@ You can run tests using `pytest` like so:
 $ python -m pytest -v .
 ```
 
+Some tests run against live websites and can be slow (or worse; they might spam a county's server with requests and get your IP blocked), so they are disabled by default. To run them, set the `LIVE_TESTS` environment variable. It can be `'*'` to run live tests against all counties, or a comma separated list of counties to test.
+
+```sh
+# Run live tests against all county websites.
+$ LIVE_TESTS='*' python -m pytest -v .
+
+# Run live tests against only San Francisco and Sonoma counties.
+$ LIVE_TESTS='san_francisco,sonoma' python -m pytest -v .
+```
+
 ### Linting and Code Conventions
 
 We use Pyflakes for linting. Many editors have support for running it while you type (either built-in or via a plugin), but you can also run it directly from the command line:
