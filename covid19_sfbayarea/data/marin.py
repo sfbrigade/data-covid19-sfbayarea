@@ -3,11 +3,11 @@ import csv
 from typing import List, Dict, Tuple
 from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import contextmanager
 import time
 
- 
+
 from ..webdriver import get_firefox
 from .utils import get_data_model
 
@@ -21,13 +21,13 @@ def get_county() -> Dict:
     # The time series data for negative tests is gone, so I've just scraped positive test data using the new chart referenced above.
 
     model['name'] = "Marin County"
-    model['update_time'] = datetime.today().isoformat()
+    model['update_time'] = datetime.now(tz=timezone.utc).isoformat()
     model["meta_from_baypd"] = ""
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
-    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases') 
-    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths') 
+    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases')
+    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths')
 
     model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
@@ -36,7 +36,7 @@ def get_county() -> Dict:
     return model
 
 @contextmanager
-def chart_frame(driver, chart_id: str): # type: ignore 
+def chart_frame(driver, chart_id: str): # type: ignore
     # is this bad practice? I didn't know what type to specify here for the frame.
     frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
     driver.switch_to.frame(frame)
@@ -46,7 +46,7 @@ def chart_frame(driver, chart_id: str): # type: ignore
         driver.switch_to.default_content()
         driver.quit()
 
-def get_chart_data(url: str, chart_id: str) -> List[str]: 
+def get_chart_data(url: str, chart_id: str) -> List[str]:
     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
     with get_firefox() as driver:
         driver.implicitly_wait(30)
@@ -67,17 +67,18 @@ def get_chart_data(url: str, chart_id: str) -> List[str]:
 
     return csv_data
 
-def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
+def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> str:
     """This method gets all the metadata underneath the data wrapper charts and the metadata at the top of the county dashboard."""
+    # Some metadata strings are repeated, so use sets to dedupe them.
     metadata: set = set()
     chart_metadata: set = set()
 
-    with get_firefox() as driver: 
+    with get_firefox() as driver:
         driver.implicitly_wait(30)
         driver.get(url)
         soup = BeautifulSoup(driver.page_source, 'html5lib')
 
-        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}): 
+        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
             if soup_obj.findAll('p'):
                 metadata = set({paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","") for paragraph in soup_obj.findAll('p')})
             else:
@@ -87,10 +88,10 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
         driver.implicitly_wait(30)
         driver.get(url)
         # Metadata for each chart visualizing the data of the csv file I'll pull.
-        # I had to change my metadata function b/c for whatever reason, my usual code didn't pick up on the class notes block. 
-        # There's something weird with the website that Ricardo and I couldn't quite pinpoint. 
+        # I had to change my metadata function b/c for whatever reason, my usual code didn't pick up on the class notes block.
+        # There's something weird with the website that Ricardo and I couldn't quite pinpoint.
         source_list: set = set()
-        for chart_id in chart_ids.values(): 
+        for chart_id in chart_ids.values():
             driver.implicitly_wait(30)
             source = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]').get_attribute('src')
             source_list.add(source)
@@ -98,20 +99,19 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> Tuple[List, List]:
     with get_firefox() as driver:
         for source in source_list:
             driver.get(source)
-            #breakpoint() 
-            time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate. 
-            # From the source code it seems that .get() should be synchronous but it's not working like that :( 
-            soup = BeautifulSoup(driver.page_source, 'html5lib') 
+            #breakpoint()
+            time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate.
+            # From the source code it seems that .get() should be synchronous but it's not working like that :(
+            soup = BeautifulSoup(driver.page_source, 'html5lib')
             for data in soup.findAll('div', attrs = {'class': 'notes-block'}):
-                #breakpoint() 
+                #breakpoint()
                 chart_metadata.add(data.text.strip())
 
     # Manually adding in metadata about testing data
     chart_metadata.add("Negative and pending tests are excluded from the Marin County test data.")
     chart_metadata.add("Note that this test data is about tests done by Marin County residents, not about all tests done in Marin County (includes residents and non-residents).")
 
-    # Return the metadata. I take the set of the chart_metadata since there are repeating metadata strings.
-    return list(metadata), list(chart_metadata)
+    return '\n\n'.join([*metadata, *chart_metadata])
 
 def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str) -> List:
     """This method extracts the date, number of cases/deaths, and new cases/deaths."""
@@ -132,9 +132,9 @@ def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ:
         daily: dict = dict()
         date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
         daily["date"] = date_time_obj.strftime('%Y-%m-%d')
-        # Collect the case totals in order to compute the change in cases per day 
+        # Collect the case totals in order to compute the change in cases per day
         history.append(int(row[typ]))
-        daily[model_typ] = int(row[typ]) 
+        daily[model_typ] = int(row[typ])
         series.append(daily)
 
     history_diff: list = list()
@@ -145,7 +145,7 @@ def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ:
     history_diff.insert(0, int(series[0][model_typ]))
 
     for val, num in enumerate(history_diff):
-        series[val][new_count] = num 
+        series[val][new_count] = num
     return series
 
 def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
@@ -161,7 +161,7 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
 
-    key_mapping = {"0-9": "0_to_9", "10-18": "10_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"} 
+    key_mapping = {"0-9": "0_to_9", "10-18": "10_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"}
 
     for row in csv_reader:
         c_age: dict = dict()
@@ -193,15 +193,15 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     genders = ['male', 'female']
     c_gender: dict = dict()
     d_gender: dict = dict()
-    
+
     for row in csv_reader:
         # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
         # Each new row has data for a different gender.
         gender = row["Gender"].lower()
         if gender not in genders:
-            raise ValueError("The genders have changed.") 
+            raise ValueError("The genders have changed.")
         c_gender[gender] = int(row["Cases"])
-        d_gender[gender] = int(row["Deaths"])            
+        d_gender[gender] = int(row["Deaths"])
 
     return c_gender, d_gender
 
@@ -212,7 +212,7 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
-    
+
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
         raise ValueError("The headers have changed.")
 
@@ -237,7 +237,7 @@ def get_test_series(chart_id: str, url: str) -> List:
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
-    
+
     if keys != ['Test Date', 'Positive Tests']:
         raise ValueError("The headers have changed.")
 
@@ -252,5 +252,5 @@ def get_test_series(chart_id: str, url: str) -> List:
         cumul_pos += daily["positive"]
         daily["cumul_positive"] = cumul_pos
         test_series.append(daily)
-        
+
     return test_series
