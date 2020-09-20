@@ -5,6 +5,7 @@
 import click
 import json
 from typing import Tuple
+from covid19_sfbayarea.utils import cli_friendly_county
 
 
 # prep lists of counties the user can choose to filter the data
@@ -13,11 +14,11 @@ with open("counties.json") as f:
     ca_county_list = json.load(f)
 
 bay_area_counties = [
-    county.replace(" ", "_").lower() for county in ca_county_list.get("Bay Area")
+    cli_friendly_county(county) for county in ca_county_list.get("Bay Area")
 ]
 
 other_ca_counties = [
-    county.replace(" ", "_").lower() for county in ca_county_list.get("Other CA")
+    cli_friendly_county(county) for county in ca_county_list.get("Other CA")
 ]
 
 all_ca_counties = bay_area_counties + other_ca_counties
