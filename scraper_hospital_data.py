@@ -4,6 +4,8 @@
 
 import click
 import json
+import traceback
+from pathlib import Path
 from typing import Tuple
 
 from covid19_sfbayarea.data import hospitals
@@ -42,13 +44,29 @@ all_ca_counties = bay_area_counties + other_ca_counties
     help='write output file to this directory'
 )
 def main(counties: Tuple[str, ...], output: str) -> None:
-    if counties:
-        out = hospitals.get_timeseries(counties)
 
-    else:
-        out = hospitals.get_timeseries(bay_area_counties)
+    try:
+        if counties:
+            out = hospitals.get_timeseries(counties)
 
-    print(json.dumps(out, indent=2))
+        else:
+            out = hospitals.get_timeseries(bay_area_counties)
+
+        if output:
+            parent = Path(output)
+            parent.mkdir(exist_ok=True)  # if output directory does not exist, create it
+            with parent.joinpath('hospital_data.json').open('w', encoding='utf-8') as f:
+                json.dump(out, f, ensure_ascii=False, indent=2)
+
+        else:
+            print(json.dumps(out, indent=2))
+
+    except Exception as error:
+        message = click.style(
+            'Hospitalization data fetch failed', fg='red'
+        )
+        click.echo(f'{message}: {error}', err=True)
+        traceback.print_exc()
 
 
 if __name__ == '__main__':
