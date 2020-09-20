@@ -49,7 +49,7 @@ def main(counties: Tuple[str, ...], output: str) -> None:
 
     try:
         if counties:
-            out = hospitals.get_timeseries(counties)
+            out = hospitals.get_timeseries(list(counties))
 
         else:
             out = hospitals.get_timeseries(bay_area_counties)

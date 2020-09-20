@@ -5,7 +5,7 @@ import requests
 from datetime import datetime
 from dateutil import tz
 from dateutil.parser import parse
-from typing import Any, Dict, List, Union, Tuple
+from typing import Any, Dict, List, Union
 
 from covid19_sfbayarea.utils import friendly_county
 
@@ -102,7 +102,7 @@ def standardize_data(record: Dict) -> Dict:
     return record
 
 
-def process_data(series: List, counties: Tuple) -> Dict:
+def process_data(series: List, counties: List) -> Dict:
     """Transform the timeseries data (a list of dicts) into a dict
     with keys for each county name, and a list of dicts with records
     for that particular county"""
@@ -125,7 +125,7 @@ def process_data(series: List, counties: Tuple) -> Dict:
 # ====================
 
 
-def get_timeseries(counties: Tuple) -> Dict:
+def get_timeseries(counties: List) -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
     ts_data: Dict[Any, Any] = {}
     timeseries_raw: List[Dict[str, Any]] = []
