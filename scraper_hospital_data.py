@@ -4,6 +4,8 @@
 
 import click
 import json
+import logging
+import os
 import traceback
 from pathlib import Path
 from typing import Tuple
@@ -70,4 +72,5 @@ def main(counties: Tuple[str, ...], output: str) -> None:
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=os.getenv('LOG_LEVEL', 'WARN').upper())
     main()

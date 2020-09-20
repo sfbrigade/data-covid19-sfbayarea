@@ -27,7 +27,7 @@ RESULTS_LIMIT = 200
 SERIES_NAME = "CA COVID-19 Hospitalization Data"
 BAYPD_META = "This data was pulled from the data.ca.gov CKAN Data API"
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # =======================
@@ -172,7 +172,7 @@ def get_timeseries(counties: Tuple) -> Dict:
             timeseries_raw.extend(records)
 
             results_count = len(timeseries_raw)
-            logging.info(f"Got {results_count} results out of {total} ...")
+            logger.info(f"Got {results_count} results out of {total} ...")
             more = results.get("_links").get("next")
 
             # Don't ask for more pages than there are
@@ -181,16 +181,16 @@ def get_timeseries(counties: Tuple) -> Dict:
 
             else:
                 break
-        logging.info("Collected all pages")
+        logger.info("Collected all pages")
 
         # standardize the format of the data and key it by county name
         ts_data["series"] = process_data(timeseries_raw, counties)
 
     except AttributeError:
-        logging.exception("Error parsing response")
+        logger.exception("Error parsing response")
 
     except requests.exceptions.RequestException:
-        logging.exception("Error fetching from API")
+        logger.exception("Error fetching from API")
 
     finally:
         return ts_data
