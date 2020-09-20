@@ -176,9 +176,7 @@ California COVID-19 hospitalization data is retrieved separately from the the
         -- snip --
 ```
 
-Each entry in `series` is a flat record with each of the fields described in
-`meta_from_source`, one for each day on which an observation was made. As
-described above, null or default values are represented as `-1`.
+The `series` object is a dictionary keyed by the county name (e.g. "San Francisco"), with values being a list of flat dictionaries with with each of the fields described in `meta_from_source`, one for each day on which an observation was made. As described above, null or default values are represented as `-1`.
 
 ```
         {
@@ -195,7 +193,7 @@ described above, null or default values are represented as `-1`.
         }
 ```
 
-The `name` value starts with "Hospitalization - " and then the full name of the county (e.g. "Hospitalization - Alameda County"). If the argument `"all"` is passed to `get_county()` (the default in the `get_timeseries()` function), then data for all counties will be fetched, and the name value will be "Hospitalization - All CA Counties"
+The `name` value should always be `CA COVID-19 Hospitalization Data`.
 
 # Notes and resources 
 Please contribute!
