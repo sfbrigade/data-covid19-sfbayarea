@@ -4,7 +4,7 @@ import os
 import pytest
 from pytest_voluptuous import S, Partial, Exact
 from typing import List
-from voluptuous.validators import Date, Datetime, Url
+from voluptuous.validators import Date, Match, Url
 from voluptuous.schema_builder import Optional
 import warnings
 
@@ -32,7 +32,7 @@ elif LIVE_TESTS:
 # A validator for an ISO 8601 datetime. This is really similar to
 # voluptuous.validators.Datetime, but it accepts time zone offsets (e.g.
 # `+0300`) instead of just `Z` (the short-form version of `+0000`).
-DatetimeIso = Datetime('%Y-%m-%dT%H:%M:%S.%f%z')
+DatetimeIso = Match(r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(.\d+)?(Z|[+\-]\d\d:?\d\d)$')
 
 
 @pytest.mark.parametrize('county', TEST_COUNTIES)
