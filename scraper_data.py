@@ -30,7 +30,10 @@ def main(counties: Tuple[str,...], output: str) -> None:
             out[county] = data_scrapers.scrapers[county].get_county()
         except Exception as error:
             failed_counties = True
-            print(f'{county} failed to scrape: {e}', file = stderr)
+            message = click.style(f'{friendly_county(county)} county failed',
+                                  fg='red')
+            click.echo(f'{message}: {error}', err=True)
+            traceback.print_exc()
 
     if output:
         parent = Path(output)
