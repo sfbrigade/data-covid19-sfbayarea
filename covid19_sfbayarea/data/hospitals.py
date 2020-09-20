@@ -8,6 +8,8 @@ from dateutil import tz
 from dateutil.parser import parse
 from typing import Any, Dict, List, Union, Tuple
 
+from covid19_sfbayarea.utils import friendly_county
+
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
 # The input data is fetched from an API endpoint, and appears to be updated at
 # least daily.  Hospital stats, such as number of available ICU beds, are
@@ -108,12 +110,13 @@ def process_data(series: List, counties: Tuple) -> Dict:
     processed_series: Dict[str, Union[str, Any]] = {}
 
     for county in counties:
+        county_name = friendly_county(county)
         county_records = [
             standardize_data(record) for record in series
-            if record.get("county") == county
+            if record.get("county") == county_name
         ]
 
-        processed_series[county] = county_records
+        processed_series[county_name] = county_records
 
     return processed_series
 

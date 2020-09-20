@@ -5,6 +5,8 @@
 import click
 import json
 from typing import Tuple
+
+from covid19_sfbayarea.data import hospitals
 from covid19_sfbayarea.utils import cli_friendly_county
 
 
@@ -40,7 +42,8 @@ all_ca_counties = bay_area_counties + other_ca_counties
     help='write output file to this directory'
 )
 def main(counties: Tuple[str, ...], output: str) -> None:
-    print(counties)
+    out = hospitals.get_timeseries(counties)
+    print(json.dumps(out, indent=2))
 
 
 if __name__ == '__main__':
