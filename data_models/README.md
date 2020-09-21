@@ -176,7 +176,7 @@ California COVID-19 hospitalization data is retrieved separately from the the
         -- snip --
 ```
 
-The `series` object is a dictionary keyed by the county name (e.g. "San Francisco"), with values being a list of flat dictionaries with with each of the fields described in `meta_from_source`, one for each day on which an observation was made. As described above, null or default values are represented as `-1`.
+The `series` object is a dictionary keyed by the machine-friendly formatted county name (e.g. "san_francisco"), with values being a list of flat dictionaries with with each of the fields described in `meta_from_source`, one for each day on which an observation was made. As described above, null or default values are represented as `-1`.
 
 ```
         {

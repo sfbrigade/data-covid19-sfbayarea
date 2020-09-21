@@ -15,7 +15,7 @@
         }
     ],
     "series": {
-        "County Name 1": [
+        "county_name": [
             {
                 "icu_covid_confirmed_patients": -1,
                 "icu_suspected_covid_patients": -1,

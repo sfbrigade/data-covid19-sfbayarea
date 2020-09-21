@@ -115,7 +115,7 @@ def process_data(series: List, counties: List) -> Dict:
             if record.get("county") == county_name
         ]
 
-        processed_series[county_name] = county_records
+        processed_series[county] = county_records
 
     return processed_series
 
