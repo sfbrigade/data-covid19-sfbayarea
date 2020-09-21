@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import traceback
+import sys
 from pathlib import Path
 from typing import Tuple
 
@@ -54,6 +55,13 @@ def main(counties: Tuple[str], output: str) -> None:
         else:
             out = hospitals.get_timeseries(bay_area_counties)
 
+        if not out:
+            message = click.style(
+                'Hospitalization data fetch came back empty ', fg='red'
+            )
+            click.echo(message, err=True)
+            sys.exit(1)
+
         if output:
             parent = Path(output)
             parent.mkdir(exist_ok=True)  # if output directory does not exist, create it
@@ -65,10 +73,11 @@ def main(counties: Tuple[str], output: str) -> None:
 
     except Exception as error:
         message = click.style(
-            'Hospitalization data fetch failed', fg='red'
+            'Hospitalization data fetch encountered error', fg='red'
         )
         click.echo(f'{message}: {error}', err=True)
         traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == '__main__':
