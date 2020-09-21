@@ -11,24 +11,11 @@ import sys
 from pathlib import Path
 from typing import Tuple
 
+from covid19_sfbayarea import ca_counties
 from covid19_sfbayarea.data import hospitals
-from covid19_sfbayarea.utils import cli_friendly_county
 
 
-# prep lists of counties the user can choose to filter the data
-# format county strings so they're command line-friendly
-with open("covid19_sfbayarea/counties.json") as f:
-    ca_county_list = json.load(f)
-
-bay_area_counties = [
-    cli_friendly_county(county) for county in ca_county_list.get("Bay Area")
-]
-
-other_ca_counties = [
-    cli_friendly_county(county) for county in ca_county_list.get("Other CA")
-]
-
-all_ca_counties = bay_area_counties + other_ca_counties
+all_ca_counties = sorted(ca_counties.bay_area_counties + ca_counties.other_ca_counties)
 
 
 @click.command(
@@ -53,7 +40,7 @@ def main(counties: Tuple[str], output: str) -> None:
             out = hospitals.get_timeseries(list(counties))
 
         else:
-            out = hospitals.get_timeseries(bay_area_counties)
+            out = hospitals.get_timeseries(ca_counties.bay_area_counties)
 
         if not out:
             message = click.style(
