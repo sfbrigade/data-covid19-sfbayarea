@@ -45,7 +45,7 @@ all_ca_counties = bay_area_counties + other_ca_counties
     metavar='PATH',
     help='write output file to this directory'
 )
-def main(counties: Tuple[str, ...], output: str) -> None:
+def main(counties: Tuple[str], output: str) -> None:
 
     try:
         if counties:
