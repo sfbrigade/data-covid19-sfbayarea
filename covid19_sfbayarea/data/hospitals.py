@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 # =======================
 
 
-def truncate_ts(ts: str) -> str:
+def truncate_timestamp(timestamp: str) -> str:
     """Truncate a timestamp to an ISO 8601-formatted date"""
-    trunc_ts = parse(ts).date().isoformat()
-    return trunc_ts
+    truncated_timestamp = parse(timestamp).date().isoformat()
+    return truncated_timestamp
 
 
 def convert_null(record: Dict) -> Dict:
@@ -94,7 +94,7 @@ def standardize_data(record: Dict) -> Dict:
 
     Also, the key 'todays_date' is converted to 'report_date' for clarity.
     """
-    record["report_date"] = truncate_ts(record.pop("todays_date"))
+    record["report_date"] = truncate_timestamp(record.pop("todays_date"))
     record.pop("rank", None)
     record = convert_null(record)
     record = floats_to_ints(record)

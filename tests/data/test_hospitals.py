@@ -35,10 +35,10 @@ SAMPLE_OUTPUT = {
 }
 
 
-def test_truncate_ts():
-    ts = SAMPLE_RECORD.get("todays_date")
-    trunc_ts = hospitals.truncate_ts(ts)
-    assert trunc_ts == "2020-03-30"
+def test_truncate_timestamp():
+    timestamp = SAMPLE_RECORD.get("todays_date")
+    truncated_timestamp = hospitals.truncate_timestamp(timestamp)
+    assert truncated_timestamp == "2020-03-30"
 
 
 def test_convert_null():
