@@ -44,7 +44,7 @@ def row_list_to_dict(row: List[str], headers: List[str]) -> UnformattedSeriesIte
 
 def parse_table(tag: element.Tag) -> UnformattedSeries:
     """
-    Takes in a BeautifulSoup table tag and returns a list of dictionaries 
+    Takes in a BeautifulSoup table tag and returns a list of dictionaries
     where the keys correspond to header names and the values to corresponding cell values
     """
     rows = tag.find_all('tr')
@@ -56,7 +56,7 @@ def parse_table(tag: element.Tag) -> UnformattedSeries:
 
 def parse_int(text: str) -> int:
     """
-    Takes in a number in string form and returns that string in integer form 
+    Takes in a number in string form and returns that string in integer form
     and handles zeroes represented as dashes
     """
     text = text.strip()
@@ -203,7 +203,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         'Multi-Race': 'Multiple_Race',
         'Black / African American, non-Hispanic': 'African_Amer',
         'Unknown': 'Unknown'
-    }    
+    }
 
     rows = parse_table(race_eth_tag)
     for row in rows:
@@ -238,7 +238,7 @@ def get_county() -> Dict:
     model = {
         'name': 'Sonoma County',
         'update_time': generate_update_time(sonoma_soup),
-        'source': url,
+        'source_url': url,
         'meta_from_source': get_source_meta(sonoma_soup),
         'meta_from_baypd': '',
         'series': transform_cases(hist_cases),

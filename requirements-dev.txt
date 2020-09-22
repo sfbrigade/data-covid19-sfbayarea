@@ -1,3 +1,4 @@
 mypy==0.770
 pyflakes==2.2.0
 pytest==5.4.3
+pytest-voluptuous==1.2.0
