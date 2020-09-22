@@ -7,8 +7,12 @@ def get_json() -> List[Dict]:
     """
     Fetches location-keyed data in JSON format from the CDS
     and parses it into a dict
+    Since 8/31/2020, the CDS site has not been updating data.
+    Seems the public site is busted but the data is still updating and
+    available directly from the updated link below.
+    Keep watching the issue: https://github.com/covidatlas/li/issues/606
     """
-    corona_url = 'https://coronadatascraper.com/timeseries-byLocation.json'
+    corona_url = 'https://liproduction-reportsbucket-bhk8fnhv1s76.s3-us-west-1.amazonaws.com/v1/latest/timeseries-byLocation.json'
     raw_response = requests.get(corona_url)
     parsed_json = json.loads(raw_response.content)
     return parsed_json
