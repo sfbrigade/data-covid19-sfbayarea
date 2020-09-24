@@ -186,6 +186,31 @@ def get_timeseries(counties: List) -> Dict:
         # standardize the format of the data and key it by county name
         ts_data["series"] = process_data(timeseries_raw, counties)
 
+        # reflect renaming of the date field in the metadata
+        updated_date_meta = {
+            "info": {
+                "notes": "Report date",
+                "type_override": "date",
+                "label": "Date"
+            },
+            "type": "date",
+            "id": "date"
+        }
+
+        current_meta = ts_data["meta_from_source"]
+        updated_meta: Dict = {"meta_from_source": []}
+
+        for entry in current_meta:
+            if entry.get("id") == "todays_date":
+                index = current_meta.index(entry)
+                updated_meta["meta_from_source"].insert(
+                    index, updated_date_meta
+                )
+            else:
+                updated_meta["meta_from_source"].append(entry)
+
+        ts_data.update(updated_meta)
+
     except AttributeError:
         logger.exception("Error parsing response")
 

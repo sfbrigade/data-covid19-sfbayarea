@@ -31,7 +31,7 @@ SAMPLE_OUTPUT = {
     'hospitalized_covid_confirmed_patients': 10,
     '_id': 103,
     'all_hospital_beds': -1,
-    'report_date': '2020-03-30'
+    'date': '2020-03-30'
 }
 
 
