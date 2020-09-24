@@ -1,33 +1,37 @@
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 from .power_bi_querier import PowerBiQuerier
+from .time_series_tests_total import TimeSeriesTestsTotal
+from .time_series_tests_percent import TimeSeriesTestsPercent
 
-class TimeSeriesTests(PowerBiQuerier):
-    def __init__(self) -> None:
-        self.function = 'Sum'
-        self.model_id = 275728
-        self.powerbi_resource_key = '1b96a93b-9500-44cf-a3ce-942805b455ce'
-        self.source = 'l'
-        self.name = 'lab_cases_by_date'
-        self.property = 'lab_collection_date'
-        super().__init__()
+class TimeSeriesTests():
+    def get_data(self) -> List[Dict[str, Any]]:
+        total_tests = dict(TimeSeriesTestsTotal().get_data()[1:])
+        percent_positive_tests = dict(TimeSeriesTestsPercent().get_data()[1:])
+        self._assert_total_and_percent_cases_count_matches(total_tests, percent_positive_tests)
 
-    def _parse_data(self, response_json: Dict) -> List[Dict[str, Any]]:
-        data_pairs = super()._parse_data(response_json)
-        results = [
-            {
-                'date': self._timestamp_to_date(timestamp),
-                'tests': positive + negative + pending,
-                'positive': positive,
-                'negative': negative,
-                'pending': pending
-            } for timestamp, positive, pending, negative in data_pairs
-        ]
+        results = [{
+            'date': self._timestamp_to_date(timestamp),
+            'tests': total_tests[timestamp],
+            'pending': -1, # we don't have data for this
+            'cumul_pend': -1, # no data for this
+            **self._positive_and_negative_tests(total_tests[timestamp], percent_positive_tests[timestamp])
+        } for timestamp in total_tests.keys()]
         self._add_cumulative_data(results)
         return results
 
+
+    def _positive_and_negative_tests(self, total_tests: int, percent_positive_tests: int) -> Dict[str, int]:
+        positive_tests = round(total_tests * percent_positive_tests / 100)
+        negative_tests = total_tests - positive_tests
+        return { 'positive': positive_tests, 'negative': negative_tests }
+
     def _timestamp_to_date(self, timestamp_in_milliseconds: int) -> str:
         return datetime.utcfromtimestamp(timestamp_in_milliseconds / 1000).strftime('%Y-%m-%d')
+
+    def _assert_total_and_percent_cases_count_matches(self, daily_cases: Dict[int, int], cumulative_cases: Dict[int, int]) -> None:
+        if daily_cases.keys() != cumulative_cases.keys():
+            raise(ValueError('The cumulative and daily cases do not have the same timestamps!'))
 
     def _add_cumulative_data(self, results: List[Dict[str, Any]]) -> None:
         running_totals = { 'cumul_tests': 0, 'cumul_pos': 0, 'cumul_neg': 0, 'cumul_pend': 0 }
@@ -35,26 +39,4 @@ class TimeSeriesTests(PowerBiQuerier):
             running_totals['cumul_tests'] += result['tests']
             running_totals['cumul_pos'] += result['positive']
             running_totals['cumul_neg'] += result['negative']
-            running_totals['cumul_pend'] += result['pending']
             result.update(running_totals)
-
-    def _select(self) -> List[Dict[str, Any]]:
-        return [
-            {
-                'Column': self._column_expression(self.property),
-                'Name': f'{self.name}.{self.property}'
-            },
-            self._aggregation('positive_per_day'),
-            self._aggregation('unknown_per_day'),
-            self._aggregation('negative_per_day')
-       ]
-
-    def _binding(self) -> Dict[str, Any]:
-        return {
-            'Primary': { 'Groupings': [{ 'Projections': [0, 1, 2, 3] }] },
-            'DataReduction': {
-                'DataVolume': 4,
-                'Primary': { 'Sample': {} }
-            },
-            'Version': 1
-        }
