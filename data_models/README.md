@@ -189,7 +189,7 @@ The `series` object is a dictionary keyed by the machine-friendly formatted coun
             "hospitalized_covid_confirmed_patients": -1,
             "_id": -1,
             "all_hospital_beds": -1,
-            "report_date": "yyyy-mm-dd"
+            "date": "yyyy-mm-dd"
         }
 ```
 
