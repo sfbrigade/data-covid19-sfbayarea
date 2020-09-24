@@ -1,11 +1,9 @@
 version: 2.1
 
-jobs:
-  lint:
-    docker:
-      - image: circleci/python:3.7
+commands:
+  setup_dependencies:
+    description: "Set Up Dependencies"
     steps:
-      - checkout
       - restore_cache:
           keys:
             - data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
@@ -27,6 +25,14 @@ jobs:
           key: data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
           paths:
             - env
+
+jobs:
+  lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - setup_dependencies
 
       - run:
           name: Pyflakes
@@ -46,35 +52,19 @@ jobs:
 
   test:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.7-browsers
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
-            - data-covid-19-sfbayarea-v1-{{ arch }}-
-
-      - run:
-          name: Install Dependencies
-          command: |
-            # FIXME: install.sh is currently broken because of a bug in
-            # webdrivermanager. See: https://github.com/rasjani/webdrivermanager/issues/35
-            # For now, do each install step manually.
-            # ./install.sh
-            python3 -m venv env
-            source env/bin/activate
-            pip install -r requirements.txt
-            pip install -r requirements-dev.txt
-
-      - save_cache:
-          key: data-covid-19-sfbayarea-v1-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
-          paths:
-            - env
+      - setup_dependencies
 
       - run:
           name: Run Tests
           command: |
             . env/bin/activate
+            # Since we are in CI, run some tests against live websites.
+            # Note that this means some tests on a PR could fail through no
+            # fault of the code changes on that PR.
+            export LIVE_TESTS='*'
             python -m pytest -v .
 
 workflows:
