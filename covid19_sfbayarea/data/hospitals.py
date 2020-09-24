@@ -127,16 +127,16 @@ def process_data(series: List, counties: List) -> Dict:
 
 def get_timeseries(counties: List) -> Dict:
     """Fetch all pages of timeseries data from API endpoint"""
-    ts_data: Dict[Any, Any] = {}
+    timeseries_data: Dict[Any, Any] = {}
     timeseries_raw: List[Dict[str, Any]] = []
 
     now = datetime.now(tz.tzutc()).isoformat(timespec="minutes")
 
     # Add header data
-    ts_data["name"] = SERIES_NAME
-    ts_data["update_time"] = now
-    ts_data["source_url"] = HOSPITALS_LANDING_PAGE
-    ts_data["meta_from_baypd"] = BAYPD_META
+    timeseries_data["name"] = SERIES_NAME
+    timeseries_data["update_time"] = now
+    timeseries_data["source_url"] = HOSPITALS_LANDING_PAGE
+    timeseries_data["meta_from_baypd"] = BAYPD_META
 
     # Call may be made without params on subsequent calls
     params: Dict[str, Union[int, str]] = {
@@ -161,9 +161,9 @@ def get_timeseries(counties: List) -> Dict:
             total = int(results.get("total"))
 
             # Get notes only on the first pull
-            if not ts_data.get("meta_from_source"):
+            if not timeseries_data.get("meta_from_source"):
                 notes = results.get("fields")
-                ts_data["meta_from_source"] = notes
+                timeseries_data["meta_from_source"] = notes
 
             else:
                 pass
@@ -184,7 +184,7 @@ def get_timeseries(counties: List) -> Dict:
         logger.info("Collected all pages")
 
         # standardize the format of the data and key it by county name
-        ts_data["series"] = process_data(timeseries_raw, counties)
+        timeseries_data["series"] = process_data(timeseries_raw, counties)
 
         # reflect renaming of the date field in the metadata
         updated_date_meta = {
@@ -197,7 +197,7 @@ def get_timeseries(counties: List) -> Dict:
             "id": "date"
         }
 
-        current_meta = ts_data["meta_from_source"]
+        current_meta = timeseries_data["meta_from_source"]
         updated_meta: Dict = {"meta_from_source": []}
 
         for entry in current_meta:
@@ -209,7 +209,7 @@ def get_timeseries(counties: List) -> Dict:
             else:
                 updated_meta["meta_from_source"].append(entry)
 
-        ts_data.update(updated_meta)
+        timeseries_data.update(updated_meta)
 
     except AttributeError:
         logger.exception("Error parsing response")
@@ -218,4 +218,4 @@ def get_timeseries(counties: List) -> Dict:
         logger.exception("Error fetching from API")
 
     finally:
-        return ts_data
+        return timeseries_data
