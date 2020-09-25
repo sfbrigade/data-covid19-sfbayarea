@@ -1,5 +1,5 @@
 {
-    "name": "Hospitalization - Name1 Name2 County | All CA Counties",
+    "name": "CA COVID-19 Hospitalization Data",
     "update_time": "yyyy-mm-ddThh:mmz",
     "source_url": "POINT TO LANDING PAGES, IN CASE ENDPOINTS CHANGE",
     "meta_from_baypd": "STORE IMPORTANT NOTES ABOUT OUR METHODS HERE",
@@ -14,18 +14,20 @@
             "id": "FIELD ID IN SERIES DATA"
         }
     ],
-    "series": [
-        {
-            "icu_covid_confirmed_patients": -1,
-            "icu_suspected_covid_patients": -1,
-            "hospitalized_covid_patients": -1,
-            "hospitalized_suspected_covid_patients": -1,
-            "icu_available_beds": -1,
-            "county": "Name1 Name2",
-            "hospitalized_covid_confirmed_patients": -1,
-            "_id": -1,
-            "all_hospital_beds": -1,
-            "report_date": "yyyy-mm-dd"
-        }
-    ]
+    "series": {
+        "county_name": [
+            {
+                "icu_covid_confirmed_patients": -1,
+                "icu_suspected_covid_patients": -1,
+                "hospitalized_covid_patients": -1,
+                "hospitalized_suspected_covid_patients": -1,
+                "icu_available_beds": -1,
+                "county": "Name1 Name2",
+                "hospitalized_covid_confirmed_patients": -1,
+                "_id": -1,
+                "all_hospital_beds": -1,
+                "date": "yyyy-mm-dd"
+            }
+        ]
+    }
 }

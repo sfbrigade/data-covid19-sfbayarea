@@ -31,14 +31,14 @@ SAMPLE_OUTPUT = {
     'hospitalized_covid_confirmed_patients': 10,
     '_id': 103,
     'all_hospital_beds': -1,
-    'report_date': '2020-03-30'
+    'date': '2020-03-30'
 }
 
 
-def test_truncate_ts():
-    ts = SAMPLE_RECORD.get("todays_date")
-    trunc_ts = hospitals.truncate_ts(ts)
-    assert trunc_ts == "2020-03-30"
+def test_truncate_timestamp():
+    timestamp = SAMPLE_RECORD.get("todays_date")
+    truncated_timestamp = hospitals.truncate_timestamp(timestamp)
+    assert truncated_timestamp == "2020-03-30"
 
 
 def test_convert_null():
