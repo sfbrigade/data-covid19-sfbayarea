@@ -103,7 +103,7 @@ class ContraCostaNews(NewsScraper):
 
         # TODO: Figure this one out! It's possible this could be as simple as
         # using an actual browser (e.g. Selenium) instead of requests.
-        if len(news) == 0:
+        if not news:
             raise FormatError('News page had no recognizable news items '
                               '(The Contra Costa site returns an empty page '
                               'every so often; waiting a bit and retrying '
