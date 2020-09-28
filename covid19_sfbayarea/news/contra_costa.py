@@ -101,6 +101,14 @@ class ContraCostaNews(NewsScraper):
                 if item:
                     news.append(item)
 
+        # TODO: Figure this one out! It's possible this could be as simple as
+        # using an actual browser (e.g. Selenium) instead of requests.
+        if not news:
+            raise FormatError('News page had no recognizable news items '
+                              '(The Contra Costa site returns an empty page '
+                              'every so often; waiting a bit and retrying '
+                              'often works.)')
+
         return news
 
     def parse_article(self, index: int, article: element.Tag,
