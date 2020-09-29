@@ -12,8 +12,7 @@ from covid19_sfbayarea.utils import friendly_county
 # This module fetches COVID-19 hospital data from the CA.gov open data portal.
 # The input data is fetched from an API endpoint, and appears to be updated at
 # least daily.  Hospital stats, such as number of available ICU beds, are
-# provided at the county level. This module's top-level function takes a county
-# as an arg and returns the data for that county as JSON.
+# provided at the county level.
 
 
 # URLs and APIs
