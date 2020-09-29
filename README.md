@@ -123,7 +123,7 @@ Options:
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
 
 
-### <a id="hospital-scraper></a> Hospitalization Data Scraper
+### <a id="hospital-scraper"></a> Hospitalization Data Scraper
 
 The hospitalization data scraper pulls down COVID-19-related hospitalization statistics at the county level from the [California Department of Public Health](https://data.ca.gov/dataset/covid-19-hospital-data#) via its CKAN API. To run the scraper, execute the following command in your terminal:
 
