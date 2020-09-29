@@ -12,11 +12,12 @@ To install this project, you can simply run `./install.sh` in your terminal. Thi
 
 ## Running the scraper
 
-This project includes three separate scraping tools for different purposes:
+This project includes four separate scraping tools for different purposes:
 
 - [Legacy CDS (Corona Data Scraper) Scraper](#legacy-scraper)
 - [County Website Scraper](#county-scraper)
 - [County News Scraper](#news-scraper)
+- [Hospitalization Data Scraper](#hospital-scraper)
 
 **You can also run each of these tools in Docker.** See the [“using Docker”](#using-docker) section below.
 
@@ -119,6 +120,25 @@ Options:
     ```
 
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
+
+
+### <a id="hospital-scraper></a> Hospitalization Data Scraper
+
+The hospitalization data scraper pulls down COVID-19-related hospitalization statistics at the county level from the [California Department of Public Health](https://data.ca.gov/dataset/covid-19-hospital-data#) via its CKAN API. To run the scraper, execute the following command in your terminal:
+
+    ```console
+    $ ./run_scraper_hospital.sh
+    ```
+
+By default, this will print time-series data in JSON format to `stdout` for all nine Bay Area counties, following the structure described in the [data model documentation](data_models/README.md).
+
+Data for all California counties is also available; to select a specific county or list of counties, add them as arguments when running the script. The county should be spelled in lowercase, with underscores replacing spaces:
+
+    ```console
+    $ ./run_scraper_hospital.sh alameda los_angeles mendocino
+    ```
+
+You may also pass an `--output` flag followed by the path to the directory where you would like the JSON data to be saved. If the directory does not exist, it will be created. The data will be saved as `hospital_data.json`.
 
 
 ## Using Docker
