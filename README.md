@@ -127,17 +127,17 @@ Options:
 
 The hospitalization data scraper pulls down COVID-19-related hospitalization statistics at the county level from the [California Department of Public Health](https://data.ca.gov/dataset/covid-19-hospital-data#) via its CKAN API. To run the scraper, execute the following command in your terminal:
 
-    ```console
-    $ ./run_scraper_hospital.sh
-    ```
+```console
+$ ./run_scraper_hospital.sh
+```
 
 By default, this will print time-series data in JSON format to `stdout` for all nine Bay Area counties, following the structure described in the [data model documentation](data_models/README.md).
 
 Data for all California counties is also available; to select a specific county or list of counties, add them as arguments when running the script. The county should be spelled in lowercase, with underscores replacing spaces:
 
-    ```console
-    $ ./run_scraper_hospital.sh alameda los_angeles mendocino
-    ```
+```console
+$ ./run_scraper_hospital.sh alameda los_angeles mendocino
+```
 
 You may also pass an `--output` flag followed by the path to the directory where you would like the JSON data to be saved. If the directory does not exist, it will be created. The data will be saved as `hospital_data.json`.
 
