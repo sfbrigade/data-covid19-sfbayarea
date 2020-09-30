@@ -23,14 +23,18 @@ MONTHS = (
     'december',
 )
 
+# This page uses all manner of complex space characters like em squares,
+# zero-width spaces, etc. that do not get matched by `\s` in regexes. To handle
+# that, we replace `\s` is some expressions with this more permissive character
+# class that includes many of those other kinds of spaces.
+PERMISSIVE_SPACE = r'[\s\u2000-\u200d]'
+
 # There's not a great way to identify a news item listing on the page (and very
 # few CSS classes or attributes in general), so we find news items by looking
 # for the month-based headings and finding all the <li> tags after them.
 MONTH_HEADING_PATTERN = re.compile(
-    # NOTE: this funky character class for whitespace is needed because `\s`
-    # does not match things like em squares, zero-width spaces, etc. and those
-    # kinds of whitespace *do* show up on this page.
-    r'^\s*(' + '|'.join(MONTHS) + r')[\s\u2000-\u200d]+\d{4}\s*$',
+    (r'^\s*(' + '|'.join(MONTHS) + r')\s+\d{4}\s*$'
+        .replace(r'\s', PERMISSIVE_SPACE)),
     re.IGNORECASE
 )
 
@@ -42,7 +46,7 @@ ARTICLE_TITLE_PATTERN = re.compile(r'''
     \s*-\s*           # A `-` separator
     (\d+/\d+/\d+)     # The date in mm/dd/yyyy format
     \s*$
-''', re.VERBOSE)
+'''.replace(r'\s', PERMISSIVE_SPACE), re.VERBOSE)
 
 
 class ContraCostaNews(NewsScraper):
