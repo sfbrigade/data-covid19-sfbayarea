@@ -1,6 +1,7 @@
 # data-covid19-sfbayarea
 
-Processes for sourcing data for the Stop COVID-19 SF Bay Area dashboard, which you can find [here](https://stop-covid19-sfbayarea.netlify.com/), or [on GitHub](https://github.com/sfbrigade/stop-covid19-sfbayarea).  
+Processes for sourcing data for the [Stop COVID-19 SF Bay Area Pandemic Dashboard](https://panda.baybrigades.org/). You can find the dashboard’s source code in the [sfbrigade/stop-covid19-sfbayarea](https://github.com/sfbrigade/stop-covid19-sfbayarea) project on GitHub.
+
 **We are looking for feedback**! Did you come here looking for a data API? Do you have questions, comments, or concerns? Don't leave yet - let us know how you are using this project and what you'd like to see implemented. Please leave us your two cents over in Issues under [#101 Feedback Mega Thread](https://github.com/sfbrigade/data-covid19-sfbayarea/issues/101).
 
 
@@ -12,11 +13,12 @@ To install this project, you can simply run `./install.sh` in your terminal. Thi
 
 ## Running the scraper
 
-This project includes three separate scraping tools for different purposes:
+This project includes four separate scraping tools for different purposes:
 
 - [Legacy CDS (Corona Data Scraper) Scraper](#legacy-scraper)
 - [County Website Scraper](#county-scraper)
 - [County News Scraper](#news-scraper)
+- [Hospitalization Data Scraper](#hospital-scraper)
 
 **You can also run each of these tools in Docker.** See the [“using Docker”](#using-docker) section below.
 
@@ -119,6 +121,25 @@ Options:
     ```
 
 - `--output` specifies a directory to write to instead of your terminal’s STDOUT. Each county and `--format` combination will create a separate file in the directory. If the directory does not exist, it will be created.
+
+
+### <a id="hospital-scraper"></a> Hospitalization Data Scraper
+
+The hospitalization data scraper pulls down COVID-19-related hospitalization statistics at the county level from the [California Department of Public Health](https://data.ca.gov/dataset/covid-19-hospital-data#) via its CKAN API. To run the scraper, execute the following command in your terminal:
+
+```console
+$ ./run_scraper_hospital.sh
+```
+
+By default, this will print time-series data in JSON format to `stdout` for all nine Bay Area counties, following the structure described in the [data model documentation](data_models/README.md).
+
+Data for all California counties is also available; to select a specific county or list of counties, add them as arguments when running the script. The county should be spelled in lowercase, with underscores replacing spaces:
+
+```console
+$ ./run_scraper_hospital.sh alameda los_angeles mendocino
+```
+
+You may also pass an `--output` flag followed by the path to the directory where you would like the JSON data to be saved. If the directory does not exist, it will be created. The data will be saved as `hospital_data.json`.
 
 
 ## Using Docker
