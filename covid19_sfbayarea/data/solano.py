@@ -182,62 +182,101 @@ def get_race_eth (out: Dict)-> None :
 def get_age_table(out: Dict) -> None:
     """
     Fetch cases and deaths by age group
-    Updates out with {"cases_totals": {}, "death_totals":{} }
+    Updates out with:
+        {
+            "cases_totals": {
+                "age_group": [ {"group": "20-30", "raw_count": 54}, ... ]
+            },
+            "death_totals": {
+                "age_group": [ {"group": "20-30", "raw_count": 54}, ... ]
+            }
+        }
     """
-
-     # filter for any days on which a total age group cases was reported
-    param_list = {'where': "Age_group='Total_AG'",'outFields': 'Date_reported', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
-    response = requests.get(data2_url, params=param_list)
+    # Filter for any days on which a total age group cases was reported.
+    response = requests.get(data2_url, params={
+        'where': "Age_group='Total_AG'",
+        'outFields': 'Date_reported',
+        'orderByFields': 'Date_reported DESC',
+        'resultRecordCount': '1',
+        'f': 'json'
+    })
     response.raise_for_status()
     parsed = response.json()
     latest_day_timestamp = parsed['features'][0]['attributes']['Date_reported']
-    # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
-    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
+    # Translate timestamp  to a date string in format 'mm-dd-yyyy' to use in
+    # the next query.
+    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000,
+                                        tz=timezone.utc).strftime('%m-%d-%Y')
 
     # get all positive values for age group total cases on the latest day
-    param2_list = {'where': f"AG_Total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Age_group, AG_Total_cases, AG_deaths', 'f': 'json'}
-    response2 = requests.get(data2_url, params=param2_list)
+    response2 = requests.get(data2_url, params={
+        'where': f"AG_Total_cases>0 AND Date_reported = '{latest_day}' ",
+        'outFields': 'Age_group, AG_Total_cases, AG_deaths',
+        'f': 'json'
+    })
     response2.raise_for_status()
     parsed2 = response2.json()
 
-    age_group_cases = { entry['attributes']['Age_group']: entry['attributes']['AG_Total_cases']  for entry in parsed2['features'] }
-    # A complete table will have 5 datapoints, as of 9/18/20. If there are any more or less, raise an error.
+    # Format the results.
+    age_group_cases = [{
+                        'group': entry['attributes']['Age_group'],
+                        'raw_count': entry['attributes']['AG_Total_cases']
+                       }
+                       for entry in parsed2['features']]
+    age_group_deaths = [{
+                         'group': entry['attributes']['Age_group'],
+                         'raw_count': entry['attributes']['AG_deaths']
+                        }
+                        for entry in parsed2['features']]
+
+    # Validate that we’ve got the right age groups.
     if len(age_group_cases) != 5:
-        raise FormatError( f'Race_eth query did not return 5 groups. Results: {age_group_cases}')
+        raise FormatError(f'Race_eth query did not return 5 groups. Results: {age_group_cases}')
 
-    age_group_deaths = { entry['attributes']['Age_group']: entry['attributes']['AG_deaths']  for entry in parsed2['features'] }
     # save to the out dict
-    out["case_totals"]["age_group"] = age_group_cases
-    out["death_totals"]["age_group"] = age_group_deaths
-
     out["case_totals"]["age_group"] = age_group_cases
     out["death_totals"]["age_group"] = age_group_deaths
 
 
 def get_gender_table(out: Dict) -> None:
     """
-    Fetch cases by gender
-    Updates out with {"cases_totals": {} }
+    Fetch cases by gender.
+    Updates out with:
+        { "cases_totals": { "gender": {"male": 45, "female": 40, ... } } }
     """
-     # filter for any days on which a Gender total cases number was reported
-    param_list = {'where': "G_Total_cases>0",'outFields': 'Date_reported', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
-    response = requests.get(data2_url, params=param_list)
+    # Filter for any days on which a Gender total cases number was reported.
+    response = requests.get(data2_url, params={
+        'where': "G_Total_cases>0",
+        'outFields': 'Date_reported',
+        'orderByFields': 'Date_reported DESC',
+        'resultRecordCount': '1',
+        'f': 'json'
+    })
     response.raise_for_status()
     parsed = response.json()
     latest_day_timestamp = parsed['features'][0]['attributes']['Date_reported']
-    # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
-    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
+    # Translate timestamp  to a date string in format 'mm-dd-yyyy' to use in
+    # the next query.
+    latest_day = datetime.fromtimestamp(latest_day_timestamp/1000,
+                                        tz=timezone.utc).strftime('%m-%d-%Y')
 
     # get all positive values for Gender total cases reported on the latest day
-    param2_list = {'where': f"G_Total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Gender, G_Total_cases', 'f': 'json'}
-    response2 = requests.get(data2_url, params=param2_list)
+    response2 = requests.get(data2_url, params={
+        'where': f"G_Total_cases>0 AND Date_reported = '{latest_day}' ",
+        'outFields': 'Gender, G_Total_cases',
+        'f': 'json'
+    })
     response2.raise_for_status()
     parsed2 = response2.json()
 
-    gender_cases = { entry['attributes']['Gender']: entry['attributes']['G_Total_cases']  for entry in parsed2['features'] }
-    # A complete table will have at least 2 datapoints, as of 9/18/20. If were less than 2, raise an error.
-    if len(gender_cases) <2 :
-        raise FormatError( f'Gender query returned less than 2 groups. Results: {gender_cases}')
+    gender_cases = {entry['attributes']['Gender'].lower(): entry['attributes']['G_Total_cases']
+                    for entry in parsed2['features']}
+
+    # A complete table will have at least 2 datapoints, as of 9/18/20. If were
+    # less than 2, raise an error.
+    if len(gender_cases) < 2:
+        raise FormatError('Gender query returned less than 2 groups. Results: '
+                          f'{gender_cases}')
 
     # save to the out dict
     out["case_totals"]["gender"] = gender_cases
