@@ -194,7 +194,7 @@ def get_age_table(out: Dict) -> None:
     # translate timestamp  to a date string in format 'mm-dd-yyyy' to use in the query string
     latest_day = datetime.fromtimestamp(latest_day_timestamp/1000, tz=timezone.utc).strftime('%m-%d-%Y')
 
-    # get all positive values for race/ethnicity total cases on the latest day
+    # get all positive values for age group total cases on the latest day
     param2_list = {'where': f"AG_Total_cases>0 AND Date_reported = '{latest_day}' ",'outFields': 'Age_group, AG_Total_cases, AG_deaths', 'f': 'json'}
     response2 = requests.get(data2_url, params=param2_list)
     response2.raise_for_status()
