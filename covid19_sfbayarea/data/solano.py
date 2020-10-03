@@ -219,7 +219,7 @@ def get_gender_table(out: Dict) -> None:
     Fetch cases by gender
     Updates out with {"cases_totals": {} }
     """
-     # filter for any days on which a Gender total cases numbner was reported
+     # filter for any days on which a Gender total cases number was reported
     param_list = {'where': "G_Total_cases>0",'outFields': 'Date_reported', 'orderByFields':'Date_reported DESC', 'resultRecordCount': '1', 'f': 'json'}
     response = requests.get(data2_url, params=param_list)
     response.raise_for_status()
