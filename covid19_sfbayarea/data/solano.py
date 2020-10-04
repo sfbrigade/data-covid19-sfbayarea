@@ -208,9 +208,12 @@ def get_age_table(out: Dict) -> None:
     latest_day = datetime.fromtimestamp(latest_day_timestamp/1000,
                                         tz=timezone.utc).strftime('%m-%d-%Y')
 
-    # get all positive values for age group total cases on the latest day
+    # Get all positive values for age group total cases on the latest day.
+    # Skip the group "Total_AG", which represents the sum total of all groups.
     response2 = requests.get(data2_url, params={
-        'where': f"AG_Total_cases>0 AND Date_reported = '{latest_day}' ",
+        'where': f"""AG_Total_cases > 0
+                     AND Date_reported = '{latest_day}'
+                     AND Age_group <> 'Total_AG'""",
         'outFields': 'Age_group, AG_Total_cases, AG_deaths',
         'f': 'json'
     })
@@ -230,7 +233,7 @@ def get_age_table(out: Dict) -> None:
                         for entry in parsed2['features']]
 
     # Validate that we’ve got the right age groups.
-    if len(age_group_cases) != 5:
+    if len(age_group_cases) != 4:
         raise FormatError(f'Race_eth query did not return 5 groups. Results: {age_group_cases}')
 
     # save to the out dict
