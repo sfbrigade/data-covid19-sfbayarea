@@ -16,6 +16,7 @@ from .deaths_by_ethnicity import DeathsByEthnicity
 from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
+from .time_series_deaths import TimeSeriesDeaths
 from .time_series_tests import TimeSeriesTests
 
 from ..utils import get_data_model
@@ -39,6 +40,7 @@ def fetch_data() -> Dict:
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
+            'deaths': TimeSeriesDeaths().get_data(),
             'tests': TimeSeriesTests().get_data()
         },
         'case_totals': {
