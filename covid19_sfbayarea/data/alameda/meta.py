@@ -13,22 +13,20 @@ class Meta():
                 '/modelsAndExploration?preferReadOnlySession=true'
             ])
             response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
-            return self._extract_meta(response.json())
+            return self._extract_meta(response.json())[2:] # First two characters are ': '
         except:
             return """
-            Because of limited testing capacity, the number of cases detected
-            through testing represents only a small portion of the total number
-            of likely cases in the County. COVID-19 data are reported as timely,
-            accurately, and completely as we have available. Data are updated as
-            we receive information that is more complete and will change over
-            time as we learn more. Cases are lab-confirmed COVID-19 cases
-            reported to San Mateo County Public Health by providers, commercial
-            laboratories, and academic laboratories, including reporting results
-            through the California Reportable Disease Information Exchange. A
-            lab-confirmed case is defined as detection of SARS-CoV-2 RNA in a
-            clinical specimen using a molecular amplification detection test.
-            Cases are counted by date the lab result was reported.  Deaths
-            reported in this dashboard include only San Mateo County residents.
+            The City of Berkeley and Alameda County (minus Berkeley) are separate local health jurisdictions (LHJs).
+            We are showing data for each separately and together. The numbers for the Alameda County LHJ and the
+            Berkeley LHJ come from the state’s communicable disease tracking database, CalREDIE. These data are updated
+            daily, with cases sometimes reassigned to other LHJs and sometimes changed from a suspected to a confirmed
+            case, so counts for a particular date in the past may change as information is updated in CalREDIE. Case
+            dates reflect the date created in CalREDIE. The time lag between the date of death and the date of entry
+            into CalREDIE has sometimes been one week; the date of death is what is reflected here, and so death counts
+            for a particular date in the past may change as information is updated in CalREDIE. Furthermore, we review
+            our data routinely and adjust to ensure its integrity and that it most accurately represents the full
+            picture of COVID-19 cases in our county. Berkeley LHJ cases do not include two cases that were passengers of
+            the Diamond Princess cruise.
             """
 
     def _extract_meta(self, response_json: Dict[str, Any]) -> str:

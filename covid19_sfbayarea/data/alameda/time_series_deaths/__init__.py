@@ -1,13 +1,13 @@
 from datetime import datetime
 from typing import Any, Dict, List, cast
 
-from .time_series_daily import TimeSeriesDaily
-from .time_series_cumulative import TimeSeriesCumulative
+from .daily import Daily
+from .cumulative import Cumulative
 
-class TimeSeriesCases():
+class TimeSeriesDeaths():
     def get_data(self) -> List[Dict[str, Any]]:
-        daily_cases = dict(TimeSeriesDaily().get_data())
-        cumulative_cases =dict(TimeSeriesCumulative().get_data())
+        daily_cases = dict(Daily().get_data())
+        cumulative_cases = dict(Cumulative().get_data())
         self._assert_daily_and_cumulative_cases_match(daily_cases, cumulative_cases)
 
         return [{

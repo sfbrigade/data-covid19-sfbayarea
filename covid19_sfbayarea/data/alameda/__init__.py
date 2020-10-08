@@ -16,6 +16,7 @@ from .deaths_by_ethnicity import DeathsByEthnicity
 from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
+from .time_series_deaths import TimeSeriesDeaths
 from .time_series_tests import TimeSeriesTests
 from .total_deaths import TotalDeaths
 
@@ -32,15 +33,11 @@ def fetch_data() -> Dict:
     data : Dict = {
         'name': 'Alameda County',
         'source_url': LANDING_PAGE,
-        # 'meta_from_source': Meta().get_data(),
+        'meta_from_source': Meta().get_data(),
         'meta_from_baypd': """
             See power_bi_scraper.py for methods.
-            San Mateo does not provide a timestamp for their last dataset update,
+            Alameda does not provide a timestamp for their last dataset update,
             so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
-
-            San Mateo does not provide a deaths timeseries. In lieu of a
-            timeseries BayPD provides cumulative deaths for the date of the last
-            dataset update.
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
@@ -59,7 +56,6 @@ def fetch_data() -> Dict:
     }
     last_updated = most_recent_case_time(data)
     data.update({ 'update_time': last_updated.isoformat() })
-    data['series'].update({ 'deaths': cumulative_deaths(last_updated) })
     return data
 
 def most_recent_case_time(data: Dict[str, Any]) -> datetime:
@@ -68,14 +64,6 @@ def most_recent_case_time(data: Dict[str, Any]) -> datetime:
     # Offset by 8 hours to ensure the correct day is shown
     start_of_day_pacific = datetime.strptime(most_recent_cases['date'] + '-8', '%Y-%m-%d-%H')
     return start_of_day_pacific.astimezone(pacific_time)
-
-def cumulative_deaths(last_updated: datetime) -> List[Dict[str, Any]]:
-    #  There is no timeseries, but there is a cumulative deaths for the current day.
-    return [{
-        'date': last_updated.strftime('%Y-%m-%d'),
-        'deaths': -1,
-        'cumul_deaths': TotalDeaths().get_data()
-    }]
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""

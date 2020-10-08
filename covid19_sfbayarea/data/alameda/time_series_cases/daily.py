@@ -1,15 +1,18 @@
 from typing import Any, Dict, List
-from .power_bi_querier import PowerBiQuerier
+from ..power_bi_querier import PowerBiQuerier
 
-class TimeSeriesCumulative(PowerBiQuerier):
+class Daily(PowerBiQuerier):
     def __init__(self) -> None:
         self.source = 'v'
         self.name = 'V_Combined_data'
         self.property = 'DtCreate'
         super().__init__()
 
+    def _parse_data(self, response_json: Dict) -> Dict[int, int]:
+        return dict(super()._parse_data(response_json))
+
     def _select(self) -> List[Dict[str, Any]]:
-        measure = 'Cumulative Cases'
+        measure = 'NumberOfCases'
         return [
             {
                 'Column': self._column_expression(self.property),
@@ -23,15 +26,3 @@ class TimeSeriesCumulative(PowerBiQuerier):
                 'Name': f'{self.name}.{measure}'
             }
         ]
-
-    def _binding(self) -> Dict[str, Any]:
-        return {
-            'DataReduction': {
-                'DataVolume': 4,
-                'Primary': { 'BinnedLineSample': {} }
-            },
-            'Primary': {
-                'Groupings': [{'Projections': [0, 1] }]
-            },
-            'Version': 1
-        }
