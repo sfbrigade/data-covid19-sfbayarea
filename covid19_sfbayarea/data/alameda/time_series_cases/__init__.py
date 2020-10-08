@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 
 from .daily import Daily
 from .cumulative import Cumulative

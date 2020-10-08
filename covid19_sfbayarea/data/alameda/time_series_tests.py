@@ -1,6 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, cast
-from .power_bi_querier import PowerBiQuerier
+from typing import Any, Dict, List
 from .time_series_tests_total import TimeSeriesTestsTotal
 from .time_series_tests_percent import TimeSeriesTestsPercent
 

@@ -2,7 +2,7 @@ import json
 
 from datetime import datetime
 from dateutil import tz
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, cast
 from .utils import dig
 
 from .cases_by_age import CasesByAge
@@ -16,9 +16,7 @@ from .deaths_by_ethnicity import DeathsByEthnicity
 from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
-from .time_series_deaths import TimeSeriesDeaths
 from .time_series_tests import TimeSeriesTests
-from .total_deaths import TotalDeaths
 
 from ..utils import get_data_model
 
