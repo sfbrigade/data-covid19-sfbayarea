@@ -13,6 +13,29 @@ from .utils import get_base_url, parse_datetime
 logger = getLogger(__name__)
 
 
+# Maps the various forms of language names in the page's text to ISO language
+# codes so we can determine the language of a link.
+# TODO: Actually use these to handle more than just English links.
+LANGUAGES = {
+    'english': 'en',
+    'spanish': 'es',
+    'español': 'es',
+    'chinese': 'zh_HANS',
+    'chinese (simplified)': 'zh_HANS',   # 'zh_CN' is common, but less correct.
+    'chinese (traditional)': 'zh_HANT',  # 'zh_TW' is common, but less correct.
+    'korean': 'ko',
+    'vietnamese': 'vi',
+    'amharic': 'am',
+    'arabic': 'ar',
+    'farsi': 'fa',
+    'persian': 'fa',
+    'pashto': 'ps',
+    'urdu': 'ur',
+}
+
+LANGUAGE_NAMES = set(name.casefold() for name in LANGUAGES)
+
+
 def date_from_node_text(node: element.Tag) -> Optional[datetime]:
     """
     If an element contains a date as text, return the parsed date.
@@ -109,7 +132,7 @@ class AlamedaNews(NewsScraper):
         if item.url:
             return item
         else:
-            logger.warn('No URL found for news item on %s', item.date_published)
+            logger.warning('No URL found for news item on %s', item.date_published)
             return None
 
 
@@ -326,5 +349,8 @@ class ItemParser:
         Determine if an element looks like a link to a language-specific
         version of the news item.
         """
-        return (node.name == 'a'
-                and len(node.get_text().strip().split(' ')) == 1)
+        if node.name != 'a':
+            return False
+
+        text = node.get_text().strip().casefold()
+        return text in LANGUAGE_NAMES
