@@ -45,7 +45,6 @@ ARTICLE_TITLE_PATTERN = re.compile(r'''
     (?:\s*\|\s*\w+)?  # An optional `| <language>` alternate language link
     \s*-\s*           # A `-` separator
     (\d+/\d+/\d+)     # The date in mm/dd/yyyy format
-    \s*$
 '''.replace(r'\s', PERMISSIVE_SPACE), re.VERBOSE)
 
 
