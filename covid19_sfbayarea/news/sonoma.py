@@ -4,7 +4,8 @@ from urllib.parse import urljoin
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, is_covid_related, parse_datetime
+from .utils import (get_base_url, is_covid_related, normalize_whitespace,
+                    parse_datetime)
 
 
 class SonomaNews(NewsScraper):
@@ -86,7 +87,7 @@ class SonomaNews(NewsScraper):
         tags = []
         source_element = item_element.select_one('.source')
         if source_element:
-            tags.append(source_element.get_text(strip=True))
+            tags.append(normalize_whitespace(source_element.get_text()))
 
         return NewsItem(id=url, url=url, title=title, date_published=date,
                         summary=summary, tags=tags)
