@@ -92,7 +92,9 @@ class NewsFeed:
     items: List[NewsItem] = field(default_factory=list, init=False)
 
     def append(self, *items: NewsItem) -> None:
-        self.items.extend(items)
+        for item in items:
+            if item not in self.items:
+                self.items.append(item)
         self.sort_items()
 
     def sort_items(self) -> None:
