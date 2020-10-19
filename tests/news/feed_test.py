@@ -1,3 +1,4 @@
+from copy import copy
 from covid19_sfbayarea.news.feed import NewsFeed, NewsItem
 from datetime import datetime, timezone
 
@@ -31,3 +32,19 @@ def test_feed_items_sort_stable() -> None:
     feed2 = NewsFeed(title='Test Feed 2')
     feed2.append(b, a)
     assert feed.items == [b, a]
+
+
+def test_feed_items_are_unique() -> None:
+    a = NewsItem(id='a', title='a', url='a',
+                 date_published=datetime(2020, 6, 3, tzinfo=timezone.utc))
+    b = NewsItem(id='b', title='b', url='b',
+                 date_published=datetime(2020, 6, 2, tzinfo=timezone.utc))
+    # It's important that this is a copy, so `a == c`, but `a is not c`
+    c = copy(a)
+
+    feed = NewsFeed(title='Test Feed')
+    feed.append(a, b, c)
+    assert [a, b] == feed.items
+
+    feed.append(c)
+    assert [a, b] == feed.items
