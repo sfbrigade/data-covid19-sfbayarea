@@ -14,7 +14,6 @@ class TimeSeriesTests():
             'tests': total_tests[timestamp],
             'pending': -1, # we don't have data for this
             'cumul_tests': -1, # tests are a rolling 7-day average, so cumulative results don't add up
-            'cumul_pend': -1,
             'cumul_pos': -1,
             'cumul_neg': -1,
             'cumul_pend': -1,

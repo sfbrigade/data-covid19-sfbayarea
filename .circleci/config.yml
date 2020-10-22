@@ -52,7 +52,7 @@ jobs:
 
   test:
     docker:
-      - image: circleci/python:3.7-browsers
+      - image: circleci/python:3.8-browsers
     steps:
       - checkout
       - setup_dependencies
