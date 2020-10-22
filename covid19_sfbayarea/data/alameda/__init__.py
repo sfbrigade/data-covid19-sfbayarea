@@ -37,6 +37,9 @@ def fetch_data() -> Dict:
             See power_bi_scraper.py for methods.
             Alameda does not provide a timestamp for their last dataset update,
             so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
+
+            The test cases are on a rolling seven-day average and do not represent the
+            exact number of cases on any given day.
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),

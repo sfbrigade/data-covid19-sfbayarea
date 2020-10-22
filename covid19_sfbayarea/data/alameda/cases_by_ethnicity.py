@@ -12,7 +12,12 @@ class CasesByEthnicity(PowerBiQuerier):
     def _parse_data(self, response_json: Dict[str, List]) -> Dict[str, int]:
         results = super()._parse_data(response_json)
         ethnicity_labels = dig(response_json, [*self.JSON_PATH[0:-3], 'ValueDicts', 'D0'])
-        return { ethnicity_labels[ethnicity_label_index].strip(): count for ethnicity_label_index, count in results }
+        labels_to_skip = {'Overall', 'Overall Known Race/Ethnicity'}
+        return {
+            ethnicity_label: count
+            for ethnicity_label_index, count in results
+            if (ethnicity_label := ethnicity_labels[ethnicity_label_index].strip()) not in labels_to_skip
+        }
 
     def _select(self) -> List[Dict[str, Any]]:
         return [
