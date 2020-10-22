@@ -6,28 +6,13 @@ from requests import get
 
 class Meta():
     def get_data(self) -> str:
-        try:
-            url = ''.join([
-                'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/',
-                PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY,
-                '/modelsAndExploration?preferReadOnlySession=true'
-            ])
-            response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
-            return self._extract_meta(response.json())[2:] # First two characters are ': '
-        except:
-            return """
-            The City of Berkeley and Alameda County (minus Berkeley) are separate local health jurisdictions (LHJs).
-            We are showing data for each separately and together. The numbers for the Alameda County LHJ and the
-            Berkeley LHJ come from the state’s communicable disease tracking database, CalREDIE. These data are updated
-            daily, with cases sometimes reassigned to other LHJs and sometimes changed from a suspected to a confirmed
-            case, so counts for a particular date in the past may change as information is updated in CalREDIE. Case
-            dates reflect the date created in CalREDIE. The time lag between the date of death and the date of entry
-            into CalREDIE has sometimes been one week; the date of death is what is reflected here, and so death counts
-            for a particular date in the past may change as information is updated in CalREDIE. Furthermore, we review
-            our data routinely and adjust to ensure its integrity and that it most accurately represents the full
-            picture of COVID-19 cases in our county. Berkeley LHJ cases do not include two cases that were passengers of
-            the Diamond Princess cruise.
-            """
+        url = ''.join([
+            'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/',
+            PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY,
+            '/modelsAndExploration?preferReadOnlySession=true'
+        ])
+        response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
+        return self._extract_meta(response.json())[2:] # First two characters are ': '
 
     def _extract_meta(self, response_json: Dict[str, Any]) -> str:
         visual_containers = dig(response_json, ['exploration', 'sections', 0, 'visualContainers'])
