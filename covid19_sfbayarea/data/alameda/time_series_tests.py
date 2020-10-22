@@ -9,15 +9,17 @@ class TimeSeriesTests():
         percent_positive_tests = dict(TimeSeriesTestsPercent().get_data()[1:])
         self._assert_total_and_percent_cases_count_matches(total_tests, percent_positive_tests)
 
-        results = [{
+        return [{
             'date': self._timestamp_to_date(timestamp),
             'tests': total_tests[timestamp],
             'pending': -1, # we don't have data for this
-            'cumul_pend': -1, # no data for this
+            'cumul_tests': -1, # tests are a rolling 7-day average, so cumulative results don't add up
+            'cumul_pend': -1,
+            'cumul_pos': -1,
+            'cumul_neg': -1,
+            'cumul_pend': -1,
             **self._positive_and_negative_tests(total_tests[timestamp], percent_positive_tests[timestamp])
         } for timestamp in total_tests.keys()]
-        self._add_cumulative_data(results)
-        return results
 
 
     def _positive_and_negative_tests(self, total_tests: int, percent_positive_tests: int) -> Dict[str, int]:
@@ -31,11 +33,3 @@ class TimeSeriesTests():
     def _assert_total_and_percent_cases_count_matches(self, daily_cases: Dict[int, int], cumulative_cases: Dict[int, int]) -> None:
         if daily_cases.keys() != cumulative_cases.keys():
             raise(ValueError('The cumulative and daily cases do not have the same timestamps!'))
-
-    def _add_cumulative_data(self, results: List[Dict[str, Any]]) -> None:
-        running_totals = { 'cumul_tests': 0, 'cumul_pos': 0, 'cumul_neg': 0, 'cumul_pend': 0 }
-        for result in results:
-            running_totals['cumul_tests'] += result['tests']
-            running_totals['cumul_pos'] += result['positive']
-            running_totals['cumul_neg'] += result['negative']
-            result.update(running_totals)
