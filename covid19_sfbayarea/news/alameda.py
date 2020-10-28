@@ -3,11 +3,12 @@ from datetime import datetime
 from logging import getLogger
 from typing import List, Optional
 from urllib.parse import urljoin
+from ..utils import parse_datetime
 from ..webdriver import get_firefox
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, parse_datetime
+from .utils import get_base_url
 
 
 logger = getLogger(__name__)

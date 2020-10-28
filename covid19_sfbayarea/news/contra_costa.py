@@ -3,9 +3,10 @@ import re
 from typing import List, Optional
 from urllib.parse import urljoin
 from ..errors import FormatError
+from ..utils import parse_datetime
 from .base import NewsScraper
 from .feed import NewsItem
-from .utils import get_base_url, parse_datetime
+from .utils import get_base_url
 
 
 MONTHS = (

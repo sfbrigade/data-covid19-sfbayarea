@@ -1,9 +1,8 @@
 import json
 
 from datetime import datetime
-from dateutil import tz
 from typing import Any, Dict, cast
-from covid19_sfbayarea.utils import dig
+from covid19_sfbayarea.utils import dig, parse_datetime
 
 from .cases_by_age import CasesByAge
 from .cases_by_ethnicity import CasesByEthnicity
@@ -63,10 +62,7 @@ def fetch_data() -> Dict:
 
 def most_recent_case_time(data: Dict[str, Any]) -> datetime:
     most_recent_cases = cast(Dict[str, str], dig(data, ['series', 'cases', -1]))
-    pacific_time = tz.gettz('America/Los_Angeles')
-    # Offset by 8 hours to ensure the correct day is shown
-    start_of_day_pacific = datetime.strptime(most_recent_cases['date'] + '-8', '%Y-%m-%d-%H')
-    return start_of_day_pacific.astimezone(pacific_time)
+    return parse_datetime(most_recent_cases['date'])
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
