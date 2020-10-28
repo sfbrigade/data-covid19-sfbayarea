@@ -1,7 +1,7 @@
 import json
 
 from datetime import datetime
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, cast
 from covid19_sfbayarea.utils import dig, parse_datetime
 
 from .cases_by_age import CasesByAge
@@ -15,12 +15,12 @@ from .deaths_by_ethnicity import DeathsByEthnicity
 from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
+from .time_series_deaths import TimeSeriesDeaths
 from .time_series_tests import TimeSeriesTests
-from .total_deaths import TotalDeaths
 
 from ..utils import get_data_model
 
-LANDING_PAGE = 'https://www.smchealth.org/post/san-mateo-county-covid-19-data-1'
+LANDING_PAGE = 'https://covid-19.acgov.org/data.page'
 
 def get_county() -> Dict:
     out = get_data_model()
@@ -29,20 +29,20 @@ def get_county() -> Dict:
 
 def fetch_data() -> Dict:
     data : Dict = {
-        'name': 'San Mateo County',
+        'name': 'Alameda County',
         'source_url': LANDING_PAGE,
         'meta_from_source': Meta().get_data(),
         'meta_from_baypd': """
             See power_bi_scraper.py for methods.
-            San Mateo does not provide a timestamp for their last dataset update,
+            Alameda does not provide a timestamp for their last dataset update,
             so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
 
-            San Mateo does not provide a deaths timeseries. In lieu of a
-            timeseries BayPD provides cumulative deaths for the date of the last
-            dataset update.
-         """,
+            The test cases are on a rolling seven-day average and do not represent the
+            exact number of cases on any given day.
+        """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
+            'deaths': TimeSeriesDeaths().get_data(),
             'tests': TimeSeriesTests().get_data()
         },
         'case_totals': {
@@ -58,20 +58,11 @@ def fetch_data() -> Dict:
     }
     last_updated = most_recent_case_time(data)
     data.update({ 'update_time': last_updated.isoformat() })
-    data['series'].update({ 'deaths': cumulative_deaths(last_updated) })
     return data
 
 def most_recent_case_time(data: Dict[str, Any]) -> datetime:
     most_recent_cases = cast(Dict[str, str], dig(data, ['series', 'cases', -1]))
     return parse_datetime(most_recent_cases['date'])
-
-def cumulative_deaths(last_updated: datetime) -> List[Dict[str, Any]]:
-    #  There is no timeseries, but there is a cumulative deaths for the current day.
-    return [{
-        'date': last_updated.strftime('%Y-%m-%d'),
-        'deaths': -1,
-        'cumul_deaths': TotalDeaths().get_data()
-    }]
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""

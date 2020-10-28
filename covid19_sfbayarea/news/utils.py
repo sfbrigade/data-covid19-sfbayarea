@@ -1,7 +1,4 @@
 from bs4 import BeautifulSoup, element  # type: ignore
-from datetime import datetime, tzinfo
-import dateutil.parser
-import dateutil.tz
 import re
 import requests
 from typing import Optional
@@ -12,9 +9,6 @@ from .feed import NewsItem
 HEADING_PATTERN = re.compile(r'h\d')
 COLLAPSIBLE_WHITESPACE = re.compile(r'[^\S\u00a0]+')
 ISO_DATETIME_PATTERN = re.compile(r'^\d{4}-\d\d-\d\d(T|\s)\d\d:\d\d:\d\d(\.\d+)?(Z|\d{4}|\d\d:\d\d)$')
-US_SHORT_DATE_PATTERN = re.compile(r'^\s*\d+/\d+/\d+\s*$')
-PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
-CURRENT_YEAR = datetime.utcnow().year
 
 # Sometimes we can't find a news feed that is specific to COVID-19, so the news
 # items we scrape need to be filtered. These key terms are used to test whether
@@ -109,28 +103,6 @@ def first_text_in_element(parent: element.Tag) -> Optional[str]:
                 return descendent_text
 
     return None
-
-
-def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) -> datetime:
-    """
-    Parse a datetime from a string and ensure it always has a timezone set. Use
-    the `timezone` argument to set the timezone to use if none was specified in
-    the parsed string.
-    """
-    # Handle dumb typos that might be in the dates on the page :(
-    if US_SHORT_DATE_PATTERN.match(date_string):
-        if date_string.endswith('/202'):
-            date_string += '0'
-
-    date = dateutil.parser.parse(date_string)
-    if date.tzinfo is None:
-        date = date.replace(tzinfo=timezone)
-
-    # Gut-check whether this date seems reasonable
-    if abs(CURRENT_YEAR - date.year) > 5:
-        raise ValueError(f'Unknown date format: "{date_string}"')
-
-    return date
 
 
 # NOTE: This is adapted from:

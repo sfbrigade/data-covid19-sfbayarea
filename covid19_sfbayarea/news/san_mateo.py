@@ -2,9 +2,9 @@ from bs4 import element  # type: ignore
 from lxml import etree  # type: ignore
 import re
 from typing import List
+from ..utils import parse_datetime
 from .base import NewsScraper
 from .feed import NewsItem, NewsFeed
-from .utils import parse_datetime
 
 
 SUMMARY_PREFIX_PATTERN = re.compile(r'''

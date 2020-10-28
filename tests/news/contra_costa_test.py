@@ -1,7 +1,7 @@
 from covid19_sfbayarea.news import scrapers
 from covid19_sfbayarea.news.contra_costa import ContraCostaNews
 from covid19_sfbayarea.news.feed import NewsItem
-from covid19_sfbayarea.news.utils import PACIFIC_TIME
+from covid19_sfbayarea.utils import PACIFIC_TIME
 from datetime import datetime
 import os
 import pytest

@@ -2,8 +2,7 @@
 import click
 from datetime import datetime, timedelta
 from covid19_sfbayarea import news
-from covid19_sfbayarea.utils import friendly_county
-from covid19_sfbayarea.news.utils import parse_datetime
+from covid19_sfbayarea.utils import friendly_county, parse_datetime
 import logging
 import os
 import sys

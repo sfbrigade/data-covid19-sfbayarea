@@ -6,8 +6,8 @@ from covid19_sfbayarea.utils import dig
 class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
     JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
-    DEFAULT_MODEL_ID = 275725
-    DEFAULT_POWERBI_RESOURCE_KEY = '86dc380f-4914-4cff-b2a5-03af9f292bbd'
+    DEFAULT_MODEL_ID = 295360
+    DEFAULT_POWERBI_RESOURCE_KEY = '3a22cb23-cf1a-436e-9a33-511d2edc29f3'
 
     def __init__(self) -> None:
         self._set_defaults()
