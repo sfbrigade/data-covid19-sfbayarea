@@ -7,7 +7,7 @@ Processes for sourcing data for the [Stop COVID-19 SF Bay Area Pandemic Dashboar
 
 ## Installation
 
-This project requires Python 3 to run. It was built specifically with version `3.7.4`, but it may run with other versions. However, it does take advantage of insertion-ordered dictionaries which are only reliable in `3.7+`.
+This project requires Python 3 to run. It was built specifically with version `3.8.6`, but it may run with other versions. However, it does take advantage of assignment expressions which are only available in `3.8+`.
 To install this project, you can simply run `./install.sh` in your terminal. This will set up the virtual environment and install all of the dependencies from `requirements.txt` and `requirements-dev.txt`. However, it will not keep the virtual environment running when the script ends. If you want to stay in the virtual environment, you will have to run `source env/bin/activate` separately from the install script.
 
 

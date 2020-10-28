@@ -40,7 +40,7 @@ def fetch_data() -> Dict:
 
             The test cases are on a rolling seven-day average and do not represent the
             exact number of cases on any given day.
-         """,
+        """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
             'deaths': TimeSeriesDeaths().get_data(),
