@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from dateutil import tz
 from typing import Any, Dict, cast
-from .utils import dig
+from covid19_sfbayarea.utils import dig
 
 from .cases_by_age import CasesByAge
 from .cases_by_ethnicity import CasesByEthnicity

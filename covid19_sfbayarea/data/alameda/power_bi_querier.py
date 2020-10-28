@@ -1,7 +1,7 @@
 import json
 from requests import post
 from typing import Any, Dict, List, Union
-from .utils import dig
+from covid19_sfbayarea.utils import dig
 
 class PowerBiQuerier:
     BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'

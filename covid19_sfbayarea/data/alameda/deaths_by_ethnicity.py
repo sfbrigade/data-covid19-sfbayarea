@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 from .power_bi_querier import PowerBiQuerier
-from .utils import dig
+from covid19_sfbayarea.utils import dig
 
 class DeathsByEthnicity(PowerBiQuerier):
     def __init__(self) -> None:

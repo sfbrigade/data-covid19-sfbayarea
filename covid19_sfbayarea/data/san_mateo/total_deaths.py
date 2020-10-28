@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, cast
 from .power_bi_querier import PowerBiQuerier
-from .utils import dig
+from covid19_sfbayarea.utils import dig
 
 class TotalDeaths(PowerBiQuerier):
     JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0', 0, 'M0']
