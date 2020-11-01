@@ -245,6 +245,18 @@ class ItemParser:
         self.state = self.START_STATE
         node = self.start_node
         root = node.parent
+        # For some news items, the start tag is inside another element, like:
+        #   <div><strong>October 28, 2020</strong></div> News Title
+        # So we can't treat its parent as the root container of the whole news
+        # item. Instead, we look for the nearest ancestor with a class name and
+        # treat that as the root. It's a rough heuristic, but seems to work.
+        while root.get('class') is None:
+            if root.parent:
+                root = root.parent
+            else:
+                root = node.parent
+                break
+
         while node and root in node.parents:
             try:
                 self.before_node(node)
@@ -277,7 +289,12 @@ class ItemParser:
             # Switch to parsing the title and jump forward to the next node
             # (since we don't need to look at this node's children).
             self.state = 'title'
-            raise SkipIterationTo(node.next_sibling)
+            # Ideally, this would just be:
+            #   raise SkipIterationTo(node.next_sibling)
+            # But in some news entries on the page, the date is embedded in a
+            # few wrapping elements, like:
+            #   <div><strong>October 28, 2020</strong></div>
+            raise SkipIterationTo(list(node.descendants)[-1].next_element)
 
     def parse_title(self, node: element.Tag) -> None:
         """Parse the news item's title."""
@@ -340,7 +357,7 @@ class ItemParser:
         # they are followed by language-specific links). If so, drop it.
         self.item.title = self.item.title.strip().strip(':')
         if not self.item.title:
-            raise FormatError('No title content found')
+            raise FormatError(f'No title content found for {self.start_node}')
 
         if self.item.summary:
             self.item.summary = self.item.summary.strip().strip(':')
