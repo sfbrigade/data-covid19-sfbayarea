@@ -77,8 +77,8 @@ def get_chart_data(url: str, chart_id: str) -> List[str]:
 def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> str:
     """This method gets all the metadata underneath the data wrapper charts and the metadata at the top of the county dashboard."""
     # Some metadata strings are repeated, so use sets to dedupe them.
-    metadata: set = set()
-    chart_metadata: set = set()
+    metadata: List[str] = []
+    chart_metadata: List[str] = []
 
     with get_firefox() as driver:
         driver.implicitly_wait(30)
@@ -87,38 +87,31 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> str:
 
         for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
             if soup_obj.findAll('p'):
-                metadata = set({paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","") for paragraph in soup_obj.findAll('p')})
+                # TODO: it's not clear why any of these are being removed, nor
+                # why they are not being replaced with an equivalent ASCII
+                # character or just a space (not having something else in their
+                # place results in joined up words, like "arealways")
+                # \u2014 = em dash
+                # \u00a0 = non-breaking space
+                # \u2019 = apostrophe/right single quote
+                metadata.extend(paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","")
+                                for paragraph in soup_obj.findAll('p'))
             else:
                 raise ValueError('Metadata location has changed.')
 
-    with get_firefox() as driver: # I keep getting a connection error so maybe I need to do this again? seems weird.
-        driver.implicitly_wait(30)
-        driver.get(url)
-        # Metadata for each chart visualizing the data of the csv file I'll pull.
-        # I had to change my metadata function b/c for whatever reason, my usual code didn't pick up on the class notes block.
-        # There's something weird with the website that Ricardo and I couldn't quite pinpoint.
-        source_list: set = set()
         for chart_id in chart_ids.values():
-            driver.implicitly_wait(30)
-            source = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]').get_attribute('src')
-            source_list.add(source)
-
-    with get_firefox() as driver:
-        for source in source_list:
-            driver.get(source)
-            #breakpoint()
-            time.sleep(5) # this ensures there's enough time for the soup to find the elements and for the chart_metadata to populate.
-            # From the source code it seems that .get() should be synchronous but it's not working like that :(
-            soup = BeautifulSoup(driver.page_source, 'html5lib')
-            for data in soup.findAll('div', attrs = {'class': 'notes-block'}):
-                #breakpoint()
-                chart_metadata.add(data.text.strip())
+            with chart_frame(driver, chart_id, quit_after=False):
+                # TODO: just use selenium commands here
+                for div in driver.find_elements_by_css_selector('div.notes-block'):
+                    chart_metadata.append(div.text)
 
     # Manually adding in metadata about testing data
-    chart_metadata.add("Negative and pending tests are excluded from the Marin County test data.")
-    chart_metadata.add("Note that this test data is about tests done by Marin County residents, not about all tests done in Marin County (includes residents and non-residents).")
+    chart_metadata.append("Negative and pending tests are excluded from the Marin County test data.")
+    chart_metadata.append("Note that this test data is about tests done by Marin County residents, not about all tests done in Marin County (includes residents and non-residents).")
 
-    return '\n\n'.join([*metadata, *chart_metadata])
+    # Deduplicate metadata messages. (But preserve order!)
+    all_metadata = list(dict.fromkeys([*metadata, *chart_metadata]))
+    return '\n\n'.join(all_metadata)
 
 def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str, date_column: str = 'Date') -> List:
     """This method extracts the date, number of cases/deaths, and new cases/deaths."""
