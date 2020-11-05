@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from contextlib import contextmanager
 from selenium import webdriver # type: ignore
 
+from ..errors import FormatError
 from ..webdriver import get_firefox
 from .utils import get_data_model
 
@@ -45,7 +46,7 @@ class MarinDashboardPage:
         finally:
             self.driver.switch_to.default_content()
 
-    def get_chart_data(self, chart_id: str) -> List[str]:
+    def get_chart_csv(self, chart_id: str) -> List[str]:
         """
         Extract parsed csv data from the csv linked in the data wrapper charts.
         """
@@ -56,13 +57,16 @@ class MarinDashboardPage:
                 media, data = csv_data[5:].split(',', 1)
                 # Will likely always have this kind of data type
                 if media != 'application/octet-stream;charset=utf-8':
-                    raise ValueError(f'Cannot handle media type "{media}"')
+                    raise FormatError(f'Cannot parse data with media type "{media}" for chart "{chart_id}"')
                 csv_string = unquote_plus(data)
                 csv_data = csv_string.splitlines()
             else:
-                raise ValueError('Cannot handle this csv_data href')
+                raise FormatError(f'Chart "{chart_id}" did not have a data: URL')
 
         return csv_data
+
+    def get_chart_data(self, chart_id: str) -> csv.DictReader:
+        return csv.DictReader(self.get_chart_csv(chart_id))
 
     def _load(self) -> None:
         self.driver.get(self.url)
@@ -142,11 +146,8 @@ def get_chart_meta(page: MarinDashboardPage, chart_ids: Iterable[str]) -> str:
 
 
 def get_series_data(page: MarinDashboardPage, chart_id: str, headers: list, model_typ: str, typ: str, new_count: str, date_column: str = 'Date') -> List:
-    """This method extracts the date, number of cases/deaths, and new cases/deaths."""
-
-    csv_data = page.get_chart_data(chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
+    """Extract the date, number of cases/deaths, and new cases/deaths."""
+    csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
     series: list = list()
@@ -179,10 +180,8 @@ def get_series_data(page: MarinDashboardPage, chart_id: str, headers: list, mode
 
 
 def get_breakdown_age(page: MarinDashboardPage, chart_id: str) -> Tuple[List, List]:
-    """This method gets the breakdown of cases and deaths by age."""
-    csv_data = page.get_chart_data(chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
+    """Get the breakdown of cases and deaths by age."""
+    csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
     c_brkdown: list = list()
@@ -212,10 +211,8 @@ def get_breakdown_age(page: MarinDashboardPage, chart_id: str) -> Tuple[List, Li
 
 
 def get_breakdown_gender(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict, Dict]:
-    """This method gets the breakdown of cases and deaths by gender."""
-    csv_data = page.get_chart_data(chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
+    """Get the breakdown of cases and deaths by gender."""
+    csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
     if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
@@ -238,11 +235,8 @@ def get_breakdown_gender(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict,
 
 
 def get_breakdown_race_eth(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict, Dict]:
-    """This method gets the breakdown of cases and deaths by race/ethnicity."""
-
-    csv_data = page.get_chart_data(chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
+    """Get the breakdown of cases and deaths by race/ethnicity."""
+    csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
@@ -265,10 +259,11 @@ def get_breakdown_race_eth(page: MarinDashboardPage, chart_id: str) -> Tuple[Dic
 
 
 def get_test_series(page: MarinDashboardPage, chart_id: str) -> List:
-    """This method gets the date, the number of new positive tests on that date, and the number of cumulative positive tests."""
-    csv_data = page.get_chart_data(chart_id)
-    csv_reader = csv.DictReader(csv_data)
-
+    """
+    Get the date, the number of new positive tests on that date, and the number
+    of cumulative positive tests.
+    """
+    csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
     if keys != ['Test Date', 'Positive Tests']:
