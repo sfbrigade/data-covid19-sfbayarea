@@ -130,7 +130,7 @@ def get_chart_meta(page: MarinDashboardPage, chart_ids: Iterable[str]) -> str:
         metadata.extend(paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","")
                         for paragraph in paragraphs)
     else:
-        raise ValueError('Metadata location has changed.')
+        raise FormatError('Metadata location has changed.')
 
     for chart_id in chart_ids:
         with page.use_chart_frame(chart_id):
@@ -153,8 +153,8 @@ def get_series_data(page: MarinDashboardPage, chart_id: str, headers: list, mode
     keys = csv_reader.fieldnames
 
     if keys != headers:
-        raise ValueError(f'Data headers for chart "{chart_id}" have changed! '
-                         f'Expected: {headers}, found: {keys}')
+        raise FormatError(f'Data headers for chart "{chart_id}" have changed. '
+                          f'Expected: {headers}, found: {keys}')
 
     series = []
     history = []
@@ -185,7 +185,7 @@ def get_breakdown_age(page: MarinDashboardPage, chart_id: str) -> Tuple[List, Li
     keys = csv_reader.fieldnames
 
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
-        raise ValueError('The headers have changed')
+        raise FormatError(f'Data headers for chart "{chart_id}" have changed')
 
     key_mapping = {"0-9": "0_to_9", "10-18": "10_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"}
 
@@ -197,7 +197,7 @@ def get_breakdown_age(page: MarinDashboardPage, chart_id: str) -> Tuple[List, Li
          # Extracting the age group and the raw count for both cases and deaths.
         c_age["group"], d_age["group"] = row['Age Category'], row['Age Category']
         if c_age["group"] not in key_mapping:
-            raise ValueError(str(c_age["group"]) + ' is not in the list of age groups. The age groups have changed.')
+            raise FormatError(f'"{c_age["group"]}" is not in the list of age groups. The age groups have changed.')
         else:
             c_age["group"] = key_mapping[c_age["group"]]
             c_age["raw_count"] = int(row["Cases"])
@@ -215,7 +215,7 @@ def get_breakdown_gender(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict,
     keys = csv_reader.fieldnames
 
     if keys != ['Gender', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
-        raise ValueError('The headers have changed.')
+        raise FormatError(f'Data headers for chart "{chart_id}" have changed')
 
     genders = ['male', 'female']
     c_gender = {}
@@ -226,7 +226,7 @@ def get_breakdown_gender(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict,
         # Each new row has data for a different gender.
         gender = row["Gender"].lower()
         if gender not in genders:
-            raise ValueError("The genders have changed.")
+            raise FormatError("The genders have changed.")
         c_gender[gender] = int(row["Cases"])
         d_gender[gender] = int(row["Deaths"])
 
@@ -239,7 +239,7 @@ def get_breakdown_race_eth(page: MarinDashboardPage, chart_id: str) -> Tuple[Dic
     keys = csv_reader.fieldnames
 
     if keys != ['Race/Ethnicity', 'COUNTY POPULATION', 'Cases', 'Case Percent', 'Hospitalizations', 'Hospitalizations Percent', 'Deaths', 'Deaths Percent']:
-        raise ValueError("The headers have changed.")
+        raise FormatError(f'Data headers for chart "{chart_id}" have changed')
 
     key_mapping = {"Black/African American":"African_Amer", "Hispanic/Latino": "Latinx_or_Hispanic", "White": "White", "Asian": "Asian", "Native Hawaiian/Pacific Islander": "Pacific_Islander", "American Indian/Alaska Native": "Native_Amer", "Multi or Other Race": "Multi_or_Other"}
 
@@ -249,7 +249,7 @@ def get_breakdown_race_eth(page: MarinDashboardPage, chart_id: str) -> Tuple[Dic
     for row in csv_reader:
         race_eth = row["Race/Ethnicity"]
         if race_eth not in key_mapping:
-            raise ValueError("The race_eth groups have changed.")
+            raise FormatError("The race_eth groups have changed.")
         else:
             c_race_eth[key_mapping[race_eth]] = int(row["Cases"])
             d_race_eth[key_mapping[race_eth]] = int(row["Deaths"])
@@ -266,7 +266,7 @@ def get_test_series(page: MarinDashboardPage, chart_id: str) -> List:
     keys = csv_reader.fieldnames
 
     if keys != ['Test Date', 'Positive Tests']:
-        raise ValueError("The headers have changed.")
+        raise FormatError(f'Data headers for chart "{chart_id}" have changed')
 
     test_series = []
 
