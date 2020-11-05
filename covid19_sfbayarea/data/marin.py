@@ -17,7 +17,14 @@ def get_county() -> Dict:
     url = 'https://coronavirus.marinhhs.org/surveillance'
     model = get_data_model()
 
-    chart_ids = {"cases": "Eq6Es", "deaths": "Eq6Es", "age": "zSHDs", "gender": "FEciW", "race_eth": "aBeEd", "tests": '7sHQq'}
+    chart_ids = {
+        "cases": "Eq6Es",
+        "deaths": "bSxdG",
+        "age": "zSHDs",
+        "gender": "FEciW",
+        "race_eth": "aBeEd",
+        "tests": "7sHQq",
+    }
     # The time series data for negative tests is gone, so I've just scraped positive test data using the new chart referenced above.
 
     model['name'] = "Marin County"
@@ -26,8 +33,8 @@ def get_county() -> Dict:
     model['source_url'] = url
     model['meta_from_source'] = get_chart_meta(url, chart_ids)
 
-    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_cases", 'Total Cases', 'cases')
-    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Date', 'Total Cases', 'Total Recovered*', 'Total Hospitalized', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths')
+    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*'], "cumul_cases", 'Total Cases', 'cases')
+    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Event Date', 'Total Hospitalizations', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths', date_column='Event Date')
 
     model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
     model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
@@ -113,7 +120,7 @@ def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> str:
 
     return '\n\n'.join([*metadata, *chart_metadata])
 
-def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str) -> List:
+def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str, date_column: str = 'Date') -> List:
     """This method extracts the date, number of cases/deaths, and new cases/deaths."""
 
     csv_data = get_chart_data(url, chart_id)
@@ -124,13 +131,14 @@ def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ:
     series: list = list()
 
     if keys != headers:
-        raise ValueError('The headers have changed')
+        raise ValueError(f'Data headers for chart "{chart_id}" have changed! '
+                         f'Expected: {headers}, found: {keys}')
 
     history: list = list()
 
     for row in csv_reader:
         daily: dict = dict()
-        date_time_obj = datetime.strptime(row['Date'], '%m/%d/%Y')
+        date_time_obj = datetime.strptime(row[date_column], '%m/%d/%Y')
         daily["date"] = date_time_obj.strftime('%Y-%m-%d')
         # Collect the case totals in order to compute the change in cases per day
         history.append(int(row[typ]))
