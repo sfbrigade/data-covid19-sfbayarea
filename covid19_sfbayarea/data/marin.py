@@ -150,14 +150,12 @@ def get_series_data(page: MarinDashboardPage, chart_id: str, headers: list, mode
     csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
-    series: list = list()
-
     if keys != headers:
         raise ValueError(f'Data headers for chart "{chart_id}" have changed! '
                          f'Expected: {headers}, found: {keys}')
 
-    history: list = list()
-
+    series = []
+    history = []
     for row in csv_reader:
         daily: dict = dict()
         date_time_obj = datetime.strptime(row[date_column], '%m/%d/%Y')
@@ -184,14 +182,13 @@ def get_breakdown_age(page: MarinDashboardPage, chart_id: str) -> Tuple[List, Li
     csv_reader = page.get_chart_data(chart_id)
     keys = csv_reader.fieldnames
 
-    c_brkdown: list = list()
-    d_brkdown: list = list()
-
     if keys != ['Age Category', 'POPULATION', 'Cases', 'Hospitalizations', 'Deaths']:
         raise ValueError('The headers have changed')
 
     key_mapping = {"0-9": "0_to_9", "10-18": "10_to_18", "19-34": "19_to_34", "35-49": "35_to_49", "50-64": "50_to_64", "65-79": "65_to_79", "80-94": "80_to_94", "95+": "95_and_older"}
 
+    c_brkdown = []
+    d_brkdown = []
     for row in csv_reader:
         c_age: dict = dict()
         d_age: dict = dict()
@@ -219,8 +216,8 @@ def get_breakdown_gender(page: MarinDashboardPage, chart_id: str) -> Tuple[Dict,
         raise ValueError('The headers have changed.')
 
     genders = ['male', 'female']
-    c_gender: dict = dict()
-    d_gender: dict = dict()
+    c_gender = {}
+    d_gender = {}
 
     for row in csv_reader:
         # Extracting the gender and the raw count (the 3rd and 5th columns, respectively) for both cases and deaths.
@@ -244,8 +241,8 @@ def get_breakdown_race_eth(page: MarinDashboardPage, chart_id: str) -> Tuple[Dic
 
     key_mapping = {"Black/African American":"African_Amer", "Hispanic/Latino": "Latinx_or_Hispanic", "White": "White", "Asian": "Asian", "Native Hawaiian/Pacific Islander": "Pacific_Islander", "American Indian/Alaska Native": "Native_Amer", "Multi or Other Race": "Multi_or_Other"}
 
-    c_race_eth: dict = dict()
-    d_race_eth: dict = dict()
+    c_race_eth = {}
+    d_race_eth = {}
 
     for row in csv_reader:
         race_eth = row["Race/Ethnicity"]
@@ -269,7 +266,7 @@ def get_test_series(page: MarinDashboardPage, chart_id: str) -> List:
     if keys != ['Test Date', 'Positive Tests']:
         raise ValueError("The headers have changed.")
 
-    test_series: list = list()
+    test_series = []
 
     cumul_pos = 0
     for row in csv_reader:
