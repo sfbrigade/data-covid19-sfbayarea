@@ -47,9 +47,7 @@ class MarinDashboardPage:
             self.driver.switch_to.default_content()
 
     def get_chart_csv(self, chart_id: str) -> List[str]:
-        """
-        Extract parsed csv data from the csv linked in the data wrapper charts.
-        """
+        "Extract the data backing a given chart as a CSV string."
         with self.use_chart_frame(chart_id):
             csv_data = self.find('.dw-data-link').get_attribute('href')
             # Deal with the data
@@ -66,6 +64,7 @@ class MarinDashboardPage:
         return csv_data
 
     def get_chart_data(self, chart_id: str) -> csv.DictReader:
+        "Get the data backing a given chart as a :class:`csv.DictReader`."
         return csv.DictReader(self.get_chart_csv(chart_id))
 
     def _load(self) -> None:
@@ -112,7 +111,10 @@ def get_county() -> Dict:
 
 
 def get_chart_meta(page: MarinDashboardPage, chart_ids: Iterable[str]) -> str:
-    """This method gets all the metadata underneath the data wrapper charts and the metadata at the top of the county dashboard."""
+    """
+    Get all the metadata underneath the data wrapper charts and the metadata at
+    the top of the county dashboard.
+    """
     metadata: List[str] = []
     chart_metadata: List[str] = []
 
