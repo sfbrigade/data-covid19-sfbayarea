@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import csv
-from typing import List, Dict, Tuple
+from typing import List, Dict, Generator, Tuple
 from bs4 import BeautifulSoup # type: ignore
 from urllib.parse import unquote_plus
 from datetime import datetime, timezone
 from contextlib import contextmanager
-import time
-
+from selenium import webdriver # type: ignore
 
 from ..webdriver import get_firefox
 from .utils import get_data_model
@@ -27,96 +26,90 @@ def get_county() -> Dict:
     }
     # The time series data for negative tests is gone, so I've just scraped positive test data using the new chart referenced above.
 
-    model['name'] = "Marin County"
-    model['update_time'] = datetime.now(tz=timezone.utc).isoformat()
-    model["meta_from_baypd"] = ""
-    model['source_url'] = url
-    model['meta_from_source'] = get_chart_meta(url, chart_ids)
+    with get_firefox() as driver:
+        driver.implicitly_wait(30)
+        driver.get(url)
 
-    model["series"]["cases"] = get_series_data(chart_ids["cases"], url, ['Date', 'Total Cases', 'Total Recovered*'], "cumul_cases", 'Total Cases', 'cases')
-    model["series"]["deaths"] =  get_series_data(chart_ids["deaths"], url, ['Event Date', 'Total Hospitalizations', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths', date_column='Event Date')
+        model['name'] = "Marin County"
+        model['update_time'] = datetime.now(tz=timezone.utc).isoformat()
+        model["meta_from_baypd"] = ""
+        model['source_url'] = url
+        model['meta_from_source'] = get_chart_meta(driver, chart_ids)
 
-    model["series"]["tests"] = get_test_series(chart_ids["tests"], url)
-    model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(chart_ids["age"], url)
-    model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(chart_ids["gender"], url)
-    model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(chart_ids["race_eth"], url)
+        model["series"]["cases"] = get_series_data(driver, chart_ids["cases"], ['Date', 'Total Cases', 'Total Recovered*'], "cumul_cases", 'Total Cases', 'cases')
+        model["series"]["deaths"] =  get_series_data(driver, chart_ids["deaths"], ['Event Date', 'Total Hospitalizations', 'Total Deaths'], "cumul_deaths", 'Total Deaths', 'deaths', date_column='Event Date')
+
+        model["series"]["tests"] = get_test_series(driver, chart_ids["tests"])
+        model["case_totals"]["age_group"], model["death_totals"]["age_group"] = get_breakdown_age(driver, chart_ids["age"])
+        model["case_totals"]["gender"], model["death_totals"]["gender"] = get_breakdown_gender(driver, chart_ids["gender"])
+        model["case_totals"]["race_eth"], model["death_totals"]["race_eth"] = get_breakdown_race_eth(driver, chart_ids["race_eth"])
+
     return model
 
 @contextmanager
-def chart_frame(driver, chart_id: str): # type: ignore
-    # is this bad practice? I didn't know what type to specify here for the frame.
+def chart_frame(driver: webdriver.Remote, chart_id: str) -> Generator:
     frame = driver.find_element_by_css_selector(f'iframe[src*="//datawrapper.dwcdn.net/{chart_id}/"]')
     driver.switch_to.frame(frame)
     try:
         yield frame
     finally:
         driver.switch_to.default_content()
-        driver.quit()
 
-def get_chart_data(url: str, chart_id: str) -> List[str]:
+def get_chart_data(driver: webdriver.Remote, chart_id: str) -> List[str]:
     """This method extracts parsed csv data from the csv linked in the data wrapper charts."""
-    with get_firefox() as driver:
-        driver.implicitly_wait(30)
-        driver.get(url)
-
-        with chart_frame(driver, chart_id):
-            csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
-            # Deal with the data
-            if csv_data.startswith('data:'):
-                media, data = csv_data[5:].split(',', 1)
-                # Will likely always have this kind of data type
-                if media != 'application/octet-stream;charset=utf-8':
-                    raise ValueError(f'Cannot handle media type "{media}"')
-                csv_string = unquote_plus(data)
-                csv_data = csv_string.splitlines()
-            else:
-                raise ValueError('Cannot handle this csv_data href')
+    with chart_frame(driver, chart_id):
+        csv_data = driver.find_element_by_class_name('dw-data-link').get_attribute('href')
+        # Deal with the data
+        if csv_data.startswith('data:'):
+            media, data = csv_data[5:].split(',', 1)
+            # Will likely always have this kind of data type
+            if media != 'application/octet-stream;charset=utf-8':
+                raise ValueError(f'Cannot handle media type "{media}"')
+            csv_string = unquote_plus(data)
+            csv_data = csv_string.splitlines()
+        else:
+            raise ValueError('Cannot handle this csv_data href')
 
     return csv_data
 
-def get_chart_meta(url: str, chart_ids: Dict[str, str]) -> str:
+def get_chart_meta(driver: webdriver.Remote, chart_ids: Dict[str, str]) -> str:
     """This method gets all the metadata underneath the data wrapper charts and the metadata at the top of the county dashboard."""
-    # Some metadata strings are repeated, so use sets to dedupe them.
     metadata: List[str] = []
     chart_metadata: List[str] = []
 
-    with get_firefox() as driver:
-        driver.implicitly_wait(30)
-        driver.get(url)
-        soup = BeautifulSoup(driver.page_source, 'html5lib')
+    soup = BeautifulSoup(driver.page_source, 'html5lib')
+    for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
+        if soup_obj.findAll('p'):
+            # TODO: it's not clear why any of these are being removed, nor
+            # why they are not being replaced with an equivalent ASCII
+            # character or just a space (not having something else in their
+            # place results in joined up words, like "arealways")
+            # \u2014 = em dash
+            # \u00a0 = non-breaking space
+            # \u2019 = apostrophe/right single quote
+            metadata.extend(paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","")
+                            for paragraph in soup_obj.findAll('p'))
+        else:
+            raise ValueError('Metadata location has changed.')
 
-        for soup_obj in soup.findAll('div', attrs={"class":"surveillance-data-text"}):
-            if soup_obj.findAll('p'):
-                # TODO: it's not clear why any of these are being removed, nor
-                # why they are not being replaced with an equivalent ASCII
-                # character or just a space (not having something else in their
-                # place results in joined up words, like "arealways")
-                # \u2014 = em dash
-                # \u00a0 = non-breaking space
-                # \u2019 = apostrophe/right single quote
-                metadata.extend(paragraph.text.replace("\u2014","").replace("\u00a0", "").replace("\u2019","")
-                                for paragraph in soup_obj.findAll('p'))
-            else:
-                raise ValueError('Metadata location has changed.')
-
-        for chart_id in chart_ids.values():
-            with chart_frame(driver, chart_id, quit_after=False):
-                # TODO: just use selenium commands here
-                for div in driver.find_elements_by_css_selector('div.notes-block'):
-                    chart_metadata.append(div.text)
+    for chart_id in chart_ids.values():
+        with chart_frame(driver, chart_id):
+            for div in driver.find_elements_by_css_selector('div.notes-block'):
+                chart_metadata.append(div.text)
 
     # Manually adding in metadata about testing data
     chart_metadata.append("Negative and pending tests are excluded from the Marin County test data.")
     chart_metadata.append("Note that this test data is about tests done by Marin County residents, not about all tests done in Marin County (includes residents and non-residents).")
 
-    # Deduplicate metadata messages. (But preserve order!)
+    # Some metadata strings are repeated.
+    # Dedupe and preserve order with list(dict()).
     all_metadata = list(dict.fromkeys([*metadata, *chart_metadata]))
     return '\n\n'.join(all_metadata)
 
-def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ: str, new_count: str, date_column: str = 'Date') -> List:
+def get_series_data(driver: webdriver.Remote, chart_id: str, headers: list, model_typ: str, typ: str, new_count: str, date_column: str = 'Date') -> List:
     """This method extracts the date, number of cases/deaths, and new cases/deaths."""
 
-    csv_data = get_chart_data(url, chart_id)
+    csv_data = get_chart_data(driver, chart_id)
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
@@ -149,9 +142,9 @@ def get_series_data(chart_id: str, url: str, headers: list, model_typ: str, typ:
         series[val][new_count] = num
     return series
 
-def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
+def get_breakdown_age(driver: webdriver.Remote, chart_id: str) -> Tuple[List, List]:
     """This method gets the breakdown of cases and deaths by age."""
-    csv_data = get_chart_data(url, chart_id)
+    csv_data = get_chart_data(driver, chart_id)
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
@@ -181,9 +174,9 @@ def get_breakdown_age(chart_id: str, url: str) -> Tuple[List, List]:
 
     return c_brkdown, d_brkdown
 
-def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
+def get_breakdown_gender(driver: webdriver.Remote, chart_id: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by gender."""
-    csv_data = get_chart_data(url, chart_id)
+    csv_data = get_chart_data(driver, chart_id)
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
@@ -206,10 +199,10 @@ def get_breakdown_gender(chart_id: str, url: str) -> Tuple[Dict, Dict]:
 
     return c_gender, d_gender
 
-def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
+def get_breakdown_race_eth(driver: webdriver.Remote, chart_id: str) -> Tuple[Dict, Dict]:
     """This method gets the breakdown of cases and deaths by race/ethnicity."""
 
-    csv_data = get_chart_data(url, chart_id)
+    csv_data = get_chart_data(driver, chart_id)
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
@@ -232,9 +225,9 @@ def get_breakdown_race_eth(chart_id: str, url: str) -> Tuple[Dict, Dict]:
 
     return c_race_eth, d_race_eth
 
-def get_test_series(chart_id: str, url: str) -> List:
+def get_test_series(driver: webdriver.Remote, chart_id: str) -> List:
     """This method gets the date, the number of new positive tests on that date, and the number of cumulative positive tests."""
-    csv_data = get_chart_data(url, chart_id)
+    csv_data = get_chart_data(driver, chart_id)
     csv_reader = csv.DictReader(csv_data)
 
     keys = csv_reader.fieldnames
