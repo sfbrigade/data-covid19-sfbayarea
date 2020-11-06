@@ -75,7 +75,7 @@ class MarinDashboardPage:
 
     # We're being a bit lazy with types here because we don't use them.
     def __exit__(self, _type: Any, _value: Any, _traceback: Any) -> None:
-        ...
+        self.driver.quit()
 
 
 def get_county() -> Dict:
@@ -118,8 +118,7 @@ def get_chart_meta(page: MarinDashboardPage, chart_ids: Iterable[str]) -> str:
     metadata: List[str] = []
     chart_metadata: List[str] = []
 
-    paragraphs = page.find_all('div.surveillance-data-text p')
-    if paragraphs:
+    if paragraphs := page.find_all('div.surveillance-data-text p'):
         # TODO: it's not clear why any of these are being removed, nor
         # why they are not being replaced with an equivalent ASCII
         # character or just a space (not having something else in their
