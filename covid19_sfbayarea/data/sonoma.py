@@ -4,6 +4,7 @@ import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 from ..errors import FormatError
+from ..utils import assert_equal_sets
 
 TimeSeriesItem = Dict[str, Union[str, int]]
 TimeSeries = List[TimeSeriesItem]
@@ -208,14 +209,17 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     }
 
     rows = parse_table(race_eth_tag)
+    assert_equal_sets(race_transform.keys(),
+                      (row['Race/Ethnicity'] for row in rows),
+                      description='Racial groups')
+
     for row in rows:
         group_name = row['Race/Ethnicity']
         cases = parse_int(row['Cases'])
-        if group_name not in race_transform:
-            raise FormatError(f'The racial group {group_name} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     return race_cases
+
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """

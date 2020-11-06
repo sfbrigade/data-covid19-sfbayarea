@@ -3,12 +3,14 @@ import dateutil.tz
 import re
 from datetime import datetime, tzinfo
 from functools import reduce
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
+from .errors import FormatError
 
 
 US_SHORT_DATE_PATTERN = re.compile(r'^\s*\d+/\d+/\d+\s*$')
 PACIFIC_TIME = dateutil.tz.gettz('America/Los_Angeles')
 CURRENT_YEAR = datetime.utcnow().year
+
 
 def friendly_county(county_id: str) -> str:
     '''
@@ -46,3 +48,17 @@ def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) 
         raise ValueError(f'Unknown date format: "{date_string}"')
 
     return date
+
+
+def assert_equal_sets(a: Iterable, b: Iterable, description: str = 'items') -> None:
+    """
+    Raise a nicely formatted exception if the two arguments do not contain the
+    same items. Arguments can be any iterable; the order of items in them does
+    not matter (they are treated like sets).
+    """
+    a_set = isinstance(a, set) and a or set(a)
+    b_set = isinstance(b, set) and b or set(b)
+    if a_set != b_set:
+        removed = a_set - b_set
+        added = b_set - a_set
+        raise FormatError(f"{description} are different -- removed: {removed}, added: {added}")
