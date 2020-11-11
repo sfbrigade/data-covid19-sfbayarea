@@ -61,4 +61,10 @@ def assert_equal_sets(a: Iterable, b: Iterable, description: str = 'items') -> N
     if a_set != b_set:
         removed = a_set - b_set
         added = b_set - a_set
-        raise FormatError(f"{description} are different -- removed: {removed}, added: {added}")
+        message_parts = [f'{description} are different']
+        if removed:
+            message_parts.append(f'removed {removed}')
+        if added:
+            message_parts.append(f'added {added}')
+
+        raise FormatError(', '.join(message_parts))
