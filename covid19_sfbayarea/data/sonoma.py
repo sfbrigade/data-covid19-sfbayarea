@@ -203,6 +203,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         'Black/African American, non-Hispanic': 'African_Amer',
         'American Indian/Alaska Native, non-Hispanic': 'Native_Amer',
         'Native Hawaiian and other Pacific Islander, non-Hispanic': 'Pacific_Islander',
+        'Other, non-Hispanic': 'Other',
         'Unknown': 'Unknown',
     }
 
