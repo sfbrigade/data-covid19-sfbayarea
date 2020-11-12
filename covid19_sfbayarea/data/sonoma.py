@@ -196,13 +196,15 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     }
 
     race_transform = {
-        'Asian / Pacific Islander, non-Hispanic': 'Asian',
+        'Asian, non-Hispanic': 'Asian',
         'Hispanic / Latino': 'Latinx_or_Hispanic',
-        'Other': 'Other',
         'White, non-Hispanic': 'White',
-        'Multi-Race': 'Multiple_Race',
-        'Black / African American, non-Hispanic': 'African_Amer',
-        'Unknown': 'Unknown'
+        'Multi-racial, non-Hispanic': 'Multiple_Race',
+        'Black/African American, non-Hispanic': 'African_Amer',
+        'American Indian/Alaska Native, non-Hispanic': 'Native_Amer',
+        'Native Hawaiian and other Pacific Islander, non-Hispanic': 'Pacific_Islander',
+        'Other, non-Hispanic': 'Other',
+        'Unknown': 'Unknown',
     }
 
     rows = parse_table(race_eth_tag)
@@ -210,7 +212,7 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
         group_name = row['Race/Ethnicity']
         cases = parse_int(row['Cases'])
         if group_name not in race_transform:
-            raise FormatError('The racial group {0} is new in the data -- please adjust the scraper accordingly')
+            raise FormatError(f'The racial group {group_name} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     return race_cases
