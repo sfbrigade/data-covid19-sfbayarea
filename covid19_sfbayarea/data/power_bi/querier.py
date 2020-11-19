@@ -4,10 +4,16 @@ from typing import Any, Dict, List, Union
 from covid19_sfbayarea.utils import dig
 
 class Querier:
-    BASE_URI = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
-    JSON_PATH = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
-    model_id = 295360
-    powerbi_resource_key = '3a22cb23-cf1a-436e-9a33-511d2edc29f3'
+    # Defaults, these are mostly the same for all classes, can be overridden where necessary
+    base_uri = 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/querydata?synchronous=true'
+    json_path = ['results', 0, 'result', 'data', 'dsr', 'DS', 0, 'PH', 0, 'DM0']
+
+    # These must be set when subclassing this
+    model_id: int
+    name: str
+    property: str
+    powerbi_resource_key: str
+    source: str
 
     def __init__(self) -> None:
         self.function = getattr(self, 'function', 'CountNotNull')
@@ -18,12 +24,12 @@ class Querier:
         return self._parse_data(response_json)
 
     def _fetch_data(self) -> Dict:
-        response = post(self.BASE_URI, headers = { 'X-PowerBI-ResourceKey': self.powerbi_resource_key }, json = self._query_params())
+        response = post(self.base_uri, headers = { 'X-PowerBI-ResourceKey': self.powerbi_resource_key }, json = self._query_params())
         response.raise_for_status()
         return response.json()
 
     def _parse_data(self, response_json: Dict[str, List]) -> Union[List, Dict]:
-        results = dig(response_json, self.JSON_PATH)
+        results = dig(response_json, self.json_path)
         return self._extract_lists(results)
 
     def _query_params(self) -> Dict[str, Any]:
