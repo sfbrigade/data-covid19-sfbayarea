@@ -9,10 +9,10 @@ class Meta():
         try:
             url = ''.join([
                 'https://wabi-us-gov-iowa-api.analysis.usgovcloudapi.net/public/reports/',
-                PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY,
+                PowerBiQuerier.powerbi_resource_key,
                 '/modelsAndExploration?preferReadOnlySession=true'
             ])
-            response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.DEFAULT_POWERBI_RESOURCE_KEY })
+            response = get(url, headers = { 'X-PowerBI-ResourceKey': PowerBiQuerier.powerbi_resource_key })
             return self._extract_meta(response.json())
         except:
             return """
