@@ -4,6 +4,7 @@ import dateutil.parser
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 from ..errors import FormatError
+from ..utils import assert_equal_sets
 
 TimeSeriesItem = Dict[str, Union[str, int]]
 TimeSeries = List[TimeSeriesItem]
@@ -126,11 +127,12 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     rows = parse_table(transmission_tag)
     # turns the transmission categories on the page into the ones we're using
     transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
+    assert_equal_sets(transmission_type_conversion.keys(),
+                      (row['Source'] for row in rows),
+                      description='Transmission types')
     for row in rows:
         type = row['Source']
         number = parse_int(row['Cases'])
-        if type not in transmission_type_conversion:
-            raise FormatError(f'The transmission type {type} was not found in transmission_type_conversion')
         type = transmission_type_conversion[type]
         transmissions[type] = number
     return transmissions
@@ -156,11 +158,12 @@ def transform_gender(tag: element.Tag) -> Dict[str, int]:
     genders = {}
     rows = parse_table(tag)
     gender_string_conversions = {'Males': 'male', 'Females': 'female'}
+    assert_equal_sets(gender_string_conversions.keys(),
+                      (row['Gender'] for row in rows),
+                      description='Genders')
     for row in rows:
         gender = row['Gender']
         cases = parse_int(row['Cases'])
-        if gender not in gender_string_conversions:
-            raise FormatError('An unrecognized gender has been added to the gender table')
         genders[gender_string_conversions[gender]] = cases
     return genders
 
@@ -208,14 +211,17 @@ def transform_race_eth(race_eth_tag: element.Tag) -> Dict[str, int]:
     }
 
     rows = parse_table(race_eth_tag)
+    assert_equal_sets(race_transform.keys(),
+                      (row['Race/Ethnicity'] for row in rows),
+                      description='Racial groups')
+
     for row in rows:
         group_name = row['Race/Ethnicity']
         cases = parse_int(row['Cases'])
-        if group_name not in race_transform:
-            raise FormatError(f'The racial group {group_name} is new in the data -- please adjust the scraper accordingly')
         internal_name = race_transform[group_name]
         race_cases[internal_name] = cases
     return race_cases
+
 
 def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """
