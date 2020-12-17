@@ -23,9 +23,8 @@ def friendly_county(county_id: str) -> str:
 def dig(items: Union[Dict[Any, Any], List[Any]], json_path: List[Any]) -> Any:
     try:
         return reduce(lambda subitem, next_step: subitem[next_step], json_path, items)
-    except (KeyError, TypeError, IndexError) as err:
-        print('Error reading returned JSON, check path: ', err)
-        raise(err)
+    except (KeyError, TypeError, IndexError) as error:
+        raise KeyError(f'Error reading data at path: {json_path}') from error
 
 
 def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) -> datetime:
