@@ -3,6 +3,7 @@ import dateutil.tz
 import re
 from datetime import datetime, tzinfo
 from functools import reduce
+import string
 from typing import Any, Dict, Iterable, List, Optional, Union
 from .errors import FormatError
 
@@ -67,3 +68,32 @@ def assert_equal_sets(a: Iterable, b: Iterable, description: str = 'items') -> N
             message_parts.append(f'added {added}')
 
         raise FormatError(', '.join(message_parts))
+
+
+# A more permissive set of space characters that you might want to remove from
+# a string. We've seen all kinds of crazy invisible space characters embedded
+# where they obviously weren't intended in web pages and that aren't covered by
+# `str.strip()` or by `\s` in regular expressions. Using this instead can help
+# clean those up.
+PERMISSIVE_SPACES = (
+    string.whitespace +
+    '\u00a0'  # No-break space
+    '\ufeff'  # Zero width no-break space
+    '\u2000'  # En quad
+    '\u2001'  # Em quad
+    '\u2002'  # En space
+    '\u2003'  # Em space
+    '\u2004'  # Three-per-em space
+    '\u2005'  # Four-per-em space
+    '\u2006'  # Six-per-em space
+    '\u2007'  # Figure space
+    '\u2008'  # Punctuation space
+    '\u2009'  # Thin space
+    '\u200a'  # Hair space
+    '\u200b'  # Zero width space
+    '\u2028'  # Line separator
+    '\u2029'  # Paragraph separator
+    '\u202f'  # Narrow no-break space
+    '\u205f'  # Medium mathematical space
+    '\u3000'  # Ideographic space
+)

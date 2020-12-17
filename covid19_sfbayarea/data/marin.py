@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from selenium import webdriver # type: ignore
 
 from ..errors import FormatError
+from ..utils import PERMISSIVE_SPACES
 from ..webdriver import get_firefox
 from .utils import get_data_model
 
@@ -65,7 +66,11 @@ class MarinDashboardPage:
 
     def get_chart_data(self, chart_id: str) -> csv.DictReader:
         "Get the data backing a given chart as a :class:`csv.DictReader`."
-        return csv.DictReader(self.get_chart_csv(chart_id))
+        reader = csv.DictReader(self.get_chart_csv(chart_id))
+        # Clean up field names, which sometimes have erroneous whitespace.
+        reader.fieldnames = [name.strip(PERMISSIVE_SPACES)
+                             for name in reader.fieldnames or []]
+        return reader
 
     def _load(self) -> None:
         self.driver.get(self.url)
