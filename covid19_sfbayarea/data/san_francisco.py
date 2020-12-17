@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 from collections import Counter
 from ..utils import assert_equal_sets
 from .utils import get_data_model, SocrataApi
@@ -150,23 +150,6 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
 def get_age_table(session: SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
     resource_id = resource_ids['age']
-    # Dict of target_label:source_label for lookups
-    AGE_KEYS = {
-        "0_to_4":       "0-4",
-        "5_to_10":      "5-10",
-        "11_to_13":     "11-13",
-        "14_to_17":     "14-17",
-        "18_to_20":     "18-20",
-        "21_to_24":     "21-24",
-        "25_to_29":     "25-29",
-        "30_to_39":     "30-39",
-        "40_to_49":     "40-49",
-        "50_to_59":     "50-59",
-        "60_to_69":     "60-69",
-        "70_to_79":     "70-79",
-        "80_and_older": "80+",
-        "unknown":      "Unknown",
-    }
 
     # find the latest date of data collection
     params = {'$select': 'max(specimen_collection_date) as date'}
@@ -176,14 +159,15 @@ def get_age_table(session: SocrataApi, resource_ids: Dict[str, str]) -> List[Dic
     params = {'$select': 'age_group, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"','$order': 'age_group'}
     data = session.resource(resource_id, params=params)
 
-    # flatten data into a dictionary of age_group:cases
-    data = { item["age_group"]: int(item["cases"]) for item in data }
-    age_table = []
-    # fill in values in age table
-    assert_equal_sets(AGE_KEYS.values(), data.keys())
-    for target_key, source_key in AGE_KEYS.items():
-        age_table.append( { "group": target_key, "raw_count": data[source_key] })
+    def sort_key(item: Dict[str, Any]) -> str:
+        if "-" in item["group"]:
+            return item["group"].split("-")[0].ljust(3, '0')
 
+        return item["group"]
+
+    age_table = [{"group": item["age_group"], "raw_count": int(item["cases"])}
+                 for item in data]
+    age_table.sort(key=sort_key)
     return age_table
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
