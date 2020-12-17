@@ -5,3 +5,10 @@ class FormatError(Exception):
     accessing has changed.
     """
     pass
+
+
+class PowerBiQueryError(ValueError):
+    """
+    Represents an error returned by PowerBI in response to a query.
+    """
+    ...
