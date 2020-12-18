@@ -6,7 +6,7 @@ class TimeSeriesDaily(PowerBiQuerier):
     def __init__(self) -> None:
         self.source = 'c'
         self.name = 'cases_by_day'
-        self.property = 'date_result'
+        self.property = 'episode_date'
         super().__init__()
 
     def _parse_data(self, response_json: Dict) -> Dict[int, int]:

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import json
-from typing import Dict, List
+from typing import Any, Dict, List
 from collections import Counter
+from ..utils import assert_equal_sets
 from .utils import get_data_model, SocrataApi
 
 def get_county() -> Dict:
@@ -146,12 +147,9 @@ def get_tests_series(session : SocrataApi, resource_ids: Dict[str, str]) -> List
         test_series.append(out_entry)
     return test_series
 
-def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
+def get_age_table(session: SocrataApi, resource_ids: Dict[str, str]) -> List[Dict]:
     """Get cases by age"""
     resource_id = resource_ids['age']
-    # Dict of target_label:source_label for lookups
-    AGE_KEYS = {"18_and_under": "under 18", "18_to_30": "18-30", "31_to_40": "31-40", "41_to_50": "41-50",
-                "51_to_60": "51-60", "61_to_70": "61-70", "71_to_80": "71-80", "81_and_older": "81+",}
 
     # find the latest date of data collection
     params = {'$select': 'max(specimen_collection_date) as date'}
@@ -161,13 +159,15 @@ def get_age_table(session : SocrataApi, resource_ids: Dict[str, str]) -> List[Di
     params = {'$select': 'age_group, cumulative_confirmed_cases as cases', '$where':f'specimen_collection_date="{latest_date["date"]}"','$order': 'age_group'}
     data = session.resource(resource_id, params=params)
 
-    # flatten data into a dictionary of age_group:cases
-    data = { item["age_group"] : int(item["cases"]) for item in data }
-    age_table = []
-    # fill in values in age table
-    for target_key, source_key in AGE_KEYS.items():
-        age_table.append( { "group": target_key, "raw_count": data[source_key] })
+    def sort_key(item: Dict[str, Any]) -> str:
+        if "-" in item["group"]:
+            return item["group"].split("-")[0].ljust(3, '0')
 
+        return item["group"]
+
+    age_table = [{"group": item["age_group"], "raw_count": int(item["cases"])}
+                 for item in data]
+    age_table.sort(key=sort_key)
     return age_table
 
 def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict:
@@ -176,7 +176,14 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     # Dict of source_label:target_label for re-keying.
     # Note: non cis genders not currently reported
     resource_id = resource_ids['gender']
-    GENDER_KEYS = {"Female": "female", "Male": "male", "Unknown": "unknown", "Trans Female": "female", "Trans Male": "male"}
+    GENDER_KEYS = {
+        "Female": "female",
+        "Male": "male",
+        "Unknown": "unknown",
+        "Trans Female": "female",
+        "Trans Male": "male",
+        "Other": "other"
+    }
     # find the latest date of data collection
     params = {'$select': 'max(specimen_collection_date) as date'}
     latest_date = session.resource(resource_id, params=params)[0]
@@ -186,10 +193,12 @@ def get_gender_table(session : SocrataApi, resource_ids: Dict[str, str]) -> Dict
     data = session.resource(resource_id, params=params)
 
     # re-key
-    table : Dict[str, int]= dict()
+    assert_equal_sets(GENDER_KEYS.keys(), (entry['gender'] for entry in data))
+
+    table: Dict[str, int] = dict()
     for entry in data:
         rekey = GENDER_KEYS[entry['gender']]
-        table[rekey] = table.get(rekey,0) + int(entry["cases"])
+        table[rekey] = table.get(rekey, 0) + int(entry["cases"])
     return table
 
 # Confirmed cases by race and ethnicity
@@ -210,6 +219,7 @@ def get_race_eth_table(session: SocrataApi, resource_ids: Dict[str, str]) -> Dic
     data = session.resource(resource_id, params=params)
     # re-key and aggregate to flatten race x ethnicity
     # initalize all categories to 0 for aggregating
+    assert_equal_sets(RACE_ETH_KEYS.keys(), (item["race_ethnicity"] for item in data))
     race_eth_data: Dict[str, int] = {v: 0 for v in RACE_ETH_KEYS.values()}
 
     for item in data:  # iterate through all race x ethnicity objects
