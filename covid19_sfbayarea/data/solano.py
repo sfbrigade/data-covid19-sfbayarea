@@ -220,21 +220,21 @@ def get_age_table(out: Dict) -> None:
     response2.raise_for_status()
     parsed2 = response2.json()
 
-    # Format the results.
-    age_group_cases = [{
-                        'group': entry['attributes']['Age_group'],
-                        'raw_count': entry['attributes']['AG_Total_cases']
-                       }
-                       for entry in parsed2['features']]
-    age_group_deaths = [{
-                         'group': entry['attributes']['Age_group'],
-                         'raw_count': entry['attributes']['AG_deaths']
-                        }
-                        for entry in parsed2['features']]
+    # Because of the way data is structured (ages, race/ethnicity groups, etc.
+    # all on one line), some categories get repeated (even though the data is
+    # not different). To handle this, create a dict with our groupings to
+    # de-duplicate before formatting final results.
+    age_groups = {entry['attributes']['Age_group']: entry['attributes']
+                  for entry in parsed2['features']}
+
+    age_group_cases = [{'group': group, 'raw_count': data['AG_Total_cases']}
+                       for group, data in age_groups.items()]
+    age_group_deaths = [{'group': group, 'raw_count': data['AG_deaths']}
+                        for group, data in age_groups.items()]
 
     # Validate that we’ve got the right age groups.
     if len(age_group_cases) != 4:
-        raise FormatError(f'Race_eth query did not return 5 groups. Results: {age_group_cases}')
+        raise FormatError(f'Age group query did not return 4 groups. Results: {age_group_cases}')
 
     # save to the out dict
     out["case_totals"]["age_group"] = age_group_cases
