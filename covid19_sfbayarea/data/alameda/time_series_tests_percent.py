@@ -29,3 +29,16 @@ class TimeSeriesTestsPercent(PowerBiQuerier):
             },
             'Version': 1
         }
+
+    def get_data(self) -> List:
+        # The values in this dataset can sometimes be strings. It looks like
+        # PowerBI probably sends strings for values that cannot be represented
+        # by a float64 (since JSON only supports 64-bit floats for numbers).
+        # For example, '7.2322939999999996' gets sent as a string; the closest
+        # float64 representation is '7.232294'.
+        #
+        # For our purposes, the loss of precision here is OK, and we want to do
+        # math with the numbers here, so just convert to a float.
+        data = super().get_data()
+        return [[item[0], float(item[1])] if len(item) > 1 else item
+                for item in data]
