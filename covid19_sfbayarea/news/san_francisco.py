@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
-from .utils import get_base_url, HEADING_PATTERN
+from .utils import get_base_url, HEADING_PATTERN, normalize_whitespace
 
 
 class SanFranciscoNews(NewsScraper):
@@ -52,11 +52,12 @@ class SanFranciscoNews(NewsScraper):
         else:
             url = urljoin(base_url, url)
 
-        title = title_link.get_text(strip=True)
+        title = normalize_whitespace(title_link.get_text())
         if not title:
             raise FormatError('No title content found')
 
         date_string = item.find('time')['datetime']
         date = dateutil.parser.parse(date_string)
+        summary = normalize_whitespace(item.find(class_='__abstract').get_text())
 
-        return NewsItem(id=url, url=url, title=title, date_published=date)
+        return NewsItem(id=url, url=url, title=title, date_published=date, summary=summary)
