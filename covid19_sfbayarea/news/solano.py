@@ -9,7 +9,8 @@ from .feed import NewsItem
 from .utils import get_base_url, is_covid_related, normalize_whitespace
 
 
-SUMMARY_PREFIX_PATTERN = re.compile(r'^SOLANO COUNTY\s*[\-\u2013]\s*', re.I)
+SUMMARY_PREFIX_PATTERN = re.compile(r'^SOLANO COUNTY\s*[\-\u2010-\u2015]+\s*',
+                                    re.I)
 
 
 class SolanoNews(NewsScraper):
