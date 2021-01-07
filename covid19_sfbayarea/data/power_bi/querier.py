@@ -1,7 +1,8 @@
 import json
 from requests import post
 from typing import Any, Dict, List, Union
-from covid19_sfbayarea.utils import dig
+from ...utils import dig
+from ...errors import PowerBiQueryError
 
 class Querier:
     # Defaults, these are mostly the same for all classes, can be overridden where necessary
@@ -29,6 +30,16 @@ class Querier:
         return response.json()
 
     def _parse_data(self, response_json: Dict[str, List]) -> Union[List, Dict]:
+        # Check whether the result is an error and raise a meaningful message.
+        try:
+            # NOTE: we don't have good docs for PowerBI's front-end API, so
+            # this only represents one type of error we've seen. There might be
+            # other response shapes that represent errors.
+            error = dig(response_json, ['results', 0, 'result', 'data', 'dsr', 'DataShapes', 0, 'odata.error'])
+            raise PowerBiQueryError(error['message']['value'])
+        except KeyError:
+            pass
+
         results = dig(response_json, self.json_path)
         return self._extract_lists(results)
 

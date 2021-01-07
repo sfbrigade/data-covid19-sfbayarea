@@ -104,6 +104,5 @@ def test_drops_news_older_than_from_date() -> None:
         )
         feed = scraper.scrape()
 
-    print(feed.items)
     assert 1 == len(feed.items)
     assert '2' == feed.items[0].id
