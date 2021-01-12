@@ -41,11 +41,22 @@ class SantaClaraNews(NewsScraper):
         with get_firefox() as driver:
             driver.get(self.URL)
             driver.implicitly_wait(10)
-            content = driver.find_element_by_class_name('sccgov-alerts-archive-item')
-            if not content:
-                raise ValueError(f'Page did not load properly: {self.URL}')
-
-            return driver.page_source
+            page_sources = []
+            if self.from_date:
+                from_year = self.from_date.year
+            else:
+                from_year = self.to_date.year
+            for year in range(from_year, self.to_date.year+1):
+                driver.find_element_by_xpath(
+                    "//select[@id='sccgov-alerts-archive-dropdown-year']"
+                    f"/option[text()='{year}']"
+                ).click()
+                content = driver.find_element_by_class_name(
+                    'sccgov-alerts-archive-item')
+                if not content:
+                    raise ValueError(f'Page did not load properly: {self.URL}')
+                page_sources.append(driver.page_source)
+            return ''.join(page_sources)
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
