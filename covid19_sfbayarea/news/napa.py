@@ -44,10 +44,14 @@ class NapaNews(NewsScraper):
 
     FEED_INFO = dict(
         title='Napa County COVID-19 News',
-        home_page_url='https://www.countyofnapa.org/CivicAlerts.aspx?sort=date'
+        home_page_url='https://www.countyofnapa.org/CivicAlerts.aspx?CID=7,25,10,9,18&sort=date'
     )
 
-    URL = 'https://www.countyofnapa.org/CivicAlerts.aspx?sort=date'
+    # NOTE: the CID parameter represents the categories to include
+    # (e.g. Sheriff's Office, County Executive, etc.). You can drop this
+    # parameter to get *all* categories, but that is currently causing the page
+    # to break. So we use a list of categories we know is safe. ¯\_(ツ)_/¯
+    URL = 'https://www.countyofnapa.org/CivicAlerts.aspx?CID=7,25,10,9,18&sort=date'
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
