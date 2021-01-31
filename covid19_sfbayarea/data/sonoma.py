@@ -117,7 +117,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag) -> Dict[str, float]:
+def transform_transmission(transmission_tag: element.Tag, total_cases: int) -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
     a dictionary of type:
@@ -138,26 +138,27 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, float]:
 
     # turns the transmission categories on the page into the ones we're using
     transmission_type_conversion = {
-        'Congregate Care': 'congregate_care',
-        'Health Care': 'health_care',
-        'Household': 'household',
-        'Large Gathering': 'gathering_small',
-        'Other': 'other',
-        'Small Gathering': 'gathering_large',
-        'Travel': 'travel',
-        'Unknown': 'unknown',
-        'Workplace': 'workplace'
+        'congregate care': 'congregate_care',
+        'health care': 'health_care',
+        'household': 'household',
+        'large gathering': 'gathering_small',
+        'other': 'other',
+        'small gathering': 'gathering_large',
+        'travel': 'travel',
+        'unknown': 'unknown',
+        'workplace': 'workplace'
     }
 
     assert_equal_sets(transmission_type_conversion.keys(),
-                      (row['Exposure Location'] for row in rows),
+                      (row['Exposure Location'].lower() for row in rows),
                       description='Transmission types')
 
     for row in rows:
-        type = row['Exposure Location']
-        percent_cases = round(float(row['All Time'].replace('%', '')), 2)
+        type = row['Exposure Location'].lower()
+        percent_cases = float(row['All Time'].replace('%', '')) / 100
+        case_count = int(percent_cases * total_cases)
         type = transmission_type_conversion[type]
-        transmissions[type] = percent_cases
+        transmissions[type] = case_count
 
     return transmissions
 
@@ -274,6 +275,9 @@ def get_county() -> Dict:
 
     hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_gender, cases_by_race = get_table_tags(sonoma_soup)
 
+    # calculate total cases to compute values from percentages
+    total_cases = sum(transform_gender(cases_by_gender).values())
+
     model = {
         'name': 'Sonoma County',
         'update_time': generate_update_time(sonoma_soup),
@@ -282,7 +286,7 @@ def get_county() -> Dict:
         'meta_from_baypd': '',
         'series': transform_cases(hist_cases),
         'case_totals': {
-            'transmission_cat': transform_transmission(cases_by_source),
+            'transmission_cat': transform_transmission(cases_by_source, total_cases),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
