@@ -121,7 +121,17 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, float]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
     a dictionary of type:
-    {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
+    {
+        "household": -1.0,
+        "workplace": -1.0,
+        "congregate_care": -1.0,
+        "gathering_small": -1.0,
+        "health_care": -1.0,
+        "gathering_large": -1.0,
+        "travel": -1.0,
+        "other": -1.0,
+        "unknown": -1.0
+    }
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
