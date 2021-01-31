@@ -117,7 +117,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
+def transform_transmission(transmission_tag: element.Tag) -> Dict[str, float]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
     a dictionary of type:
