@@ -140,13 +140,15 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     }
 
     assert_equal_sets(transmission_type_conversion.keys(),
-                      (row['Source'] for row in rows),
+                      (row['Exposure Location'] for row in rows),
                       description='Transmission types')
+
     for row in rows:
-        type = row['Source']
-        number = parse_int(row['Cases'])
+        type = row['Exposure Location']
+        percent_cases = round(float(row['All Time'].replace('%', '')), 2)
         type = transmission_type_conversion[type]
-        transmissions[type] = number
+        transmissions[type] = percent_cases
+
     return transmissions
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
