@@ -68,7 +68,7 @@ def test_scraper_output_format_is_valid(county: str) -> None:
         }),
         Optional('transmission_cat'): Exact({
             # The keys here are not standardized.
-            str: int
+            str: float
         })
     })
 
