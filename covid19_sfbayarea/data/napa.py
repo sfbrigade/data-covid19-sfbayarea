@@ -258,64 +258,37 @@ def format_age_results(data: Iterable[Dict]) -> List[Dict]:
 
 
 def get_case_totals(api: ArcGisFeatureServer) -> Dict:
-    return {
-        'gender': get_cases_by_gender(api),
-        'age_group': get_cases_by_age(api),
-        'race_eth': get_cases_by_race(api),
-        # NOTE: Napa does not appear to have any source of information about
-        # comorbidities/underlying conditions or type of transmission, so no
-        # `underlying_cond` or `transmission_cat` fields.
-    }
-
-
-def get_cases_by_gender(api: ArcGisFeatureServer) -> Dict[str, int]:
-    data = api.query(CASES_SERVICE,
-                     outFields='Sex,COUNT(*) AS count',
-                     groupByFieldsForStatistics='Sex')
-    return format_gender_results(data)
-
-
-def get_cases_by_age(api: ArcGisFeatureServer) -> List[Dict]:
-    data = api.query(CASES_SERVICE,
-                     outFields='AgeGroup,COUNT(*) AS count',
-                     groupByFieldsForStatistics='AgeGroup')
-    return format_age_results(data)
-
-
-def get_cases_by_race(api: ArcGisFeatureServer) -> Dict:
-    data = api.query(CASES_SERVICE,
-                     outFields='RaceEthn,COUNT(*) AS count',
-                     groupByFieldsForStatistics='RaceEthn')
-    return format_race_results(data)
+    return get_totals(api, count_by='*')
 
 
 def get_death_totals(api: ArcGisFeatureServer) -> Dict:
+    return get_totals(api, count_by='DtDeath')
+
+
+def get_totals(api: ArcGisFeatureServer, count_by: str) -> Dict:
     return {
-        'gender': get_deaths_by_gender(api),
-        'age_group': get_deaths_by_age(api),
-        'race_eth': get_deaths_by_race(api),
+        'gender': format_gender_results(
+            api.query(
+                CASES_SERVICE,
+                outFields=f'Sex,COUNT({count_by}) AS count',
+                groupByFieldsForStatistics='Sex'
+            )
+        ),
+        'age_group': format_age_results(
+            api.query(
+                CASES_SERVICE,
+                outFields=f'AgeGroup,COUNT({count_by}) AS count',
+                groupByFieldsForStatistics='AgeGroup'
+            )
+        ),
+        'race_eth': format_race_results(
+            api.query(
+                CASES_SERVICE,
+                outFields=f'RaceEthn,COUNT({count_by}) AS count',
+                groupByFieldsForStatistics='RaceEthn'
+            )
+        ),
         # NOTE: Napa does not appear to have any source of information about
         # comorbidities/underlying conditions or type of transmission, so no
         # `underlying_cond` or `transmission_cat` fields.
     }
-
-
-def get_deaths_by_gender(api: ArcGisFeatureServer) -> Dict[str, int]:
-    data = api.query(CASES_SERVICE,
-                     outFields='Sex,COUNT(DtDeath) AS count',
-                     groupByFieldsForStatistics='Sex')
-    return format_gender_results(data)
-
-
-def get_deaths_by_age(api: ArcGisFeatureServer) -> List[Dict]:
-    data = api.query(CASES_SERVICE,
-                     outFields='AgeGroup,COUNT(DtDeath) AS count',
-                     groupByFieldsForStatistics='AgeGroup')
-    return format_age_results(data)
-
-
-def get_deaths_by_race(api: ArcGisFeatureServer) -> Dict[str, int]:
-    data = api.query(CASES_SERVICE,
-                     outFields='RaceEthn,COUNT(DtDeath) AS count',
-                     groupByFieldsForStatistics='RaceEthn')
-    return format_race_results(data)
