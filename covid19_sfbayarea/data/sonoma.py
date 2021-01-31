@@ -125,8 +125,20 @@ def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
+
     # turns the transmission categories on the page into the ones we're using
-    transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
+    transmission_type_conversion = {
+        'Congregate Care': 'congregate_care',
+        'Health Care': 'health_care',
+        'Household': 'household',
+        'Large Gathering': 'gathering_small',
+        'Other': 'other',
+        'Small Gathering': 'gathering_large',
+        'Travel': 'travel',
+        'Unknown': 'unknown',
+        'Workplace': 'workplace'
+    }
+
     assert_equal_sets(transmission_type_conversion.keys(),
                       (row['Source'] for row in rows),
                       description='Transmission types')
