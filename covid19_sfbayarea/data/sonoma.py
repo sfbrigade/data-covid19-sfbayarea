@@ -227,7 +227,14 @@ def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """
     Takes in a BeautifulSoup object and returns an array of the tables we need
     """
-    headers = ['Cases by Date', 'Test Results', 'Cases by Source', 'Cases by Age Group', 'Cases by Gender', 'Cases by Race']
+    headers = [
+        'Cases by Date',
+        'Test Results',
+        'Proportion of Cases Attributable to Specific Exposure Locations',
+        'Cases by Age Group',
+        'Cases by Gender',
+        'Cases by Race'
+    ]
     return [get_table(header, soup) for header in headers]
 
 def get_county() -> Dict:
