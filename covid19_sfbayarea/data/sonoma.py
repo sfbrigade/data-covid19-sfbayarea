@@ -174,8 +174,6 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, how:
             [transmissions.get(category, 0) for category in transmissions.keys()
              if category in community_categories]
         )
-        if not community:
-            community = -1
 
         coerced_transmissions = {}
         coerced_transmissions["from_contact"] = from_contact
