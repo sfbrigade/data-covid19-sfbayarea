@@ -181,15 +181,15 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, norm
         if community == 0:
             community = -1
 
-        coerced_transmissions = {}
-        coerced_transmissions["from_contact"] = from_contact
-        coerced_transmissions["community"] = community
-        coerced_transmissions["travel"] = transmissions.get("travel", -1)
-        coerced_transmissions["unknown"] = transmissions.get("unknown", -1)
+        normalized_transmissions = {}
+        normalized_transmissions["from_contact"] = from_contact
+        normalized_transmissions["community"] = community
+        normalized_transmissions["travel"] = transmissions.get("travel", -1)
+        normalized_transmissions["unknown"] = transmissions.get("unknown", -1)
 
         # check that we have all the math right
-        assert sum(coerced_transmissions.values()) == sum(transmissions.values())
-        transmissions = coerced_transmissions
+        assert sum(normalized_transmissions.values()) == sum(transmissions.values())
+        transmissions = normalized_transmissions
 
     else:
         pass
