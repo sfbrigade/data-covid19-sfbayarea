@@ -117,7 +117,7 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag, total_cases: int, how: str = "orig") -> Dict[str, int]:
+def transform_transmission(transmission_tag: element.Tag, total_cases: int, normalize: bool = True) -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
     a dictionary. Fields are either the original from data source or are coerced
@@ -150,7 +150,7 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, how:
         type = transmission_type_conversion[type]
         transmissions[type] = case_count
 
-    if how == "coerce":
+    if normalize:
         # coerce categories into groups consistent with other datasets
         # those groups are "from_contact", "travel", "unknown" and "community"
 
@@ -164,6 +164,8 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, how:
             [transmissions.get(category, 0) for category in transmissions.keys()
              if category in from_contact_categories]
         )
+        if from_contact == 0:
+            from_contact = -1
 
         community_categories = [
             "health_care",
@@ -174,6 +176,8 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, how:
             [transmissions.get(category, 0) for category in transmissions.keys()
              if category in community_categories]
         )
+        if community == 0:
+            community = -1
 
         coerced_transmissions = {}
         coerced_transmissions["from_contact"] = from_contact
@@ -314,8 +318,8 @@ def get_county() -> Dict:
         'meta_from_baypd': '',
         'series': transform_cases(hist_cases),
         'case_totals': {
-            'transmission_cat': transform_transmission(cases_by_source, total_cases, how='coerce'),
-            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases),
+            'transmission_cat': transform_transmission(cases_by_source, total_cases),
+            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases, normalize=False),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
