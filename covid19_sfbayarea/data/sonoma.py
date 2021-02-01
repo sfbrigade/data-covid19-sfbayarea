@@ -141,9 +141,9 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int) -> D
         'congregate care': 'congregate_care',
         'health care': 'health_care',
         'household': 'household',
-        'large gathering': 'gathering_small',
+        'large gathering': 'gathering_large',
         'other': 'other',
-        'small gathering': 'gathering_large',
+        'small gathering': 'gathering_small',
         'travel': 'travel',
         'unknown': 'unknown',
         'workplace': 'workplace'
