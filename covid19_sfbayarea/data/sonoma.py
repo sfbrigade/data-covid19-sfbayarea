@@ -117,21 +117,11 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag, total_cases: int) -> Dict[str, int]:
+def transform_transmission(transmission_tag: element.Tag, total_cases: int, how: str = "orig") -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
-    a dictionary of type:
-    {
-        "household": -1.0,
-        "workplace": -1.0,
-        "congregate_care": -1.0,
-        "gathering_small": -1.0,
-        "health_care": -1.0,
-        "gathering_large": -1.0,
-        "travel": -1.0,
-        "other": -1.0,
-        "unknown": -1.0
-    }
+    a dictionary. Fields are either the original from data source or are coerced
+    into groups consistent with other datasets, by using `how='coerce` arg
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
@@ -159,6 +149,46 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int) -> D
         case_count = int(percent_cases * total_cases)
         type = transmission_type_conversion[type]
         transmissions[type] = case_count
+
+    if how == "coerce":
+        # coerce categories into groups consistent with other datasets
+        # those groups are "from_contact", "travel", "unknown" and "community"
+
+        from_contact_categories = [
+            "congregate_care",
+            "household",
+            "workplace",
+            "gathering_small"
+        ]
+        from_contact = sum(
+            [transmissions.get(category, 0) for category in transmissions.keys()
+             if category in from_contact_categories]
+        )
+
+        community_categories = [
+            "health_care",
+            "gathering_large",
+            "other"
+        ]
+        community = sum(
+            [transmissions.get(category, 0) for category in transmissions.keys()
+             if category in community_categories]
+        )
+        if not community:
+            community = -1
+
+        coerced_transmissions = {}
+        coerced_transmissions["from_contact"] = from_contact
+        coerced_transmissions["community"] = community
+        coerced_transmissions["travel"] = transmissions.get("travel", -1)
+        coerced_transmissions["unknown"] = transmissions.get("unknown", -1)
+
+        # check that we have all the math right
+        assert sum(coerced_transmissions.values()) == sum(transmissions.values())
+        transmissions = coerced_transmissions
+
+    else:
+        pass
 
     return transmissions
 
@@ -286,7 +316,8 @@ def get_county() -> Dict:
         'meta_from_baypd': '',
         'series': transform_cases(hist_cases),
         'case_totals': {
-            'transmission_cat': transform_transmission(cases_by_source, total_cases),
+            'transmission_cat': transform_transmission(cases_by_source, total_cases, how='coerce'),
+            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
