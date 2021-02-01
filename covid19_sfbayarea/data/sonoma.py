@@ -120,8 +120,10 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 def transform_transmission(transmission_tag: element.Tag, total_cases: int, normalize: bool = True) -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
-    a dictionary. Fields are either the original from data source or are coerced
-    into groups consistent with other datasets, by using `how='coerce` arg
+    a dictionary. Fields are either the original from data source or are normalized
+    into groups consistent with other datasets, by using `normalize=True` (default).
+    Data model:
+      {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
@@ -151,7 +153,7 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, norm
         transmissions[type] = case_count
 
     if normalize:
-        # coerce categories into groups consistent with other datasets
+        # normalize categories into groups consistent with other datasets
         # those groups are "from_contact", "travel", "unknown" and "community"
 
         from_contact_categories = [
