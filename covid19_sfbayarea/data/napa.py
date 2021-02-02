@@ -76,10 +76,14 @@ def get_timeseries_cases(api: ArcGisFeatureServer) -> List:
     by specimen collection date. If it's not available, we fall back to the
     test result date as the next most accurate thing.
     """
+    # Fall back to the report date for dates earlier than this. (Some dates
+    # were entered incorrectly and are dated unrealistically early.)
+    minimum_valid_date = '2019-12-01'
+
     dated = {
         row['DtLabCollect']: row['count']
         for row in api.query(CASES_SERVICE,
-                             where='DtLabCollect <> NULL',
+                             where=f'DtLabCollect <> NULL AND DtLabCollect >= \'{minimum_valid_date}\'',
                              outFields='DtLabCollect,COUNT(*) AS count',
                              groupByFieldsForStatistics='DtLabCollect',
                              orderByFields='DtLabCollect asc')
@@ -88,7 +92,7 @@ def get_timeseries_cases(api: ArcGisFeatureServer) -> List:
     undated = {
         row['DtLabResult']: row['count']
         for row in api.query(CASES_SERVICE,
-                             where='DtLabCollect IS NULL',
+                             where=f'DtLabCollect IS NULL OR DtLabCollect < \'{minimum_valid_date}\'',
                              outFields='DtLabResult,COUNT(*) AS count',
                              groupByFieldsForStatistics='DtLabResult',
                              orderByFields='DtLabResult asc')
