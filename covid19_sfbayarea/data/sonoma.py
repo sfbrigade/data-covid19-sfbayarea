@@ -182,30 +182,25 @@ def transform_transmission(
             "workplace",
             "gathering_small"
         ]
-        from_contact = sum(
-            [transmissions.get(category, 0) for category in transmissions.keys()
-             if category in from_contact_categories]
-        )
 
         community_categories = [
             "health_care",
             "gathering_large",
             "other"
         ]
-        community = sum(
-            [transmissions.get(category, 0) for category in transmissions.keys()
-             if category in community_categories]
-        )
 
-        normalized_transmissions = {}
-        normalized_transmissions["from_contact"] = from_contact
-        normalized_transmissions["community"] = community
-        normalized_transmissions["travel"] = transmissions.get("travel", -1)
-        normalized_transmissions["unknown"] = transmissions.get("unknown", -1)
+        standardized_transmissions = {
+            "from_contact": sum(transmissions[category]
+                                for category in from_contact_categories),
+            "community": sum(transmissions[category]
+                             for category in community_categories),
+            "travel": transmissions.get("travel"),
+            "unknown": transmissions.get("unknown")
+        }
 
         # check that we have all the math right
-        assert sum(normalized_transmissions.values()) == sum(transmissions.values())
-        transmissions = normalized_transmissions
+        assert sum(standardized_transmissions.values()) == sum(transmissions.values())
+        transmissions = standardized_transmissions
 
     else:
         pass
