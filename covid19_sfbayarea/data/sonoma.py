@@ -194,8 +194,8 @@ def transform_transmission(
                                 for category in from_contact_categories),
             "community": sum(transmissions[category]
                              for category in community_categories),
-            "travel": transmissions.get("travel"),
-            "unknown": transmissions.get("unknown")
+            "travel": transmissions.get("travel", 0),
+            "unknown": transmissions.get("unknown", 0)
         }
 
         # check that we have all the math right
