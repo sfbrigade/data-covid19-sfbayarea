@@ -186,8 +186,6 @@ def transform_transmission(
             [transmissions.get(category, 0) for category in transmissions.keys()
              if category in from_contact_categories]
         )
-        if from_contact == 0:
-            from_contact = -1
 
         community_categories = [
             "health_care",
@@ -198,8 +196,6 @@ def transform_transmission(
             [transmissions.get(category, 0) for category in transmissions.keys()
              if category in community_categories]
         )
-        if community == 0:
-            community = -1
 
         normalized_transmissions = {}
         normalized_transmissions["from_contact"] = from_contact
