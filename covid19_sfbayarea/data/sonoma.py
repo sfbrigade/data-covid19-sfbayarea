@@ -68,9 +68,9 @@ def parse_int(text: str) -> int:
 
 def generate_update_time(soup: BeautifulSoup) -> str:
     """
-    Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
+    Finds and parses an ISO 8601 timestamp string for when the page was last updated
     """
-    update_time_text = soup.find('time', {'class': 'updated'})['datetime']
+    update_time_text = soup.find('meta', {'property': 'article:modified_time'})['content']
     try:
         date = dateutil.parser.parse(update_time_text)
     except ValueError:
