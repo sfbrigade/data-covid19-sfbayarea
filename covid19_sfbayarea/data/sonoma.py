@@ -68,9 +68,9 @@ def parse_int(text: str) -> int:
 
 def generate_update_time(soup: BeautifulSoup) -> str:
     """
-    Generates a timestamp string (e.g. May 6, 2020 10:00 AM) for when the scraper is run
+    Finds and parses an ISO 8601 timestamp string for when the page was last updated
     """
-    update_time_text = soup.find('time', {'class': 'updated'})['datetime']
+    update_time_text = soup.find('meta', {'property': 'article:modified_time'})['content']
     try:
         date = dateutil.parser.parse(update_time_text)
     except ValueError:
@@ -117,24 +117,94 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag) -> Dict[str, int]:
+def transform_transmission(
+        transmission_tag: element.Tag,
+        total_cases: int,
+        standardize: bool = True
+) -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
-    a dictionary of type:
-    {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
+    a dictionary. Fields are either the original from data source or are normalized
+    into groups consistent with other datasets, by using `standardize=True` (default).
+
+    Parameters
+    ----------
+    transmission_tag : element.Tag
+        A BeautifulSoup table tag containing transmission source data
+
+    total_cases: int
+        The total number of COVID-19 cases reported by the county
+
+    standardize: bool
+        Flag to standardize the data into BAPD-consistent fields
+
+    Returns
+    -------
+    transmissions : dict
+        A dictionary keyed by transmission source, with calculated 
+        number of cases as the values. By default the fields are:
+        {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
+
     # turns the transmission categories on the page into the ones we're using
-    transmission_type_conversion = {'Community': 'community', 'Close Contact': 'from_contact', 'Travel': 'travel', 'Under Investigation': 'unknown'}
+    transmission_type_conversion = {
+        'congregate care': 'congregate_care',
+        'health care': 'health_care',
+        'household': 'household',
+        'large gathering': 'gathering_large',
+        'other': 'other',
+        'small gathering': 'gathering_small',
+        'travel': 'travel',
+        'unknown': 'unknown',
+        'workplace': 'workplace'
+    }
+
     assert_equal_sets(transmission_type_conversion.keys(),
-                      (row['Source'] for row in rows),
+                      (row['Exposure Location'].lower() for row in rows),
                       description='Transmission types')
+
     for row in rows:
-        type = row['Source']
-        number = parse_int(row['Cases'])
+        type = row['Exposure Location'].lower()
+        percent_cases = float(row['All Time'].replace('%', '')) / 100
+        case_count = int(percent_cases * total_cases)
         type = transmission_type_conversion[type]
-        transmissions[type] = number
+        transmissions[type] = case_count
+
+    if standardize:
+        # standardize categories into groups consistent with other datasets
+        # those groups are "from_contact", "travel", "unknown" and "community"
+
+        from_contact_categories = [
+            "congregate_care",
+            "household",
+            "workplace",
+            "gathering_small"
+        ]
+
+        community_categories = [
+            "health_care",
+            "gathering_large",
+            "other"
+        ]
+
+        standardized_transmissions = {
+            "from_contact": sum(transmissions[category]
+                                for category in from_contact_categories),
+            "community": sum(transmissions[category]
+                             for category in community_categories),
+            "travel": transmissions.get("travel", 0),
+            "unknown": transmissions.get("unknown", 0)
+        }
+
+        # check that we have all the math right
+        assert sum(standardized_transmissions.values()) == sum(transmissions.values())
+        transmissions = standardized_transmissions
+
+    else:
+        pass
+
     return transmissions
 
 def transform_tests(tests_tag: element.Tag) -> Dict[str, int]:
@@ -227,7 +297,14 @@ def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
     """
     Takes in a BeautifulSoup object and returns an array of the tables we need
     """
-    headers = ['Cases by Date', 'Test Results', 'Cases by Source', 'Cases by Age Group', 'Cases by Gender', 'Cases by Race']
+    headers = [
+        'Cases by Date',
+        'Test Results',
+        'Proportion of Cases Attributable to Specific Exposure Locations',
+        'Cases by Age Group',
+        'Cases by Gender',
+        'Cases by Race'
+    ]
     return [get_table(header, soup) for header in headers]
 
 def get_county() -> Dict:
@@ -243,6 +320,9 @@ def get_county() -> Dict:
 
     hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_gender, cases_by_race = get_table_tags(sonoma_soup)
 
+    # calculate total cases to compute values from percentages
+    total_cases = sum(transform_gender(cases_by_gender).values())
+
     model = {
         'name': 'Sonoma County',
         'update_time': generate_update_time(sonoma_soup),
@@ -251,7 +331,8 @@ def get_county() -> Dict:
         'meta_from_baypd': '',
         'series': transform_cases(hist_cases),
         'case_totals': {
-            'transmission_cat': transform_transmission(cases_by_source),
+            'transmission_cat': transform_transmission(cases_by_source, total_cases),
+            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases, standardize=False),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
