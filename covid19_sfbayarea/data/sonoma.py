@@ -117,13 +117,33 @@ def transform_cases(cases_tag: element.Tag) -> Dict[str, TimeSeries]:
 
     return { 'cases': cases, 'deaths': deaths }
 
-def transform_transmission(transmission_tag: element.Tag, total_cases: int, normalize: bool = True) -> Dict[str, int]:
+def transform_transmission(
+        transmission_tag: element.Tag,
+        total_cases: int,
+        standardize: bool = True
+) -> Dict[str, int]:
     """
     Takes in a BeautifulSoup tag for the transmissions table and breaks it into
     a dictionary. Fields are either the original from data source or are normalized
-    into groups consistent with other datasets, by using `normalize=True` (default).
-    Data model:
-      {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
+    into groups consistent with other datasets, by using `standardize=True` (default).
+
+    Parameters
+    ----------
+    transmission_tag : element.Tag
+        A BeautifulSoup table tag containing transmission source data
+
+    total_cases: int
+        The total number of COVID-19 cases reported by the county
+
+    standardize: bool
+        Flag to standardize the data into BAPD-consistent fields
+
+    Returns
+    -------
+    transmissions : dict
+        A dictionary keyed by transmission source, with calculated 
+        number of cases as the values. By default the fields are:
+        {'community': -1, 'from_contact': -1, 'travel': -1, 'unknown': -1}
     """
     transmissions = {}
     rows = parse_table(transmission_tag)
@@ -152,8 +172,8 @@ def transform_transmission(transmission_tag: element.Tag, total_cases: int, norm
         type = transmission_type_conversion[type]
         transmissions[type] = case_count
 
-    if normalize:
-        # normalize categories into groups consistent with other datasets
+    if standardize:
+        # standardize categories into groups consistent with other datasets
         # those groups are "from_contact", "travel", "unknown" and "community"
 
         from_contact_categories = [
@@ -321,7 +341,7 @@ def get_county() -> Dict:
         'series': transform_cases(hist_cases),
         'case_totals': {
             'transmission_cat': transform_transmission(cases_by_source, total_cases),
-            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases, normalize=False),
+            'transmission_cat_orig': transform_transmission(cases_by_source, total_cases, standardize=False),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
             'gender': transform_gender(cases_by_gender)
