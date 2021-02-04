@@ -16,8 +16,8 @@ from .deaths_by_gender import DeathsByGender
 
 from .time_series_cases import TimeSeriesCases
 from .time_series_tests import TimeSeriesTests
-from .total_deaths import TotalDeaths
 
+from ..ckan import Ckan
 from ..utils import get_data_model
 
 LANDING_PAGE = 'https://www.smchealth.org/post/san-mateo-county-covid-19-data-1'
@@ -37,12 +37,13 @@ def fetch_data() -> Dict:
             San Mateo does not provide a timestamp for their last dataset update,
             so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
 
-            San Mateo does not provide a deaths timeseries. In lieu of a
-            timeseries BayPD provides cumulative deaths for the date of the last
-            dataset update.
+            San Mateo does not provide a deaths timeseries. Instead, the deaths
+            timeseries is pulled from Californa’s statewide data portal at
+            https://data.ca.gov/.
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
+            'deaths': get_timeseries_deaths(),
             'tests': TimeSeriesTests().get_data()
         },
         'case_totals': {
@@ -58,20 +59,33 @@ def fetch_data() -> Dict:
     }
     last_updated = most_recent_case_time(data)
     data.update({ 'update_time': last_updated.isoformat() })
-    data['series'].update({ 'deaths': cumulative_deaths(last_updated) })
     return data
+
 
 def most_recent_case_time(data: Dict[str, Any]) -> datetime:
     most_recent_cases = cast(Dict[str, str], dig(data, ['series', 'cases', -1]))
     return parse_datetime(most_recent_cases['date'])
 
-def cumulative_deaths(last_updated: datetime) -> List[Dict[str, Any]]:
-    #  There is no timeseries, but there is a cumulative deaths for the current day.
-    return [{
-        'date': last_updated.strftime('%Y-%m-%d'),
-        'deaths': -1,
-        'cumul_deaths': TotalDeaths().get_data()
-    }]
+
+def get_timeseries_deaths() -> List:
+    """
+    Get a timeseries of deaths by day from the state (since they county does
+    not publish this info). View the dataset in a browser at:
+    https://data.ca.gov/dataset/covid-19-cases/resource/926fd08f-cc91-4828-af38-bd45de97f8c3
+    """
+    state_api = Ckan('https://data.ca.gov')
+    records = state_api.data('926fd08f-cc91-4828-af38-bd45de97f8c3',
+                             filters={'county': 'San Mateo'},
+                             sort='date asc')
+    return [
+        {
+            'date': parse_datetime(record['date']).date().isoformat(),
+            'deaths': int(record['newcountdeaths']),
+            'cumul_deaths': int(record['totalcountdeaths'])
+        }
+        for record in records
+    ]
+
 
 if __name__ == '__main__':
     """ When run as a script, prints the data to stdout"""
