@@ -37,7 +37,7 @@ class Ckan:
         """
         params['resource_id'] = resource_id
         if isinstance(params.get('q'), dict):
-            params['filters'] = json.dumps(params['filters'])
+            params['q'] = json.dumps(params['q'])
         if isinstance(params.get('filters'), dict):
             params['filters'] = json.dumps(params['filters'])
 
