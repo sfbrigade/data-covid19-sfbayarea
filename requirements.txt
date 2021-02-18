@@ -15,4 +15,5 @@ requests==2.23.0
 selenium==3.141.0
 urllib3==1.25.8
 webdrivermanager==0.8.0
+websocket-client==0.57.0
 Werkzeug==1.0.0

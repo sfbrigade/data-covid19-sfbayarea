@@ -3,7 +3,7 @@ import json
 import logging
 from types import TracebackType
 from typing import Any, Dict, List, Union, Optional, Type
-from websocket import create_connection
+from websocket import create_connection  # type: ignore
 
 
 logger = logging.getLogger(__name__)
