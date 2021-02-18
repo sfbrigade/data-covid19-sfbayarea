@@ -173,8 +173,9 @@ def get_timeseries_deaths(api: QlikClient) -> List[dict]:
             'date': day.isoformat(),
             'deaths': deaths,
             'cumul_deaths': total,
-            'ltcf_deaths': ltcf['qNum'],
-            'non_ltcf_deaths': non_ltcf['qNum'],
+            # TODO: consider adding these for counties that include them?
+            # 'ltcf_deaths': ltcf['qNum'],
+            # 'non_ltcf_deaths': non_ltcf['qNum'],
         })
 
     return results
