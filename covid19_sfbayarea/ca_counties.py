@@ -14,6 +14,7 @@ bay_area_counties = [
 ]
 
 other_ca_counties = [
+    "alpine",
     "amador",
     "butte",
     "calaveras",
@@ -51,6 +52,7 @@ other_ca_counties = [
     "santa_barbara",
     "santa_cruz",
     "shasta",
+    "sierra",
     "siskiyou",
     "stanislaus",
     "sutter",
