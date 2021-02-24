@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, element  # type: ignore
+from copy import copy
 import dateutil.parser
 from typing import List
 from urllib.parse import urljoin
@@ -44,6 +45,7 @@ class SanFranciscoNews(NewsScraper):
                 for article in articles]
 
     def parse_news_item(self, item: element.Tag, base_url: str) -> NewsItem:
+        item = copy(item)
         title_link = item.find(HEADING_PATTERN).find('a')
 
         url = title_link['href']
@@ -56,8 +58,13 @@ class SanFranciscoNews(NewsScraper):
         if not title:
             raise FormatError('No title content found')
 
-        date_string = item.find('time')['datetime']
+        date_element = item.find('time')
+        date_string = date_element['datetime']
         date = dateutil.parser.parse(date_string)
-        summary = normalize_whitespace(item.find(class_='__abstract').get_text())
+
+        # The summary text is everything except the title and date.
+        title_link.extract()
+        date_element.extract()
+        summary = normalize_whitespace(item.get_text())
 
         return NewsItem(id=url, url=url, title=title, date_published=date, summary=summary)
