@@ -106,7 +106,7 @@ Options:
   --help                          Show this message and exit.
 ```
 
-- To scrape a specific county or counties, list the counties you want. For example, to scraper only Alameda and Solano counties:
+- To scrape a specific county or counties, list the counties you want. For example, to scrape only Alameda and Solano counties:
 
     ```console
     $ ./run_scraper_data.sh alameda solano
