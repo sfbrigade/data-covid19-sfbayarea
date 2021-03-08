@@ -41,7 +41,7 @@ Overview - https://www.coronavirus.cchealth.org/overview
            https://dashboard.cchealth.org/extensions/COVIDDashboard/Overview.html
            ID: b7d7f869-fb91-4950-9262-0b89473ceed6
 
-Vavvines - https://www.coronavirus.cchealth.org/vaccine
+Vaccines - https://www.coronavirus.cchealth.org/vaccine
            ID: 8dea25ae-3782-48ef-9199-508a3163297e
 """
 
