@@ -8,8 +8,8 @@ class TimeSeriesTests(PowerBiQuerier):
         self.model_id = 275728
         self.powerbi_resource_key = '1b96a93b-9500-44cf-a3ce-942805b455ce'
         self.source = 'l'
-        self.name = 'lab_cases_by_date'
-        self.property = 'lab_collection_date'
+        self.name = 'lab_tests_by_day'
+        self.property = 'early_spec_date'
         super().__init__()
 
     def _parse_data(self, response_json: Dict) -> List[Dict[str, Any]]:
@@ -44,10 +44,10 @@ class TimeSeriesTests(PowerBiQuerier):
                 'Column': self._column_expression(self.property),
                 'Name': f'{self.name}.{self.property}'
             },
-            self._aggregation('positive_per_day'),
-            self._aggregation('unknown_per_day'),
-            self._aggregation('negative_per_day')
-       ]
+            self._aggregation('Positive'),
+            self._aggregation('Inconclusive'),
+            self._aggregation('Negative')
+        ]
 
     def _binding(self) -> Dict[str, Any]:
         return {
