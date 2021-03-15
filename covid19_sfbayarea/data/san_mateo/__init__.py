@@ -1,6 +1,6 @@
 import json
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Dict, List, cast
 from covid19_sfbayarea.utils import dig, parse_datetime
 
@@ -38,8 +38,12 @@ def fetch_data() -> Dict:
             so BayPD uses midnight of the latest day in the cases timeseries as a proxy.
 
             San Mateo does not provide a deaths timeseries. Instead, the deaths
-            timeseries is pulled from Californa’s statewide data portal at
-            https://data.ca.gov/.
+            timeseries is pulled from CHHS’s statewide data portal at
+            https://data.chhs.ca.gov/. Deaths for which a date is not yet
+            determined are included in the latest date of the timeseries.
+            Please note that, because data is coming from disparate sources,
+            total count of deaths may not add up between the timeseries (from
+            CHHS) and the demographic data (from the county).
          """,
         'series': {
             'cases': TimeSeriesCases().get_data(),
@@ -71,20 +75,49 @@ def get_timeseries_deaths() -> List:
     """
     Get a timeseries of deaths by day from the state (since they county does
     not publish this info). View the dataset in a browser at:
-    https://data.ca.gov/dataset/covid-19-cases/resource/926fd08f-cc91-4828-af38-bd45de97f8c3
+    https://data.chhs.ca.gov/dataset/covid-19-time-series-metrics-by-county-and-state/resource/046cdd2b-31e5-4d34-9ed3-b48cdbc4be7a
     """
-    state_api = Ckan('https://data.ca.gov')
-    records = state_api.data('926fd08f-cc91-4828-af38-bd45de97f8c3',
-                             filters={'county': 'San Mateo'},
+    state_api = Ckan('https://data.chhs.ca.gov')
+    records = state_api.data('046cdd2b-31e5-4d34-9ed3-b48cdbc4be7a',
+                             filters={'area': 'San Mateo'},
                              sort='date asc')
-    return [
-        {
-            'date': parse_datetime(record['date']).date().isoformat(),
-            'deaths': int(record['newcountdeaths']),
-            'cumul_deaths': int(record['totalcountdeaths'])
-        }
-        for record in records
-    ]
+    # Rows in this dataset include `deaths` and `reported_deaths`, neither of
+    # which is a total. The data dictionary does not describe the specifics
+    # around these, but they appear to be deaths attributed to a given day and
+    # then the day there actually *reported* to the state.
+    total_deaths = 0
+    timeseries: List[Dict[str, Any]] = []
+    unknown_date_deaths = 0
+    for record in records:
+        deaths = int(float(record['deaths']))
+        # There is one entry with no date for records that do not (yet) have an
+        # identified date. Hold on to it for adding at the end.
+        if record['date']:
+            total_deaths += deaths
+            timeseries.append({
+                'date': parse_datetime(record['date']).date().isoformat(),
+                'deaths': deaths,
+                'cumul_deaths': total_deaths
+            })
+        else:
+            unknown_date_deaths = deaths
+
+    # Attribute unknown date deaths to today.
+    if unknown_date_deaths:
+        total_deaths += unknown_date_deaths
+        today = date.today().isoformat()
+        latest_entry = timeseries[-1]
+        if latest_entry['date'] == today:
+            latest_entry['deaths'] += unknown_date_deaths
+            latest_entry['cumul_deaths'] += total_deaths
+        else:
+            timeseries.append({
+                'date': today,
+                'deaths': unknown_date_deaths,
+                'cumul_deaths': total_deaths
+            })
+
+    return timeseries
 
 
 if __name__ == '__main__':
