@@ -16,9 +16,9 @@ from .ckan import Ckan
 
 
 # URLs and APIs
-HOSPITALS_LANDING_PAGE = "https://data.ca.gov/dataset/covid-19-hospital-data#"
-CAGOV_BASEURL = "https://data.ca.gov"
-HOSPITALS_RESOURCE_ID = "42d33765-20fd-44b8-a978-b083b7542225"
+HOSPITALS_LANDING_PAGE = "https://data.chhs.ca.gov/dataset/covid-19-hospital-data"
+CAGOV_BASEURL = "https://data.chhs.ca.gov"
+HOSPITALS_RESOURCE_ID = "47af979d-8685-4981-bced-96a6b79d3ed5"
 RESULTS_LIMIT = 200
 
 # For the output data
@@ -71,7 +71,12 @@ def floats_to_ints(record: Dict) -> Dict:
             continue
 
         else:
-            record[field] = int(val)
+            try:
+                record[field] = int(val)
+
+            except ValueError:
+                # Handle floats stored as strings
+                record[field] = int(float(val))
 
     return record
 
