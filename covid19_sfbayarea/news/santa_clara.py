@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup, element  # type: ignore
 from logging import getLogger
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.common.by import By  # type: ignore
+from selenium.webdriver.support.ui import WebDriverWait  # type: ignore
+from selenium.webdriver.support import expected_conditions  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from ..utils import parse_datetime
