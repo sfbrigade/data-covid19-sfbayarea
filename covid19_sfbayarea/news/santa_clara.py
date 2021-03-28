@@ -1,4 +1,8 @@
 from bs4 import BeautifulSoup, element  # type: ignore
+from logging import getLogger
+from selenium.webdriver.common.by import By  # type: ignore
+from selenium.webdriver.support.ui import WebDriverWait  # type: ignore
+from selenium.webdriver.support import expected_conditions  # type: ignore
 from typing import List
 from urllib.parse import urljoin
 from ..utils import parse_datetime
@@ -7,6 +11,9 @@ from .base import NewsScraper
 from .errors import FormatError
 from .feed import NewsItem
 from .utils import get_base_url
+
+
+logger = getLogger(__name__)
 
 
 class SantaClaraNews(NewsScraper):
@@ -42,26 +49,40 @@ class SantaClaraNews(NewsScraper):
             driver.get(self.URL)
             driver.implicitly_wait(10)
             page_sources = []
-            if self.from_date:
-                from_year = self.from_date.year
-            else:
-                from_year = self.to_date.year
-            for year in range(from_year, self.to_date.year+1):
-                driver.find_element_by_xpath(
-                    "//select[@id='sccgov-alerts-archive-dropdown-year']"
-                    f"/option[text()='{year}']"
-                ).click()
-                content = driver.find_element_by_class_name(
-                    'sccgov-alerts-archive-item')
+            while True:
+                content = driver.find_element_by_css_selector(
+                    '.view-news article')
                 if not content:
                     raise ValueError(f'Page did not load properly: {self.URL}')
                 page_sources.append(driver.page_source)
+
+                # If we've gone earlier than the time range, stop.
+                earliest_time = parse_datetime(
+                    driver.find_elements_by_css_selector(
+                        '.view-news article time'
+                    )[-1].get_attribute('datetime')
+                )
+                if not self.from_date or self.from_date >= earliest_time:
+                    break
+
+                # Navigate to the next page if there is one.
+                next_link = driver.find_element_by_css_selector(
+                    '.pager__item--next')
+                if not next_link:
+                    break
+
+                logger.info('Checking next news page...')
+                next_link.click()
+                WebDriverWait(driver, 5).until(
+                    expected_conditions.invisibility_of_element_located(
+                        (By.CSS_SELECTOR, '.ajax-progress')))
+
             return ''.join(page_sources)
 
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
-        articles = soup.select('.sccgov-alerts-archive-item')
+        articles = soup.select('.view-news article')
         return [self.parse_article(index, article, base_url)
                 for index, article in enumerate(articles)]
 
@@ -79,11 +100,11 @@ class SantaClaraNews(NewsScraper):
         if not title:
             raise FormatError(f'No title content found for article {index}')
 
-        date_tag = article.select_one('.sccgov-alerts-archive-date')
-        date_string = date_tag.get_text(strip=True)
+        date_tag = article.select_one('time')
+        date_string = date_tag['datetime']
         date = parse_datetime(date_string)
 
-        category_tag = article.select_one('.sccgov-alerts-archive-category')
+        category_tag = article.select('.coh-column')[1]
         category = category_tag.get_text(strip=True)
         tags = [category] if category else []
 
