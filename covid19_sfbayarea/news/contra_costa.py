@@ -4,6 +4,7 @@ from typing import List, Optional
 from urllib.parse import urljoin
 from ..errors import FormatError
 from ..utils import parse_datetime
+from ..webdriver import get_firefox
 from .base import NewsScraper
 from .feed import NewsItem
 from .utils import get_base_url
@@ -77,6 +78,20 @@ class ContraCostaNews(NewsScraper):
     )
 
     URL = 'https://www.coronavirus.cchealth.org/health-services-updates'
+
+    def load_html(self, url: str) -> str:
+        # This page uses Wix, and if it thinks it's getting scraped, might
+        # return a blank page with some JS code that sets cookies and reloads
+        # the page with real content. Use Selenium to work around that.
+        with get_firefox() as driver:
+            driver.get(self.URL)
+            driver.implicitly_wait(10)
+            # Finding a heading for the year to check we're on the news page.
+            content = driver.find_element_by_xpath('//h2[text()="2021"]')
+            if not content:
+                raise ValueError(f'Page did not load properly: {self.URL}')
+
+            return driver.page_source
 
     def is_news_heading(self, element: element.Tag) -> bool:
         return bool(element.name == 'h3' and
