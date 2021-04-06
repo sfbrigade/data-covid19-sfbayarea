@@ -28,7 +28,12 @@ def dig(items: Union[Dict[Any, Any], List[Any]], json_path: List[Any]) -> Any:
         raise KeyError(f'Error reading data at path: {json_path}') from error
 
 
-def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) -> datetime:
+def parse_datetime(
+    date_string: str,
+    timezone: Optional[tzinfo] = PACIFIC_TIME,
+    *,
+    correct_century: bool = True
+) -> datetime:
     """
     Parse a datetime from a string and ensure it always has a timezone set. Use
     the `timezone` argument to set the timezone to use if none was specified in
@@ -42,6 +47,12 @@ def parse_datetime(date_string: str, timezone: Optional[tzinfo] = PACIFIC_TIME) 
     date = dateutil.parser.parse(date_string)
     if date.tzinfo is None:
         date = date.replace(tzinfo=timezone)
+
+    # We often see dates from 1920 or 1921, which appear to be someone
+    # accidentally entering a 2-digit year in a 4-digit year field, and some
+    # system turning what was intended to be 2021 into 1921.
+    if correct_century and (date.year == 1920 or date.year == 1921):
+        date = date.replace(year=date.year + 100)
 
     # Gut-check whether this date seems reasonable
     if abs(CURRENT_YEAR - date.year) > 5:
