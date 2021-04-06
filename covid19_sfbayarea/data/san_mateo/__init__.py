@@ -2,7 +2,7 @@ import csv
 import json
 import requests
 
-from datetime import datetime, date
+from datetime import datetime
 from typing import Any, Dict, List, cast
 from covid19_sfbayarea.utils import dig, parse_datetime
 
