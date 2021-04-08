@@ -108,10 +108,11 @@ class ContraCostaNews(NewsScraper):
         soup = BeautifulSoup(html, 'lxml')
         base_url = get_base_url(soup, url)
         news = []
-        month_headings = soup.find_all(self.is_news_heading)
+        containers = set([heading.parent
+                          for heading in soup.find_all(self.is_news_heading)])
         index = 0
-        for heading in month_headings:
-            articles = self.get_next_list(heading).find_all('li')
+        for container in containers:
+            articles = container.find_all('li')
             for article in articles:
                 index += 1
                 item = self.parse_article(index,
