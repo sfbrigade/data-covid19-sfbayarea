@@ -1,7 +1,7 @@
 import requests
 from typing import Any, Dict, Generator
 from urllib.parse import urljoin
-from .errors import BadRequest
+from ..errors import BadRequest
 
 
 class ArcGisFeatureServer:

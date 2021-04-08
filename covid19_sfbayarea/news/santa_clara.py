@@ -5,10 +5,10 @@ from selenium.webdriver.support.ui import WebDriverWait  # type: ignore
 from selenium.webdriver.support import expected_conditions  # type: ignore
 from typing import List
 from urllib.parse import urljoin
+from ..errors import FormatError
 from ..utils import parse_datetime
 from ..webdriver import get_firefox
 from .base import NewsScraper
-from .errors import FormatError
 from .feed import NewsItem
 from .utils import get_base_url
 

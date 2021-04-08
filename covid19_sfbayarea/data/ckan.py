@@ -4,7 +4,7 @@ import logging
 import requests
 from typing import Dict, Any, Generator, Optional
 from urllib.parse import urljoin
-from .errors import BadRequest
+from ..errors import BadRequest
 
 
 logger = logging.getLogger(__name__)

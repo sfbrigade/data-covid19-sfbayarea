@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup, element  # type: ignore
 import re
 from typing import List
 from urllib.parse import urljoin
+from ..errors import FormatError
 from ..utils import parse_datetime
 from .base import NewsScraper
-from .errors import FormatError
 from .feed import NewsItem
 from .utils import get_base_url, is_covid_related
 
