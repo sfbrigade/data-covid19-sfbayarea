@@ -51,7 +51,7 @@ class SantaClaraNews(NewsScraper):
             page_sources = []
             while True:
                 content = driver.find_element_by_css_selector(
-                    '.view-news article')
+                    '.coh-style-news-list')
                 if not content:
                     raise ValueError(f'Page did not load properly: {self.URL}')
                 page_sources.append(driver.page_source)
@@ -59,7 +59,7 @@ class SantaClaraNews(NewsScraper):
                 # If we've gone earlier than the time range, stop.
                 earliest_time = parse_datetime(
                     driver.find_elements_by_css_selector(
-                        '.view-news article time'
+                        '.coh-style-news-list time'
                     )[-1].get_attribute('datetime')
                 )
                 if not self.from_date or self.from_date >= earliest_time:
@@ -82,29 +82,31 @@ class SantaClaraNews(NewsScraper):
     def parse_page(self, html: str, url: str) -> List[NewsItem]:
         soup = BeautifulSoup(html, 'html5lib')
         base_url = get_base_url(soup, url)
-        articles = soup.select('.view-news article')
+        articles = soup.select('.coh-style-news-list tbody tr')
         return [self.parse_article(index, article, base_url)
                 for index, article in enumerate(articles)]
 
     def parse_article(self, index: int, article: element.Tag,
                       base_url: str) -> NewsItem:
-        title_link = article.find('a')
+        title_link = article.select_one('.views-field-title a')
 
         url = title_link['href']
         if not url:
-            raise FormatError(f'No URL found for article {index}')
+            raise FormatError(f'No URL found on article {index} ({article})')
         else:
             url = urljoin(base_url, url)
 
         title = title_link.get_text(strip=True)
         if not title:
-            raise FormatError(f'No title content found for article {index}')
+            raise FormatError(f'No title found on article {index} ({article})')
 
         date_tag = article.select_one('time')
+        if not date_tag:
+            raise FormatError(f'No date found on article {index} ({article})')
         date_string = date_tag['datetime']
         date = parse_datetime(date_string)
 
-        category_tag = article.select('.coh-column')[1]
+        category_tag = article.select_one('.views-field-field-news-category')
         category = category_tag.get_text(strip=True)
         tags = [category] if category else []
 
