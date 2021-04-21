@@ -3,8 +3,8 @@ from copy import copy
 import dateutil.parser
 from typing import List
 from urllib.parse import urljoin
+from ..errors import FormatError
 from .base import NewsScraper
-from .errors import FormatError
 from .feed import NewsItem
 from .utils import get_base_url, HEADING_PATTERN, normalize_whitespace
 

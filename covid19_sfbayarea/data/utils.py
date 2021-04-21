@@ -5,7 +5,7 @@ from typing import Dict, Any
 import requests
 from urllib.parse import urljoin
 from cachecontrol import CacheControl  # type: ignore
-from .errors import BadRequest
+from ..errors import BadRequest
 
 def get_data_model() -> Dict:
     """ Return a dictionary representation of the data model """
