@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 import json
-from typing import Dict, Any
+from typing import Any, Dict, List
 import requests
 from urllib.parse import urljoin
 from cachecontrol import CacheControl  # type: ignore
@@ -20,6 +20,11 @@ class SocrataApi:
     Class for starting a session for requests via Socrata APIs.
     Initialize with a base_url
     """
+    # SODA API has a default limit of 1000 records per call,
+    # so we'll use that as well.
+    # See: https://dev.socrata.com/docs/paging.html
+    DEFAULT_LIMIT = 1000
+
     def __init__(self, base_url: str):
         self.session = CacheControl(requests.Session())
         self.base_url = base_url
@@ -48,8 +53,37 @@ class SocrataApi:
 
         return self._request(url, **kwargs)
 
-    def resource(self, resource_id: str, **kwargs: Any) -> Dict:
-        return self.request(f'{self.resource_url}{resource_id}', **kwargs)
+    def resource(self, resource_id: str, **kwargs: Any) -> List[Dict]:
+        data: List[Dict] = []
+
+        if "params" in kwargs:
+            if "$offset" not in kwargs["params"]:
+                kwargs["params"].update({"$offset": 0})
+
+            else:
+                pass
+
+        else:
+            kwargs["params"] = {"$offset": 0}
+
+        while True:
+            results = self.request(f'{self.resource_url}{resource_id}', **kwargs)
+            result_count = len(results)
+
+            if result_count == self.DEFAULT_LIMIT:
+                data.extend(results)
+                offset = kwargs["params"].get("$offset") + self.DEFAULT_LIMIT
+                kwargs["params"].update({"$offset": offset})
+                continue
+
+            elif result_count > 0 and result_count < self.DEFAULT_LIMIT:
+                data.extend(results)
+                break
+
+            else:
+                break
+
+        return data
 
     def metadata(self, resource_id: str, **kwargs: Any) -> Dict:
         return self.request(f'{self.metadata_url}{resource_id}.json', **kwargs)
