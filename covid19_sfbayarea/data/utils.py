@@ -53,27 +53,21 @@ class SocrataApi:
 
         return self._request(url, **kwargs)
 
-    def resource(self, resource_id: str, **kwargs: Any) -> List[Dict]:
+    def resource(self, resource_id: str, params: Dict = None, **kwargs: Any) -> List[Dict]:
         data: List[Dict] = []
 
-        if "params" in kwargs:
-            if "$offset" not in kwargs["params"]:
-                kwargs["params"].update({"$offset": 0})
-
-            else:
-                pass
-
-        else:
-            kwargs["params"] = {"$offset": 0}
+        params = params or {}
+        params.setdefault("$offset", 0)
+        params.setdefault("$limit", self.DEFAULT_LIMIT)
 
         while True:
-            results = self.request(f'{self.resource_url}{resource_id}', **kwargs)
+            results = self.request(f'{self.resource_url}{resource_id}', params=params, **kwargs)
             result_count = len(results)
 
             if result_count == self.DEFAULT_LIMIT:
                 data.extend(results)
-                offset = kwargs["params"].get("$offset") + self.DEFAULT_LIMIT
-                kwargs["params"].update({"$offset": offset})
+                offset = params["$offset"] + self.DEFAULT_LIMIT
+                params.update({"$offset": offset})
                 continue
 
             elif result_count > 0 and result_count < self.DEFAULT_LIMIT:
