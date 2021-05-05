@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, List
 from ..errors import FormatError
 from ..utils import assert_equal_sets, parse_datetime
-from .utils import SocrataApi
+from .socrata import SocrataApi
 
 
 API_IDS = {
