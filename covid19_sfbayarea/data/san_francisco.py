@@ -3,7 +3,8 @@ import json
 from typing import Any, Dict, List
 from collections import Counter
 from ..utils import assert_equal_sets
-from .utils import get_data_model, SocrataApi
+from .utils import get_data_model
+from .socrata import SocrataApi
 
 def get_county() -> Dict:
     """ Main method for populating county data.json """
