@@ -3,12 +3,15 @@ import requests
 import re
 from bs4 import BeautifulSoup  # type: ignore
 import json
+import logging
 from typing import List, Dict
 from datetime import datetime, timezone
 import dateutil.tz
 from ..webdriver import get_firefox
 from .utils import get_data_model
 from ..errors import FormatError
+
+logger = logging.getLogger(__name__)
 
 # URLs and API endpoints:
 # data_url has cases, deaths, tests
@@ -141,8 +144,8 @@ def get_notes() -> str:
                 notes.append(text_item.strip())
                 has_notes = True
         if not has_notes:
-            raise FormatError(
-                "This dashboard has changed. None of the <div> elements contains'Disclaimers' " + dashboard_url)
+            logger.warn('None of the elements on the dashboard contain '
+                        f'"disclaimer?" ({dashboard_url})')
         return '\n\n'.join(notes)
 
 
