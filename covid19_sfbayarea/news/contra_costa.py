@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup, element  # type: ignore
+from logging import getLogger
 import re
 from typing import List, Optional
 from urllib.parse import urljoin
@@ -9,6 +10,8 @@ from .base import NewsScraper
 from .feed import NewsItem
 from .utils import get_base_url
 
+
+logger = getLogger(__name__)
 
 MONTHS = (
     'january',
@@ -149,9 +152,16 @@ class ContraCostaNews(NewsScraper):
             raise ValueError(f'Article {index} date was in an unknown format: '
                              f'"{date_string}"')
 
-        url = article.find('a')['href']
+        link = article.find('a')
+        # Some entries are just informational paragraphs without a link. Not
+        # much we can do, so just drop them from the feed.
+        if not link:
+            logger.info(f'Found news item with no link: "{title}"')
+            return None
+
+        url = link['href']
         if not url:
-            raise ValueError(f'No URL found for article {index}')
+            raise ValueError(f'Article had an anchor, but no URL {index}')
         else:
             url = urljoin(base_url, url)
 
