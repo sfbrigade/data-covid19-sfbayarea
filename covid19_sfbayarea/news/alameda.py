@@ -325,6 +325,8 @@ class ItemParser:
         elif (node.name == 'a'
               and node.get_text(strip=True).lower() == 'english'):
             self.item.url = node['href']
+            # Skip to the next thing after the link
+            raise SkipIterationTo(list(node.descendants)[-1].next_element)
 
     def parse_br(self, node: element.Tag) -> None:
         """
