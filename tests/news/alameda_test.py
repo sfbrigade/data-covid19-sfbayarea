@@ -64,3 +64,34 @@ def test_parses_titles_with_single_word_links() -> None:
             date_published=datetime(2020, 9, 28, tzinfo=PACIFIC_TIME),
             summary=''
         ) == feed.items[0]
+
+
+def test_has_no_summary_when_br_in_language_links() -> None:
+    # This is a stripped-down version of the Alameda page's current markup,
+    # which may change.
+    mock_html = """<!DOCTYPE html>
+        <html>
+            <body>
+                <div id="mainCol">
+                    <strong>September 28, 2020</strong>
+                    This is the title (with no summary)
+                    <a href="/link-english.html" target="_blank">
+                        <br>
+                        English
+                    </a>
+                    |
+                    <a href="/link-spanish.html" target="_blank">Spanish</a>
+                </div>
+            </body>
+        </html>
+    """
+    with patch.object(AlamedaNews, 'load_html', return_value=mock_html):
+        feed = AlamedaNews.get_news()
+        assert 1 == len(feed.items)
+        assert NewsItem(
+            id='https://covid-19.acgov.org/link-english.html',
+            url='https://covid-19.acgov.org/link-english.html',
+            title='This is the title (with no summary)',
+            date_published=datetime(2020, 9, 28, tzinfo=PACIFIC_TIME),
+            summary=''
+        ) == feed.items[0]
