@@ -115,6 +115,18 @@ TODO
 
 ## County-Specific Notes ##
 
+### Alameda County ###
+
+* Alameda County only provides a seven-day rolling average for the number of
+  tests on any given date, so the cumulative number of tests is not
+  available. This data limitation also affects the precision of the number of
+  positive and negative tests for any given day. The number of postive tests is
+  calculated by multiplying the rolling average number of tests for the day by
+  the rolling average of the positivity rate for the same day; to calculate
+  negative tests, we take that figure and subtract it from the rolling average
+  number of tests.
+
+
 ### Marin County ###
 * Data for Marin only accounts for Marin residents and does not include
   inmates at San Quentin State Prison. 
