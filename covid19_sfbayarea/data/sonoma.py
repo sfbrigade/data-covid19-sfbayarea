@@ -1,6 +1,7 @@
 import requests
 import json
 import dateutil.parser
+from datetime import datetime, timezone
 from typing import List, Dict, Union
 from bs4 import BeautifulSoup, element # type: ignore
 from ..errors import FormatError
@@ -65,18 +66,6 @@ def parse_int(text: str) -> int:
         return 0
     else:
         return int(text.replace(',', ''))
-
-def generate_update_time(soup: BeautifulSoup) -> str:
-    """
-    Finds and parses an ISO 8601 timestamp string for when the page was last updated
-    """
-    update_time_text = soup.find('meta', {'property': 'article:modified_time'})['content']
-    try:
-        date = dateutil.parser.parse(update_time_text)
-    except ValueError:
-        raise ValueError(f'Date is not in ISO 8601'
-                         f'format: "{update_time_text}"')
-    return date.isoformat()
 
 def get_source_meta(soup: BeautifulSoup) -> str:
     """
@@ -327,7 +316,7 @@ def get_county() -> Dict:
 
     model = {
         'name': 'Sonoma County',
-        'update_time': generate_update_time(sonoma_soup),
+        'update_time': datetime.now(timezone.utc).isoformat(),
         'source_url': url,
         'meta_from_source': get_source_meta(sonoma_soup),
         'meta_from_baypd': '',
