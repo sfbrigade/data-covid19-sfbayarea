@@ -302,7 +302,7 @@ def get_table_tags(soup: BeautifulSoup) -> List[element.Tag]:
         'Test Results',
         'Proportion of Cases Attributable to Specific Exposure Locations',
         'Cases by Age Group',
-        'Cases by Gender',
+        # 'Cases by Gender',   Data by gender no longer available
         'Cases by Race'
     ]
     return [get_table(header, soup) for header in headers]
@@ -318,10 +318,12 @@ def get_county() -> Dict:
     page.raise_for_status()
     sonoma_soup = BeautifulSoup(page.content, 'html5lib')
 
-    hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_gender, cases_by_race = get_table_tags(sonoma_soup)
+    hist_cases, total_tests, cases_by_source, cases_by_age, cases_by_race = get_table_tags(sonoma_soup)
 
     # calculate total cases to compute values from percentages
-    total_cases = sum(transform_gender(cases_by_gender).values())
+    # we previously summed the cases across all genders, but with gender data unavailable,
+    # now we calculate the the sum of the cases across all age groups
+    total_cases = sum([group['raw_count'] for group in transform_age(cases_by_age)])
 
     model = {
         'name': 'Sonoma County',
@@ -335,7 +337,8 @@ def get_county() -> Dict:
             'transmission_cat_orig': transform_transmission(cases_by_source, total_cases, standardize=False),
             'age_group': transform_age(cases_by_age),
             'race_eth': transform_race_eth(cases_by_race),
-            'gender': transform_gender(cases_by_gender)
+            # 'gender': transform_gender(cases_by_gender)     # Gender breakdown is no longer available
+            'gender': {'male': -1, 'female': -1}              # Insert a placeholder for compatibility
         },
         'tests_totals': {
             'tests': transform_tests(total_tests),
