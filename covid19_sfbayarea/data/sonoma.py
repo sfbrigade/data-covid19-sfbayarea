@@ -312,7 +312,7 @@ def get_county() -> Dict:
     # calculate total cases to compute values from percentages
     # we previously summed the cases across all genders, but with gender data unavailable,
     # now we calculate the the sum of the cases across all age groups
-    total_cases = sum([group['raw_count'] for group in transform_age(cases_by_age)])
+    total_cases = sum([int(group['raw_count']) for group in transform_age(cases_by_age)])
 
     model = {
         'name': 'Sonoma County',
