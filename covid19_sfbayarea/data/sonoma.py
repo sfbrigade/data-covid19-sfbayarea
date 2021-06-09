@@ -314,12 +314,17 @@ def get_county() -> Dict:
     # now we calculate the the sum of the cases across all age groups
     total_cases = sum([int(group['raw_count']) for group in transform_age(cases_by_age)])
 
+    meta_from_baypd = (
+        "On or about 2021-06-03, Sonoma County stopped providing case totals "
+        "by gender. Null values are inserted as placeholders for consistency."
+    )
+
     model = {
         'name': 'Sonoma County',
         'update_time': datetime.now(timezone.utc).isoformat(),
         'source_url': url,
         'meta_from_source': get_source_meta(sonoma_soup),
-        'meta_from_baypd': '',
+        'meta_from_baypd': meta_from_baypd,
         'series': transform_cases(hist_cases),
         'case_totals': {
             'transmission_cat': transform_transmission(cases_by_source, total_cases),
