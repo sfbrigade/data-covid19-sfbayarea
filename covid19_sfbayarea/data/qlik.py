@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 import json
 import logging
+import ssl
 from types import TracebackType
 from typing import Any, Dict, List, Union, Optional, Type
 from websocket import create_connection  # type: ignore
@@ -47,6 +48,10 @@ class QlikClient:
     document_id : str
         The ID of the document you want to read data from, e.g.
         ``'b7d7f869-fb91-4950-9262-0b89473ceed6'``.
+    cookie : str, optional
+        HTTP `Cookie` header string to send when connecting.
+    ssl_verify : bool, optional
+        Whether to verify SSL certificates. Defaults to ``True``.
 
     Examples
     --------
@@ -56,17 +61,21 @@ class QlikClient:
     >>> dashboard.open()
     >>> tests_chart = dashboard.get_data('bZFxmu')
     """
-    def __init__(self, url: str, document_id: str, cookie: str = None):
+    def __init__(self, url: str, document_id: str, cookie: str = None, ssl_verify: bool = True):
         self.url = url + ('' if url.endswith('/') else '/')
         self.document_id = document_id
         self._message_id = 1
         self._document_handle = -1
         self._cookie = cookie
+        self._ssl_verify = ssl_verify
 
     def _connect(self) -> None:
         "Connect to the websocket server."
         socket_url = self.url + self.document_id
-        self._socket = create_connection(socket_url, cookie=self._cookie)
+        sslopt = None if self._ssl_verify else {"cert_reqs": ssl.CERT_NONE}
+        self._socket = create_connection(socket_url,
+                                         cookie=self._cookie,
+                                         sslopt=sslopt)
 
     def _send(self, handle: Any, method: str, parameters: Union[List, Dict],
               delta: bool = False) -> Dict:

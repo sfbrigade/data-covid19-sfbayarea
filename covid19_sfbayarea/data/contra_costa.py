@@ -82,7 +82,8 @@ def get_county() -> Dict:
     Get data for Contra Costa County.
     """
     api = QlikClient('wss://dashboard.cchealth.org/app/',
-                     'b7d7f869-fb91-4950-9262-0b89473ceed6')
+                     'b7d7f869-fb91-4950-9262-0b89473ceed6',
+                     ssl_verify=False)
     notes = ('Positive test counts are not published by the county, so they '
              'are estimated from daily positivity rates. Positivity rates are '
              'are not published for dates as early as some tests are, so '
