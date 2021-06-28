@@ -137,15 +137,10 @@ def get_notes() -> str:
         driver.implicitly_wait(30)
         driver.get(dashboard_url)
         soup = BeautifulSoup(driver.page_source, 'html5lib')
-        has_notes = False
         text = soup.get_text().splitlines()
         for text_item in text:
             if match.search(text_item):
                 notes.append(text_item.strip())
-                has_notes = True
-        if not has_notes:
-            logger.warn('None of the elements on the dashboard contain '
-                        f'"disclaimer?" ({dashboard_url})')
         return '\n\n'.join(notes)
 
 
