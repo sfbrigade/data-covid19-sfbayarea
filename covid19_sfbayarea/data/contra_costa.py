@@ -152,9 +152,16 @@ def get_timeseries_cases(api: QlikClient) -> List[dict]:
     # Sanity-check daily cases vs. totals
     total = 0
     for index, record in enumerate(result):
-        total += record['cases']
+        # We can't find a reliable county-level source that covers all time, so
+        # so the total cases on the first day of the timeseries may include
+        # past cases, and can't be reconciled with any other data.
+        if index == 0:
+            total = record['cumul_cases']
+        else:
+            total += record['cases']
+
         if record['cumul_cases'] != total:
-            raise FormatError(f'Sum of daily cases != cumul_cases at record {index} (date: {record["day"]})')
+            raise FormatError(f'Sum of daily cases != cumul_cases at record {index} (date: {record["date"]})')
 
     return result
 
