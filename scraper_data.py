@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import click
 import json
+import logging
+import os
 from covid19_sfbayarea import data as data_scrapers
 from covid19_sfbayarea.utils import friendly_county
 from sys import exit
@@ -48,4 +50,5 @@ def main(counties: Tuple[str,...], output: str) -> None:
     if failed_counties: exit(1) # some counties failed
 
 if __name__ == '__main__':
+    logging.basicConfig(level=os.getenv('LOG_LEVEL', 'WARN').upper())
     main()
