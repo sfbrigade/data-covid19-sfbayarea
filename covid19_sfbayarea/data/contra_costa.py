@@ -152,10 +152,16 @@ def get_timeseries_cases(api: QlikClient) -> List[dict]:
     # Sanity-check daily cases vs. totals
     total = 0
     for index, record in enumerate(result):
-        # We can't find a reliable county-level source that covers all time, so
-        # so the total cases on the first day of the timeseries may include
-        # past cases, and can't be reconciled with any other data.
-        if index == 0:
+        # The county's dataset does a funny thing: on the first date that has
+        # cases, the cumulative case count is higher than the day's case count.
+        # This looks like it might be because the dataset doesn't reach all the
+        # way back to the first case, and something along the way in their
+        # data pipeline doesn't output the cumulative count until there's a day
+        # with a positive count.
+        #
+        # That means the case count and total count on the first day with a
+        # case can't be reconciled, so just take whatever total it tells us.
+        if total == 0:
             total = record['cumul_cases']
         else:
             total += record['cases']

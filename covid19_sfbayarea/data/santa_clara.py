@@ -1,8 +1,11 @@
 from datetime import datetime
+import logging
 from typing import Dict, List
 from ..errors import FormatError
 from ..utils import assert_equal_sets, parse_datetime
 from .socrata import SocrataApi
+
+logger = logging.getLogger(__name__)
 
 
 API_IDS = {
@@ -92,8 +95,13 @@ def get_timeseries_cases(api: SocrataApi) -> List[dict]:
 
 def get_timeseries_deaths(api: SocrataApi) -> List[dict]:
     data = api.resource(API_IDS['deaths'], params={'$order': 'date ASC'})
-    return [
-        {
+    result = []
+    for index, entry in enumerate(data):
+        if 'date' not in entry:
+            logger.warn(f'Row {index} of deaths data (id: "{API_IDS["deaths"]}") has no `date` field')
+            continue
+
+        result.append({
             'date': parse_datetime(entry['date']).date().isoformat(),
             # This is "total" because the data is broken down into deaths at
             # long-term care facilities (e.g. nursing homes) vs. elsewhere. We
@@ -101,9 +109,12 @@ def get_timeseries_deaths(api: SocrataApi) -> List[dict]:
             # don't provide it.
             'deaths': int(entry['total']),
             'cumul_deaths': int(entry['cumulative']),
-        }
-        for entry in data
-    ]
+        })
+
+    if len(result) == 0:
+        raise FormatError(f'No valid rows in deaths data (id: "{API_IDS["deaths"]}")')
+
+    return result
 
 
 def get_timeseries_tests(api: SocrataApi) -> List[dict]:
